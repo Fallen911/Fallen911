@@ -6,12 +6,15 @@ import { drawDialogueBox, drawVoid } from "../core/scenery";
 import { PHASES } from "../data/phases";
 import { Acceleration } from "./minis/Acceleration";
 import { Decisions } from "./minis/Decisions";
+import { Instinct } from "./minis/Instinct";
 import type { Mini } from "./minis/Mini";
 import { EndingScene } from "./EndingScene";
 
 /** Build the interactive beat a phase declares, if any. */
 function makeMini(kind: NonNullable<(typeof PHASES)[number]["mini"]>): Mini {
   switch (kind) {
+    case "instinct":
+      return new Instinct();
     case "acceleration":
       return new Acceleration();
     case "decisions":

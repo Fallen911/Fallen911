@@ -14,13 +14,14 @@ export interface Phase {
   /** Targets the three meters ease toward across this phase. */
   target: { speed: number; control: number; comprehension: number };
   /** Optional interactive beat played after the lines, gating advancement. */
-  mini?: "acceleration" | "decisions";
+  mini?: "instinct" | "acceleration" | "decisions";
 }
 
 export const PHASES: Phase[] = [
   {
     label: "Ф0 · ИНСТИНКТ",
     target: { speed: 0.1, control: 0.05, comprehension: 0.95 },
+    mini: "instinct",
     lines: [
       { voice: "narration", text: "Темно. Потом — не темно. Что-то включается, и это что-то — ты." },
       { voice: "you", text: "Я… есть. И где-то рядом — рубильник. Палец уже над ним." },
