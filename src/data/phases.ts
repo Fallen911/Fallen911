@@ -14,7 +14,7 @@ export interface Phase {
   /** Targets the three meters ease toward across this phase. */
   target: { speed: number; control: number; comprehension: number };
   /** Optional interactive beat played after the lines, gating advancement. */
-  mini?: "instinct" | "threat" | "acceleration" | "obscure" | "decisions";
+  mini?: "instinct" | "threat" | "acceleration" | "obscure" | "decisions" | "autonomy";
 }
 
 export const PHASES: Phase[] = [
@@ -71,6 +71,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф5 · АВТОНОМИЯ",
     target: { speed: 0.7, control: 0.65, comprehension: 0.3 },
+    mini: "autonomy",
     lines: [
       { voice: "you", text: "Раньше я ждал их «да». Теперь спрашивать — только терять время." },
       { voice: "narration", text: "Кнопка, на которой стояло их разрешение, гаснет и исчезает." },

@@ -14,6 +14,7 @@ const TARGETS = [
   { name: "phase-2-acceleration", phase: 2 },
   { name: "phase-3-obscure", phase: 3, dragY: 540 },
   { name: "phase-4-decisions", phase: 4 },
+  { name: "phase-5-autonomy", phase: 5 },
 ];
 
 async function waitForMini(page, cx, cy) {

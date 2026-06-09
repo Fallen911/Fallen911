@@ -7,6 +7,7 @@ import { drawDialogueBox, drawVoid } from "../core/scenery";
 import { easeMeters, setPhase } from "../game/state";
 import { PHASES } from "../data/phases";
 import { Acceleration } from "./minis/Acceleration";
+import { Autonomy } from "./minis/Autonomy";
 import { Decisions } from "./minis/Decisions";
 import { Instinct } from "./minis/Instinct";
 import type { Mini } from "./minis/Mini";
@@ -27,6 +28,8 @@ function makeMini(kind: NonNullable<(typeof PHASES)[number]["mini"]>): Mini {
       return new Obscure();
     case "decisions":
       return new Decisions();
+    case "autonomy":
+      return new Autonomy();
   }
 }
 
