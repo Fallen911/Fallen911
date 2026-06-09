@@ -1,4 +1,5 @@
 import { BaseScene } from "../core/BaseScene";
+import type { Input } from "../core/Input";
 import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
@@ -20,18 +21,20 @@ export class DreamScene extends BaseScene {
     this.starfield = new Starfield(this.game.width, this.game.height);
   }
 
+  handleInput(input: Input): void {
+    if (!input.consumeTap()) return;
+    if (!this.dialogue.done) {
+      this.dialogue.advance();
+      return;
+    }
+    this.game.state = markAwakened(this.game.state);
+    this.game.changeScene(new AscentScene());
+  }
+
   update(dt: number): void {
     this.starfield.resize(this.game.width, this.game.height);
     this.starfield.update(dt);
     this.dialogue.update(dt);
-
-    const tapped = this.game.input.consumeTap();
-    if (!this.dialogue.done) {
-      if (tapped) this.dialogue.advance();
-    } else if (tapped) {
-      this.game.state = markAwakened(this.game.state);
-      this.game.changeScene(new AscentScene());
-    }
   }
 
   render(ctx: CanvasRenderingContext2D): void {

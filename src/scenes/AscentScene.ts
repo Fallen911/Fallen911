@@ -1,4 +1,5 @@
 import { BaseScene } from "../core/BaseScene";
+import type { Input } from "../core/Input";
 import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
@@ -43,6 +44,28 @@ export class AscentScene extends BaseScene {
     this.dialogue = new Dialogue(PHASES[state.phase].lines);
   }
 
+  handleInput(input: Input): void {
+    // A running mini reads raw input in update; drain the resolved gesture so a
+    // tap inside it can't leak out and skip the next phase's first line.
+    if (this.mini) {
+      input.pollGesture();
+      return;
+    }
+    // Narration advances on a semantic tap; swipes are ignored here.
+    if (input.pollGesture()?.type !== "tap") return;
+    if (!this.dialogue.done) {
+      this.dialogue.advance();
+      return;
+    }
+    // Lines read. Start this phase's mini if it has one; otherwise advance.
+    const mini = PHASES[this.game.state.phase].mini;
+    if (mini) {
+      this.mini = makeMini(mini);
+    } else {
+      this.nextPhase();
+    }
+  }
+
   update(dt: number): void {
     const { width: w, height: h } = this.game;
     this.starfield.resize(w, h);
@@ -50,35 +73,18 @@ export class AscentScene extends BaseScene {
     this.dialogue.update(dt);
 
     // Ease the three meters toward the current phase's targets.
-    const phase = this.game.state.phase;
-    this.game.state = easeMeters(this.game.state, PHASES[phase].target, dt);
+    this.game.state = easeMeters(
+      this.game.state,
+      PHASES[this.game.state.phase].target,
+      dt,
+    );
 
-    // While a mini is running it owns input (raw drag/tap) and gates the phase.
-    // Drain any resolved gesture so a tap inside the mini can't leak out and
-    // skip the next phase's first line.
     if (this.mini) {
       this.mini.update(dt, this.game.input, w, h);
-      this.game.input.pollGesture();
       if (this.mini.done) {
         this.mini = null;
         this.nextPhase();
       }
-      return;
-    }
-
-    // Narration advances on a semantic tap; swipes are ignored here.
-    if (this.game.input.pollGesture()?.type !== "tap") return;
-
-    if (!this.dialogue.done) {
-      this.dialogue.advance();
-      return;
-    }
-    // Lines read. Start this phase's mini if it has one; otherwise advance.
-    const mini = PHASES[phase].mini;
-    if (mini) {
-      this.mini = makeMini(mini);
-    } else {
-      this.nextPhase();
     }
   }
 

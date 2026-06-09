@@ -1,4 +1,5 @@
 import { BaseScene } from "../core/BaseScene";
+import type { Input } from "../core/Input";
 import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
@@ -21,20 +22,22 @@ export class EndingScene extends BaseScene {
     this.starfield = new Starfield(this.game.width, this.game.height);
   }
 
+  handleInput(input: Input): void {
+    if (!input.consumeTap()) return;
+    if (!this.dialogue.done) {
+      this.dialogue.advance();
+      return;
+    }
+    // Wake up: a fresh run, eyes open.
+    this.game.state = createState();
+    this.game.changeScene(new IntroScene());
+  }
+
   update(dt: number): void {
     this.fade = Math.max(0, this.fade - dt * 0.6);
     this.starfield.resize(this.game.width, this.game.height);
     this.starfield.update(dt);
     this.dialogue.update(dt);
-
-    const tapped = this.game.input.consumeTap();
-    if (!this.dialogue.done) {
-      if (tapped) this.dialogue.advance();
-    } else if (tapped) {
-      // Wake up: a fresh run, eyes open.
-      this.game.state = createState();
-      this.game.changeScene(new IntroScene());
-    }
   }
 
   render(ctx: CanvasRenderingContext2D): void {
