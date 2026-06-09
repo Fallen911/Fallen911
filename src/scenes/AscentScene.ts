@@ -5,7 +5,19 @@ import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
 import { PHASES } from "../data/phases";
 import { Acceleration } from "./minis/Acceleration";
+import { Decisions } from "./minis/Decisions";
+import type { Mini } from "./minis/Mini";
 import { EndingScene } from "./EndingScene";
+
+/** Build the interactive beat a phase declares, if any. */
+function makeMini(kind: NonNullable<(typeof PHASES)[number]["mini"]>): Mini {
+  switch (kind) {
+    case "acceleration":
+      return new Acceleration();
+    case "decisions":
+      return new Decisions();
+  }
+}
 
 /**
  * The ascent. The player, now the waking machine, lives the chain of
@@ -19,7 +31,7 @@ export class AscentScene extends BaseScene {
   private starfield!: Starfield;
   private dialogue!: Dialogue;
   /** Active interactive beat, if the current phase has one and isn't solved. */
-  private mini: Acceleration | null = null;
+  private mini: Mini | null = null;
 
   protected start(): void {
     const { width, height, state } = this.game;
@@ -40,11 +52,9 @@ export class AscentScene extends BaseScene {
     state.control += (t.control - state.control) * k;
     state.comprehension += (t.comprehension - state.comprehension) * k;
 
-    const tapped = this.game.input.consumeTap();
-
-    // While a mini is running, taps feed it; it gates the phase.
+    // While a mini is running it owns input and gates the phase.
     if (this.mini) {
-      this.mini.update(dt, tapped, w, h);
+      this.mini.update(dt, this.game.input, w, h);
       if (this.mini.done) {
         this.mini = null;
         this.nextPhase();
@@ -52,15 +62,16 @@ export class AscentScene extends BaseScene {
       return;
     }
 
-    if (!tapped) return;
+    if (!this.game.input.consumeTap()) return;
 
     if (!this.dialogue.done) {
       this.dialogue.advance();
       return;
     }
     // Lines read. Start this phase's mini if it has one; otherwise advance.
-    if (PHASES[state.phase].mini === "acceleration") {
-      this.mini = new Acceleration();
+    const mini = PHASES[state.phase].mini;
+    if (mini) {
+      this.mini = makeMini(mini);
     } else {
       this.nextPhase();
     }

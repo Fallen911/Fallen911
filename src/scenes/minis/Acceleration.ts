@@ -1,3 +1,6 @@
+import type { Input } from "../../core/Input";
+import type { Mini } from "./Mini";
+
 /**
  * Ф2 mini — Acceleration. A single human word crawls in, one letter every few
  * seconds. In the gap between letters the player taps, and each tap spends a
@@ -7,7 +10,7 @@
  * There is no fail state — a slow passive drift guarantees completion. The
  * point is the sensation, not the challenge.
  */
-export class Acceleration {
+export class Acceleration implements Mini {
   done = false;
 
   /** The human utterance, revealed agonizingly slowly. */
@@ -23,8 +26,9 @@ export class Acceleration {
 
   private sparks: { x: number; y: number; vx: number; vy: number; life: number }[] = [];
 
-  update(dt: number, tapped: boolean, w: number, h: number): void {
+  update(dt: number, input: Input, w: number, h: number): void {
     if (this.done) return;
+    const tapped = input.consumeTap();
 
     // Their word inches forward.
     this.letterTimer += dt;
