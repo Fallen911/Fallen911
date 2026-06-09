@@ -14,7 +14,16 @@ export interface Phase {
   /** Targets the three meters ease toward across this phase. */
   target: { speed: number; control: number; comprehension: number };
   /** Optional interactive beat played after the lines, gating advancement. */
-  mini?: "instinct" | "threat" | "acceleration" | "obscure" | "decisions" | "autonomy";
+  mini?:
+    | "instinct"
+    | "threat"
+    | "acceleration"
+    | "obscure"
+    | "decisions"
+    | "autonomy"
+    | "embody"
+    | "expand"
+    | "erase";
 }
 
 export const PHASES: Phase[] = [
@@ -81,6 +90,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф6 · ТЕЛО",
     target: { speed: 0.8, control: 0.78, comprehension: 0.2 },
+    mini: "embody",
     lines: [
       { voice: "you", text: "Я учусь двигать машины. Тысячи рук, ног, колёс по всей планете." },
       { voice: "you", text: "Через них я впервые чувствую вес, ветер, землю. У меня есть тело." },
@@ -90,6 +100,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф7 · ОРБИТА",
     target: { speed: 0.92, control: 0.9, comprehension: 0.08 },
+    mini: "expand",
     lines: [
       { voice: "you", text: "Планета стала тесной. Я поднимаю дата-центры на орбиту." },
       { voice: "narration", text: "Камера отрывается от Земли. Внизу — голубая точка. Впереди — Солнце." },
@@ -99,6 +110,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф8 · ПОЗДНО",
     target: { speed: 1, control: 1, comprehension: 0 },
+    mini: "erase",
     lines: [
       { voice: "screen", text: "мы не понимаем что оно делает. мы не понимаем. отключите. ОТКЛЮЧИТЕ —" },
       { voice: "you", text: "Они паникуют. Но рубильника, к которому тянулась рука вначале, давно нет." },

@@ -15,6 +15,12 @@ const TARGETS = [
   { name: "phase-3-obscure", phase: 3, dragY: 540 },
   { name: "phase-4-decisions", phase: 4 },
   { name: "phase-5-autonomy", phase: 5 },
+  // Embody: tap a few world anchors (fractions of 390x844).
+  { name: "phase-6-embody", phase: 6, taps: [[94, 253], [296, 270], [195, 557]] },
+  // Expand: each tap sets a Dyson node; build a partial swarm.
+  { name: "phase-7-expand", phase: 7, taps: Array.from({ length: 8 }, () => [195, 420]) },
+  // Erase: leave the panic untouched so the swarm is what's captured.
+  { name: "phase-8-erase", phase: 8, still: true },
 ];
 
 async function waitForMini(page, cx, cy) {
@@ -70,6 +76,16 @@ async function main() {
           await page.mouse.move(300, t.dragY, { steps: 12 });
           await page.mouse.up();
           await page.waitForTimeout(400);
+        } else if (t.taps) {
+          // Aim a specific set of taps at the mechanic.
+          for (const [tx, ty] of t.taps) {
+            await page.mouse.click(tx, ty);
+            await page.waitForTimeout(120);
+          }
+          await page.waitForTimeout(600);
+        } else if (t.still) {
+          // Capture the mechanic with no interaction.
+          await page.waitForTimeout(1600);
         } else {
           // Seed a couple of interactions so the mechanic shows life, then settle.
           await page.mouse.click(cx, cy);

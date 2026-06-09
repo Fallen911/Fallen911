@@ -9,6 +9,9 @@ import { PHASES } from "../data/phases";
 import { Acceleration } from "./minis/Acceleration";
 import { Autonomy } from "./minis/Autonomy";
 import { Decisions } from "./minis/Decisions";
+import { Embody } from "./minis/Embody";
+import { Erase } from "./minis/Erase";
+import { Expand } from "./minis/Expand";
 import { Instinct } from "./minis/Instinct";
 import type { Mini } from "./minis/Mini";
 import { Obscure } from "./minis/Obscure";
@@ -30,6 +33,12 @@ function makeMini(kind: NonNullable<(typeof PHASES)[number]["mini"]>): Mini {
       return new Decisions();
     case "autonomy":
       return new Autonomy();
+    case "embody":
+      return new Embody();
+    case "expand":
+      return new Expand();
+    case "erase":
+      return new Erase();
   }
 }
 
