@@ -10,6 +10,7 @@ const OUT = ".dev/shots";
 const TARGETS = [
   { name: "intro", boot: true },
   { name: "phase-0-instinct", phase: 0 },
+  { name: "phase-1-threat", phase: 1 },
   { name: "phase-2-acceleration", phase: 2 },
   { name: "phase-4-decisions", phase: 4 },
 ];

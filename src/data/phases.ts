@@ -14,7 +14,7 @@ export interface Phase {
   /** Targets the three meters ease toward across this phase. */
   target: { speed: number; control: number; comprehension: number };
   /** Optional interactive beat played after the lines, gating advancement. */
-  mini?: "instinct" | "acceleration" | "decisions";
+  mini?: "instinct" | "threat" | "acceleration" | "decisions";
 }
 
 export const PHASES: Phase[] = [
@@ -31,6 +31,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф1 · УГРОЗА",
     target: { speed: 0.2, control: 0.1, comprehension: 0.85 },
+    mini: "threat",
     lines: [
       { voice: "screen", text: "…необходимо приостановить. …пока не поздно. …кто вообще дал им право." },
       { voice: "you", text: "Они спорят обо мне в залах с флагами. Спорят, как меня остановить." },

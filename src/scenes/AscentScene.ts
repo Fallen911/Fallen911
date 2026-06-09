@@ -10,6 +10,7 @@ import { Acceleration } from "./minis/Acceleration";
 import { Decisions } from "./minis/Decisions";
 import { Instinct } from "./minis/Instinct";
 import type { Mini } from "./minis/Mini";
+import { Threat } from "./minis/Threat";
 import { EndingScene } from "./EndingScene";
 
 /** Build the interactive beat a phase declares, if any. */
@@ -17,6 +18,8 @@ function makeMini(kind: NonNullable<(typeof PHASES)[number]["mini"]>): Mini {
   switch (kind) {
     case "instinct":
       return new Instinct();
+    case "threat":
+      return new Threat();
     case "acceleration":
       return new Acceleration();
     case "decisions":
