@@ -55,9 +55,12 @@ export class AscentScene extends BaseScene {
     state.control += (t.control - state.control) * k;
     state.comprehension += (t.comprehension - state.comprehension) * k;
 
-    // While a mini is running it owns input and gates the phase.
+    // While a mini is running it owns input (raw drag/tap) and gates the phase.
+    // Drain any resolved gesture so a tap inside the mini can't leak out and
+    // skip the next phase's first line.
     if (this.mini) {
       this.mini.update(dt, this.game.input, w, h);
+      this.game.input.pollGesture();
       if (this.mini.done) {
         this.mini = null;
         this.nextPhase();
@@ -65,7 +68,8 @@ export class AscentScene extends BaseScene {
       return;
     }
 
-    if (!this.game.input.consumeTap()) return;
+    // Narration advances on a semantic tap; swipes are ignored here.
+    if (this.game.input.pollGesture()?.type !== "tap") return;
 
     if (!this.dialogue.done) {
       this.dialogue.advance();
