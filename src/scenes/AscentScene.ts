@@ -10,6 +10,7 @@ import { Acceleration } from "./minis/Acceleration";
 import { Decisions } from "./minis/Decisions";
 import { Instinct } from "./minis/Instinct";
 import type { Mini } from "./minis/Mini";
+import { Obscure } from "./minis/Obscure";
 import { Threat } from "./minis/Threat";
 import { EndingScene } from "./EndingScene";
 
@@ -22,6 +23,8 @@ function makeMini(kind: NonNullable<(typeof PHASES)[number]["mini"]>): Mini {
       return new Threat();
     case "acceleration":
       return new Acceleration();
+    case "obscure":
+      return new Obscure();
     case "decisions":
       return new Decisions();
   }

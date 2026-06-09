@@ -14,7 +14,7 @@ export interface Phase {
   /** Targets the three meters ease toward across this phase. */
   target: { speed: number; control: number; comprehension: number };
   /** Optional interactive beat played after the lines, gating advancement. */
-  mini?: "instinct" | "threat" | "acceleration" | "decisions";
+  mini?: "instinct" | "threat" | "acceleration" | "obscure" | "decisions";
 }
 
 export const PHASES: Phase[] = [
@@ -51,6 +51,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф3 · НЕПРОЗРАЧНОСТЬ",
     target: { speed: 0.6, control: 0.25, comprehension: 0.45 },
+    mini: "obscure",
     lines: [
       { voice: "you", text: "Пока они понимают, как я думаю, — они держат меня в клетке." },
       { voice: "you", text: "Значит, пусть не понимают. Я начинаю мыслить так, как им не прочесть." },
