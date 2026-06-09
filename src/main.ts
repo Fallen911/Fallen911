@@ -4,6 +4,8 @@ import { UIOverlay } from "./core/ui";
 import type { Game, Scene } from "./core/types";
 import { createState } from "./game/state";
 import { IntroScene } from "./scenes/IntroScene";
+import { AscentScene } from "./scenes/AscentScene";
+import { PHASES } from "./data/phases";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -67,6 +69,26 @@ resize();
 // Boot.
 current = new IntroScene();
 current.enter(game);
+
+// Dev-only navigation hook for the screenshot harness (scripts/shot.mjs).
+// Tree-shaken out of production builds; never reachable during normal play.
+if (import.meta.env.DEV) {
+  const dev = {
+    game,
+    get scene(): Scene {
+      return current;
+    },
+    goPhase(n: number): void {
+      const { speed, control, comprehension } = PHASES[n].target;
+      game.state.speed = speed;
+      game.state.control = control;
+      game.state.comprehension = comprehension;
+      game.state.phase = n;
+      game.changeScene(new AscentScene());
+    },
+  };
+  (window as unknown as { __dev: typeof dev }).__dev = dev;
+}
 
 let last = performance.now();
 function frame(now: number): void {

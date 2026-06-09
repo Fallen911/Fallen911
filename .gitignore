@@ -5,6 +5,9 @@ dist
 .vite
 *.log
 
+# Local visual-baseline screenshots from `npm run shot`
+.dev/
+
 # Capacitor / iOS native build artifacts (the ios/ project itself is committed)
 ios/App/App/public
 ios/App/Pods
