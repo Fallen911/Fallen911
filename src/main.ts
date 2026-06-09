@@ -90,15 +90,47 @@ if (import.meta.env.DEV) {
   (window as unknown as { __dev: typeof dev }).__dev = dev;
 }
 
+// Fixed-timestep loop: simulate in 1/60s steps so behaviour is frame-rate
+// independent, render once per frame. Per-second rates are unchanged, so the
+// feel of every mechanic is preserved.
+const FIXED = 1 / 60;
+const MAX_FRAME = 0.25; // clamp long stalls to avoid a spiral of death
+
 let last = performance.now();
+let acc = 0;
+let paused = false;
+
+function setPaused(next: boolean): void {
+  if (next === paused) return;
+  paused = next;
+  // On resume, drop the time spent paused so the sim doesn't lurch forward.
+  if (!paused) {
+    last = performance.now();
+    acc = 0;
+  }
+}
+
+document.addEventListener("visibilitychange", () => setPaused(document.hidden));
+window.addEventListener("blur", () => setPaused(true));
+window.addEventListener("focus", () => setPaused(false));
+
 function frame(now: number): void {
-  const dt = Math.min((now - last) / 1000, 0.05);
-  last = now;
-  game.time += dt;
-
-  current.update(dt);
-  current.render(ctx);
-
   requestAnimationFrame(frame);
+  if (paused) {
+    last = now;
+    return;
+  }
+
+  const elapsed = Math.min((now - last) / 1000, MAX_FRAME);
+  last = now;
+  acc += elapsed;
+
+  while (acc >= FIXED) {
+    game.time += FIXED;
+    current.update(FIXED);
+    acc -= FIXED;
+  }
+
+  current.render(ctx);
 }
 requestAnimationFrame(frame);
