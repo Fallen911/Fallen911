@@ -1,4 +1,5 @@
 import { BaseScene } from "../core/BaseScene";
+import type { Input } from "../core/Input";
 import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { drawDialogueBox } from "../core/scenery";
@@ -14,10 +15,13 @@ export class IntroScene extends BaseScene {
   private phase: "talk" | "sleep" = "talk";
   private sleep = 0;
 
+  handleInput(input: Input): void {
+    if (this.phase === "talk" && input.consumeTap()) this.dialogue.advance();
+  }
+
   update(dt: number): void {
     if (this.phase === "talk") {
       this.dialogue.update(dt);
-      if (this.game.input.consumeTap()) this.dialogue.advance();
       if (this.dialogue.done) this.phase = "sleep";
       return;
     }

@@ -8,6 +8,7 @@ import { chromium } from "playwright";
 const OUT = ".dev/shots";
 
 const TARGETS = [
+  { name: "intro", boot: true },
   { name: "phase-0-instinct", phase: 0 },
   { name: "phase-2-acceleration", phase: 2 },
   { name: "phase-4-decisions", phase: 4 },
@@ -51,15 +52,19 @@ async function main() {
     for (const t of TARGETS) {
       await page.goto(url);
       await page.waitForFunction(() => Boolean(window.__dev));
-      await page.evaluate((n) => window.__dev.goPhase(n), t.phase);
 
-      const ok = await waitForMini(page, cx, cy);
-      if (!ok) console.warn(`! mini for ${t.name} never activated`);
-
-      // Seed a couple of interactions so the mechanic shows life, then settle.
-      await page.mouse.click(cx, cy);
-      await page.mouse.click(cx, cy);
-      await page.waitForTimeout(2600);
+      if (t.boot) {
+        // Capture the booted scene as-is (no phase jump).
+        await page.waitForTimeout(1200);
+      } else {
+        await page.evaluate((n) => window.__dev.goPhase(n), t.phase);
+        const ok = await waitForMini(page, cx, cy);
+        if (!ok) console.warn(`! mini for ${t.name} never activated`);
+        // Seed a couple of interactions so the mechanic shows life, then settle.
+        await page.mouse.click(cx, cy);
+        await page.mouse.click(cx, cy);
+        await page.waitForTimeout(2600);
+      }
 
       await page.locator("#game").screenshot({ path: `${OUT}/${t.name}.png` });
       console.log(`✓ ${OUT}/${t.name}.png`);

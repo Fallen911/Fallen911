@@ -24,10 +24,10 @@ const game: Game = {
   ui: new UIOverlay(uiRoot),
   time: 0,
   changeScene(next: Scene) {
-    current.exit();
+    current.destroy();
     this.ui.clear();
     current = next;
-    next.enter(game);
+    next.mount(game);
   },
 };
 
@@ -68,7 +68,7 @@ resize();
 
 // Boot.
 current = new IntroScene();
-current.enter(game);
+current.mount(game);
 
 // Dev-only navigation hook for the screenshot harness (scripts/shot.mjs).
 // Tree-shaken out of production builds; never reachable during normal play.
@@ -120,6 +120,9 @@ function frame(now: number): void {
   const elapsed = Math.min((now - last) / 1000, MAX_FRAME);
   last = now;
   acc += elapsed;
+
+  // Input is frame-based: handle it once per frame, then step the sim.
+  current.handleInput(game.input);
 
   while (acc >= FIXED) {
     game.time += FIXED;

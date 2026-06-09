@@ -23,8 +23,10 @@ export interface Game {
 }
 
 export interface Scene {
-  enter(game: Game): void;
-  exit(): void;
+  mount(game: Game): void;
+  /** Discrete input (tap/swipe via Input), handled once per frame before update. */
+  handleInput(input: Input): void;
   update(dt: number): void;
   render(ctx: CanvasRenderingContext2D): void;
+  destroy(): void;
 }
