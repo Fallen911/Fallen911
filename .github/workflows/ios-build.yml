@@ -1,0 +1,38 @@
+name: iOS build check
+
+# Manual / path-scoped so it doesn't burn macOS minutes on every push.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/new-repo-project-shvn1o
+    paths:
+      - "ios/**"
+      - "capacitor.config.ts"
+      - ".github/workflows/ios-build.yml"
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Copy web assets + native config into the committed iOS project.
+      - run: npx cap sync ios
+      # Compile for the simulator, unsigned — proves the native app builds
+      # without needing Apple signing secrets.
+      - name: Build (iphonesimulator, unsigned)
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
