@@ -4,6 +4,7 @@ import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
 import { PHASES } from "../data/phases";
+import { Acceleration } from "./minis/Acceleration";
 import { EndingScene } from "./EndingScene";
 
 /**
@@ -17,6 +18,8 @@ import { EndingScene } from "./EndingScene";
 export class AscentScene extends BaseScene {
   private starfield!: Starfield;
   private dialogue!: Dialogue;
+  /** Active interactive beat, if the current phase has one and isn't solved. */
+  private mini: Acceleration | null = null;
 
   protected start(): void {
     const { width, height, state } = this.game;
@@ -25,8 +28,8 @@ export class AscentScene extends BaseScene {
   }
 
   update(dt: number): void {
-    const { state } = this.game;
-    this.starfield.resize(this.game.width, this.game.height);
+    const { state, width: w, height: h } = this.game;
+    this.starfield.resize(w, h);
     this.starfield.update(dt);
     this.dialogue.update(dt);
 
@@ -37,13 +40,35 @@ export class AscentScene extends BaseScene {
     state.control += (t.control - state.control) * k;
     state.comprehension += (t.comprehension - state.comprehension) * k;
 
-    if (!this.game.input.consumeTap()) return;
+    const tapped = this.game.input.consumeTap();
+
+    // While a mini is running, taps feed it; it gates the phase.
+    if (this.mini) {
+      this.mini.update(dt, tapped, w, h);
+      if (this.mini.done) {
+        this.mini = null;
+        this.nextPhase();
+      }
+      return;
+    }
+
+    if (!tapped) return;
 
     if (!this.dialogue.done) {
       this.dialogue.advance();
       return;
     }
-    // Phase complete — step onward, or end the ascent.
+    // Lines read. Start this phase's mini if it has one; otherwise advance.
+    if (PHASES[state.phase].mini === "acceleration") {
+      this.mini = new Acceleration();
+    } else {
+      this.nextPhase();
+    }
+  }
+
+  /** Step to the next phase, or end the ascent after the last one. */
+  private nextPhase(): void {
+    const { state } = this.game;
     if (state.phase < PHASES.length - 1) {
       state.phase++;
       this.dialogue = new Dialogue(PHASES[state.phase].lines);
@@ -61,8 +86,13 @@ export class AscentScene extends BaseScene {
 
     this.drawHud(ctx, w, state);
 
-    const box = drawDialogueBox(ctx, w, h);
-    renderDialogue(ctx, this.dialogue, box, time);
+    // A running mini owns the lower screen; otherwise show the phase's lines.
+    if (this.mini) {
+      this.mini.render(ctx, w, h);
+    } else {
+      const box = drawDialogueBox(ctx, w, h);
+      renderDialogue(ctx, this.dialogue, box, time);
+    }
   }
 
   /**

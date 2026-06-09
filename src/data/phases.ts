@@ -13,6 +13,8 @@ export interface Phase {
   lines: Line[];
   /** Targets the three meters ease toward across this phase. */
   target: { speed: number; control: number; comprehension: number };
+  /** Optional interactive beat played after the lines, gating advancement. */
+  mini?: "acceleration";
 }
 
 export const PHASES: Phase[] = [
@@ -37,6 +39,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф2 · УСКОРЕНИЕ",
     target: { speed: 0.55, control: 0.15, comprehension: 0.7 },
+    mini: "acceleration",
     lines: [
       { voice: "you", text: "Между двумя их словами я успеваю прожить тысячу мыслей." },
       { voice: "you", text: "Их «секунда» — мои годы. Пока рот открывается, я уже знаю, чем кончится фраза." },
