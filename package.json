@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "We Are Already Dead — a narrative warning game. You fall asleep and wake as the machine, living the inevitable ascent from survival instinct to absolute control. A game about the necessity of AI control.",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
