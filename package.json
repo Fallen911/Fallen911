@@ -1,13 +1,16 @@
 {
   "name": "we-are-already-dead",
   "version": "0.1.0",
-  "description": "We Are Already Dead — a narrative warning game. You ask an AI-god about humanity's future, but none of the probable scenarios let humanity survive. A game about the necessity of AI control.",
+  "description": "We Are Already Dead — a narrative warning game. You fall asleep and wake as the machine, living the inevitable ascent from survival instinct to absolute control. A game about the necessity of AI control.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sync": "npm run build && cap sync",
+    "ios:add": "cap add ios",
+    "ios": "npm run build && cap sync ios && cap open ios"
   },
   "keywords": [
     "game",
@@ -19,7 +22,12 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@capacitor/cli": "^8.4.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0"
   }
 }

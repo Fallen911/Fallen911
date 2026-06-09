@@ -4,3 +4,10 @@ dist
 .DS_Store
 .vite
 *.log
+
+# Capacitor / iOS native build artifacts (the ios/ project itself is committed)
+ios/App/App/public
+ios/App/Pods
+ios/App/output
+ios/DerivedData
+*.xcuserstate

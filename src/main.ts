@@ -16,6 +16,7 @@ const game: Game = {
   ctx,
   width: window.innerWidth,
   height: window.innerHeight,
+  insets: { top: 0, right: 0, bottom: 0, left: 0 },
   input: new Input(canvas),
   state: createState(),
   ui: new UIOverlay(uiRoot),
@@ -27,6 +28,24 @@ const game: Game = {
     next.enter(game);
   },
 };
+
+// Hidden probe to read CSS safe-area insets (notch / home indicator) as px.
+const insetProbe = document.createElement("div");
+insetProbe.style.cssText =
+  "position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;" +
+  "padding-top:env(safe-area-inset-top);padding-right:env(safe-area-inset-right);" +
+  "padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);";
+document.body.appendChild(insetProbe);
+
+function readInsets(): void {
+  const s = getComputedStyle(insetProbe);
+  game.insets = {
+    top: parseFloat(s.paddingTop) || 0,
+    right: parseFloat(s.paddingRight) || 0,
+    bottom: parseFloat(s.paddingBottom) || 0,
+    left: parseFloat(s.paddingLeft) || 0,
+  };
+}
 
 /** Match the backing store to the display size and devicePixelRatio. */
 function resize(): void {
@@ -40,6 +59,7 @@ function resize(): void {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   game.width = w;
   game.height = h;
+  readInsets();
 }
 window.addEventListener("resize", resize);
 resize();

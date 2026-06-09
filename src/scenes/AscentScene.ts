@@ -84,7 +84,7 @@ export class AscentScene extends BaseScene {
     this.starfield.render(ctx);
     this.drawAscent(ctx, w, h, time, state.control);
 
-    this.drawHud(ctx, w, state);
+    this.drawHud(ctx, w, state, this.game.insets.top);
 
     // A running mini owns the lower screen; otherwise show the phase's lines.
     if (this.mini) {
@@ -145,11 +145,12 @@ export class AscentScene extends BaseScene {
     ctx: CanvasRenderingContext2D,
     w: number,
     state: { speed: number; control: number; comprehension: number; phase: number },
+    safeTop: number,
   ): void {
     const pad = Math.min(20, w * 0.05);
     const barW = Math.min(w - pad * 2, 320);
     const x = w / 2 - barW / 2;
-    let y = pad;
+    let y = pad + safeTop;
 
     // Phase label.
     ctx.font = "12px 'JetBrains Mono', monospace";

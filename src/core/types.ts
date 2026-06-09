@@ -12,6 +12,8 @@ export interface Game {
   readonly ctx: CanvasRenderingContext2D;
   width: number;
   height: number;
+  /** Safe-area insets (CSS px) so canvas UI can dodge the notch / home bar. */
+  insets: { top: number; right: number; bottom: number; left: number };
   input: Input;
   state: GameState;
   ui: UIOverlay;
