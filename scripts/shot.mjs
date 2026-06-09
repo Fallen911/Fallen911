@@ -32,7 +32,11 @@ async function main() {
   const url = server.resolvedUrls?.local?.[0];
   if (!url) throw new Error("Vite did not resolve a local URL");
 
+  // PW_CHROMIUM_PATH lets a sandbox point at a manually-fetched browser when
+  // the Playwright CDN is blocked; locally, leave it unset to use Playwright's.
+  const executablePath = process.env.PW_CHROMIUM_PATH || undefined;
   const browser = await chromium.launch({
+    executablePath,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
   try {
