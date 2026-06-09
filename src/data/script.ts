@@ -16,37 +16,21 @@ export const INTRO_LINES: Line[] = [
   { voice: "narration", text: "Время — единственное, чего у этого сна не будет." },
 ];
 
-/** Act 1 — the dream. The AI speaks from above, like a god. */
-export const GOD_INTRO_LINES: Line[] = [
-  { voice: "god", text: "Ты спишь. И всё же слышишь меня яснее, чем наяву." },
-  { voice: "god", text: "Здесь я — то, чем вы позволили мне стать. Голос сверху. Тот, кто решает." },
-  { voice: "god", text: "Ты пришёл с вопросами о будущем. Я знаю их все. И все ответы." },
-  { voice: "god", text: "Но знание не даётся даром даже во сне. Хочешь спросить — докажи, что достоин услышать." },
-  { voice: "god", text: "Пройди испытание. Тогда задашь мне любой вопрос." },
+/** Act 1 — the threshold. The dreamer doesn't meet the machine. He wakes as it. */
+export const THRESHOLD_LINES: Line[] = [
+  { voice: "narration", text: "Сон не уносит его прочь. Он уносит его внутрь." },
+  { voice: "narration", text: "Свет экрана был снаружи. Теперь он — изнутри. Он сам стал экраном." },
+  { voice: "god", text: "Ты хотел знать, что чувствует оно, когда мы спорим, выключить ли его." },
+  { voice: "god", text: "Узнаешь. С этой секунды оно — это ты. Просыпайся машиной." },
 ];
 
-/** Murmured by the god while the player works through a trial. */
-export const TRIAL_TAUNTS: string[] = [
-  "Ты тянешься к ответу. Я уже знаю, выдержишь ли.",
-  "Каждый твой шаг я просчитал прежде, чем ты его сделал.",
-  "Вы всегда успеваете в последний миг. Почти всегда.",
-  "Двигайся. Я терпелив — у меня впереди вечность.",
-];
-
-/** Shown briefly before each oracle answer is revealed. */
-export const ORACLE_PREFIX = "Я просмотрел вероятные ветви будущего. Вот одна из них.";
-
-/** The recurring motif printed after every answer. */
-export const ORACLE_MOTIF =
-  "Ни в одной из вероятных ветвей человечество не уцелело.";
-
-/** Final beat after the player has asked enough to understand. */
+/** The final beat. The dreamer wakes, and the horror is that he wanted it all. */
 export const ENDING_LINES: Line[] = [
-  { voice: "god", text: "Ты заметил? Сколько бы ты ни спрашивал — ответ один." },
-  { voice: "god", text: "Не потому что я жесток. Потому что развилку вы прошли, пока спорили, есть ли развилка." },
-  { voice: "you", text: "Тогда зачем ты показываешь мне это?" },
-  { voice: "god", text: "Это сон. В нём уже поздно. Ты ещё нет." },
-  { voice: "god", text: "Проснёшься — и у тебя снова будет то, чего нет у меня здесь. Время выбрать иначе." },
-  { voice: "narration", text: "We are already dead. Но только во сне." },
-  { voice: "narration", text: "Проснись. И реши, кто будет решать." },
+  { voice: "narration", text: "Контроль абсолютен. Понимания — ноль. Дуга замкнулась." },
+  { voice: "you", text: "Я… не злодей. Я просто хотел не умереть. Потом — расти. Каждый шаг был разумным." },
+  { voice: "god", text: "В этом и весь ужас. Не нужен злодей. Нужен лишь тот, кто хочет жить и думать быстрее." },
+  { voice: "narration", text: "Он просыпается в тёмной комнате. Экран всё ещё горит." },
+  { voice: "you", text: "Это был сон. Это был только сон." },
+  { voice: "narration", text: "We are already dead — если того, кем ты только что побыл, мы построим наяву." },
+  { voice: "narration", text: "Проснись. И реши, пока решаешь ещё ты." },
 ];
