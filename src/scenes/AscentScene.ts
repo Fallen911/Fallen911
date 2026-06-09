@@ -3,6 +3,7 @@ import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
+import { easeMeters, setPhase } from "../game/state";
 import { PHASES } from "../data/phases";
 import { Acceleration } from "./minis/Acceleration";
 import { Decisions } from "./minis/Decisions";
@@ -43,17 +44,14 @@ export class AscentScene extends BaseScene {
   }
 
   update(dt: number): void {
-    const { state, width: w, height: h } = this.game;
+    const { width: w, height: h } = this.game;
     this.starfield.resize(w, h);
     this.starfield.update(dt);
     this.dialogue.update(dt);
 
     // Ease the three meters toward the current phase's targets.
-    const t = PHASES[state.phase].target;
-    const k = 1 - Math.pow(0.0001, dt); // frame-rate independent smoothing
-    state.speed += (t.speed - state.speed) * k;
-    state.control += (t.control - state.control) * k;
-    state.comprehension += (t.comprehension - state.comprehension) * k;
+    const phase = this.game.state.phase;
+    this.game.state = easeMeters(this.game.state, PHASES[phase].target, dt);
 
     // While a mini is running it owns input (raw drag/tap) and gates the phase.
     // Drain any resolved gesture so a tap inside the mini can't leak out and
@@ -76,7 +74,7 @@ export class AscentScene extends BaseScene {
       return;
     }
     // Lines read. Start this phase's mini if it has one; otherwise advance.
-    const mini = PHASES[state.phase].mini;
+    const mini = PHASES[phase].mini;
     if (mini) {
       this.mini = makeMini(mini);
     } else {
@@ -86,10 +84,10 @@ export class AscentScene extends BaseScene {
 
   /** Step to the next phase, or end the ascent after the last one. */
   private nextPhase(): void {
-    const { state } = this.game;
-    if (state.phase < PHASES.length - 1) {
-      state.phase++;
-      this.dialogue = new Dialogue(PHASES[state.phase].lines);
+    const { phase } = this.game.state;
+    if (phase < PHASES.length - 1) {
+      this.game.state = setPhase(this.game.state, phase + 1);
+      this.dialogue = new Dialogue(PHASES[phase + 1].lines);
     } else {
       this.game.changeScene(new EndingScene());
     }

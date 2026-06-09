@@ -3,6 +3,7 @@ import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawGodEye, drawVoid } from "../core/scenery";
+import { markAwakened } from "../game/state";
 import { THRESHOLD_LINES } from "../data/script";
 import { AscentScene } from "./AscentScene";
 
@@ -28,7 +29,7 @@ export class DreamScene extends BaseScene {
     if (!this.dialogue.done) {
       if (tapped) this.dialogue.advance();
     } else if (tapped) {
-      this.game.state.awakened = true;
+      this.game.state = markAwakened(this.game.state);
       this.game.changeScene(new AscentScene());
     }
   }

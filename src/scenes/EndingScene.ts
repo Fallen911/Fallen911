@@ -32,7 +32,7 @@ export class EndingScene extends BaseScene {
       if (tapped) this.dialogue.advance();
     } else if (tapped) {
       // Wake up: a fresh run, eyes open.
-      Object.assign(this.game.state, createState());
+      this.game.state = createState();
       this.game.changeScene(new IntroScene());
     }
   }

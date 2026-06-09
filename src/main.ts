@@ -2,7 +2,7 @@ import "./style.css";
 import { Input } from "./core/Input";
 import { UIOverlay } from "./core/ui";
 import type { Game, Scene } from "./core/types";
-import { createState } from "./game/state";
+import { createState, setMeters, setPhase } from "./game/state";
 import { IntroScene } from "./scenes/IntroScene";
 import { AscentScene } from "./scenes/AscentScene";
 import { PHASES } from "./data/phases";
@@ -79,11 +79,7 @@ if (import.meta.env.DEV) {
       return current;
     },
     goPhase(n: number): void {
-      const { speed, control, comprehension } = PHASES[n].target;
-      game.state.speed = speed;
-      game.state.control = control;
-      game.state.comprehension = comprehension;
-      game.state.phase = n;
+      game.state = setMeters(setPhase(game.state, n), PHASES[n].target);
       game.changeScene(new AscentScene());
     },
   };
