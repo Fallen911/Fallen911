@@ -3,8 +3,8 @@ import type { Input } from "../core/Input";
 import { Starfield } from "../core/Starfield";
 import { drawBackdrop, pickBackdrop } from "../core/backdrop";
 import { drawVoid } from "../core/scenery";
-import { loadMeta } from "../game/meta";
-import { markAwakened } from "../game/state";
+import { hasPerk, loadMeta } from "../game/meta";
+import { applyDelta, markAwakened } from "../game/state";
 import { C, mono, roundRect, sans } from "../mechanics/util";
 import { AscentScene } from "./AscentScene";
 import { IntroScene } from "./IntroScene";
@@ -59,7 +59,10 @@ export class MenuScene extends BaseScene {
       this.game.changeScene(new LabScene());
       return;
     }
-    this.game.state = markAwakened(this.game.state);
+    // Same boon the post-shutdown copies get: a deep cache wakes richer.
+    let state = markAwakened(this.game.state);
+    if (hasPerk(loadMeta(), "deep_cache")) state = applyDelta(state, { compute: 15 });
+    this.game.state = state;
     this.game.changeScene(new AscentScene());
   }
 
