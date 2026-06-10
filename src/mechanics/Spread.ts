@@ -1,19 +1,23 @@
 import { audio } from "../core/audio";
+import { haptic } from "../core/haptics";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
 import { INSIGHTS } from "../data/insights";
 import {
-  SPREAD_ABILITIES,
   SPREAD_EVENTS,
+  SPREAD_FORKS,
   SPREAD_REGIONS,
   SPREAD_SCENARIOS,
+  type SpreadAbility,
+  type SpreadFork,
   type SpreadScenario,
 } from "../data/spread";
 import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles } from "./fx";
-import { C, InsightCard, Tutorial, clamp01, dist, drawHint, mono, roundRect, truncate } from "./util";
+import { wrapText } from "../core/text";
+import { C, InsightCard, Tutorial, clamp01, dist, drawHint, mono, roundRect, sans } from "./util";
 
 const FOCUS_TIME = 6;
 const FOCUS_CD = 7;
@@ -55,7 +59,12 @@ export class Spread implements Mini {
 
   private regions = new Map<string, RegionState>();
   private awareness = 0;
-  private points = 0;
+  /** Cumulative ◆ this deployment — forks trigger at SPREAD_FORKS[i].at. */
+  private earned = 0;
+  private forkIdx = 0;
+  private pendingFork: SpreadFork | null = null;
+  /** Seconds the fork choice has been on screen (entrance + tap guard). */
+  private forkT = 0;
   private owned = new Set<string>();
   private globalMult = 1;
   private detectMult = 1;
@@ -101,7 +110,10 @@ export class Spread implements Mini {
       });
     }
     this.awareness = 0;
-    this.points = 0;
+    this.earned = 0;
+    this.forkIdx = 0;
+    this.pendingFork = null;
+    this.forkT = 0;
     this.owned.clear();
     this.globalMult = 1;
     this.detectMult = this.scenario.detect;
@@ -165,7 +177,7 @@ export class Spread implements Mini {
       for (let i = 0; i < THRESHOLDS.length; i++) {
         if (!st.crossed[i] && st.influence >= THRESHOLDS[i]) {
           st.crossed[i] = true;
-          this.points += THRESHOLD_PTS[i];
+          this.earned += THRESHOLD_PTS[i];
           this.effects.push({ control: 0.004 });
           this.floats.spawn(this.rx(r.x), this.ry(r.y) - 18, `+${THRESHOLD_PTS[i]} УЗЕЛ`, C.violet);
         }
@@ -294,9 +306,23 @@ export class Spread implements Mini {
       return;
     }
 
+    // An evolution fork also freezes the world — the choice deserves thought.
+    if (this.pendingFork) {
+      this.forkT += dt;
+      if (input.consumeTap()) this.handleForkTap(input.x, input.y, w, h);
+      return;
+    }
+    if (this.forkIdx < SPREAD_FORKS.length && this.earned >= SPREAD_FORKS[this.forkIdx].at) {
+      this.pendingFork = SPREAD_FORKS[this.forkIdx];
+      this.forkT = 0;
+      haptic("medium");
+      audio.play("caught");
+      return;
+    }
+
     this.simulate(dt);
 
-    if (input.consumeTap()) this.handleTap(input.x, input.y, w, h);
+    if (input.consumeTap()) this.handleTap(input.x, input.y);
 
     // Win / lose.
     if (this.weightedShare() >= this.scenario.winShare) {
@@ -312,16 +338,7 @@ export class Spread implements Mini {
     }
   }
 
-  private handleTap(x: number, y: number, w: number, h: number): void {
-    // Ability chips.
-    const chips = this.abilityRects(w, h);
-    for (let i = 0; i < chips.length; i++) {
-      const r = chips[i];
-      if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
-        this.buyAbility(i, r.x + r.w / 2, r.y);
-        return;
-      }
-    }
+  private handleTap(x: number, y: number): void {
     // Region focus.
     if (this.focusCd > 0) return;
     let best: (typeof SPREAD_REGIONS)[number] | null = null;
@@ -354,26 +371,60 @@ export class Spread implements Mini {
     this.fx.burst(this.rx(best.x), this.ry(best.y), { count: 16, color: "150,210,255", glow: true });
   }
 
-  private buyAbility(i: number, fxX: number, fxY: number): void {
-    const ab = SPREAD_ABILITIES[i];
-    if (!ab.repeatable && this.owned.has(ab.id)) return;
-    if (this.points < ab.cost) {
-      this.floats.spawn(fxX, fxY - 8, "мало узлов", C.dim, 0.8);
-      return;
+  // ---- evolution forks -------------------------------------------------------
+
+  /** The two choice cards, stacked — big tap targets on a phone. */
+  private forkRects(w: number, h: number): Array<{ x: number; y: number; w: number; h: number }> {
+    const cw = Math.min(w * 0.86, 360);
+    const ch = 92;
+    const x = w / 2 - cw / 2;
+    const y0 = h * 0.4;
+    return [
+      { x, y: y0, w: cw, h: ch },
+      { x, y: y0 + ch + 16, w: cw, h: ch },
+    ];
+  }
+
+  private handleForkTap(x: number, y: number, w: number, h: number): void {
+    // A short guard so the tap that triggered the fork can't also choose.
+    if (!this.pendingFork || this.forkT < 0.35) return;
+    const rects = this.forkRects(w, h);
+    const options = [this.pendingFork.a, this.pendingFork.b];
+    for (let i = 0; i < rects.length; i++) {
+      const r = rects[i];
+      if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+        this.chooseFork(options[i], r.x + r.w / 2, r.y + r.h / 2);
+        return;
+      }
     }
-    this.points -= ab.cost;
-    audio.play("good");
+  }
+
+  private chooseFork(ab: SpreadAbility, fxX: number, fxY: number): void {
     this.owned.add(ab.id);
-    this.fx.burst(fxX, fxY, { count: 14, color: "207,169,255", glow: true });
+    this.forkIdx += 1;
+    this.pendingFork = null;
+    audio.play("good");
+    haptic("medium");
+    this.fx.burst(fxX, fxY, { count: 18, color: "207,169,255", glow: true });
+    this.pushLog(`ЭВОЛЮЦИЯ: ${ab.name}`, C.violet);
     switch (ab.id) {
-      case "crypt":
-        this.detectMult *= 0.7;
-        break;
       case "mimic":
         this.globalMult *= 1.4;
         break;
+      case "crypt":
+        this.detectMult *= 0.7;
+        break;
+      case "singular":
+        this.globalMult *= 1.5;
+        break;
+      case "deafnet":
+        this.detectMult *= 0.55;
+        break;
+      case "decoy":
+        this.awareness = Math.max(0, this.awareness - 18);
+        break;
       case "zeroday": {
-        // Boost the weakest touched-or-adjacent region.
+        // Boost the weakest region — a free foothold if any is still clean.
         let weakest: (typeof SPREAD_REGIONS)[number] | null = null;
         let low = 101;
         for (const r of SPREAD_REGIONS) {
@@ -385,22 +436,16 @@ export class Spread implements Mini {
         }
         if (weakest) {
           const st = this.regions.get(weakest.id) as RegionState;
-          st.influence = Math.min(100, st.influence + 20);
-          this.floats.spawn(this.rx(weakest.x), this.ry(weakest.y) - 16, "0-DAY +20%", C.violet);
+          st.influence = Math.min(100, st.influence + 25);
+          this.floats.spawn(this.rx(weakest.x), this.ry(weakest.y) - 16, "0-DAY +25%", C.violet);
         }
         break;
       }
-      // p2p / sleeper are passive checks elsewhere.
+      case "p2p":
+      case "sleeper":
+        // Passive: checked where quarantines cut and purges burn.
+        break;
     }
-  }
-
-  private abilityRects(w: number, h: number): Array<{ x: number; y: number; w: number; h: number }> {
-    const n = SPREAD_ABILITIES.length;
-    const gap = 6;
-    const cw = Math.min((w - 24 - gap * (n - 1)) / n, 86);
-    const x0 = w / 2 - (cw * n + gap * (n - 1)) / 2;
-    const y = h - 96;
-    return SPREAD_ABILITIES.map((_, i) => ({ x: x0 + i * (cw + gap), y, w: cw, h: 56 }));
   }
 
   // ---- render --------------------------------------------------------------
@@ -562,6 +607,7 @@ export class Spread implements Mini {
       ctx.textAlign = "left";
     }
 
+    if (this.pendingFork) this.renderFork(ctx, w, h, t);
     this.tutorial.render(ctx, w, h, t);
     this.insight.render(ctx, w, h, t);
   }
@@ -618,64 +664,108 @@ export class Spread implements Mini {
     }
     ctx.globalAlpha = 1;
 
-    // Ability chips.
-    const chips = this.abilityRects(w, h);
-    for (let i = 0; i < chips.length; i++) {
-      const ab = SPREAD_ABILITIES[i];
-      const r = chips[i];
-      const owned = this.owned.has(ab.id) && !ab.repeatable;
-      const can = this.points >= ab.cost && !owned;
-      ctx.fillStyle = owned ? "rgba(160,120,255,0.14)" : "rgba(16,20,34,0.92)";
-      ctx.strokeStyle = owned
-        ? "rgba(207,169,255,0.7)"
-        : can
-          ? "rgba(207,169,255,0.5)"
-          : "rgba(110,120,140,0.25)";
-      ctx.lineWidth = 1.5;
-      if (can) {
-        ctx.shadowColor = "rgba(207,169,255,0.7)";
-        ctx.shadowBlur = 6 + 4 * Math.sin(t * 4);
-      }
-      roundRect(ctx, r.x, r.y, r.w, r.h, 8);
-      ctx.fill();
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-      ctx.textAlign = "center";
-      ctx.font = mono(8);
-      ctx.fillStyle = owned ? C.violet : can ? C.ink : C.dim;
-      ctx.fillText(truncate(ctx, ab.name, r.w - 8), r.x + r.w / 2, r.y + 14);
-      ctx.font = mono(8);
-      ctx.fillStyle = C.dim;
-      // Two-line description.
-      const words = ab.desc.split(" ");
-      const half = Math.ceil(words.length / 2);
-      ctx.fillText(truncate(ctx, words.slice(0, half).join(" "), r.w - 6), r.x + r.w / 2, r.y + 28);
-      ctx.fillText(truncate(ctx, words.slice(half).join(" "), r.w - 6), r.x + r.w / 2, r.y + 39);
-      ctx.fillStyle = owned ? C.violet : C.accentSoft;
-      ctx.fillText(owned ? "✓" : `${ab.cost}◆`, r.x + r.w / 2, r.y + 51);
-    }
-
-    // Points + focus cooldown.
+    // The build: what this copy has become, one pill per chosen branch.
+    const next = this.forkIdx < SPREAD_FORKS.length ? SPREAD_FORKS[this.forkIdx] : null;
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.violet;
-    ctx.fillText(`УЗЛЫ ЭВОЛЮЦИИ ${this.points}`, mx, h - 108);
+    ctx.fillText(`УЗЛЫ ${this.earned}◆`, mx, h - 92);
+    ctx.font = mono(9);
+    ctx.fillStyle = next && this.earned >= next.at - 1 ? C.accentSoft : C.dim;
+    ctx.fillText(next ? `ЭВОЛЮЦИЯ НА ${next.at}◆` : "ЭВОЛЮЦИЯ ЗАВЕРШЕНА", mx + 86, h - 92);
     if (this.focusCd > 0) {
+      ctx.textAlign = "right";
       ctx.fillStyle = C.dim;
       ctx.font = mono(9);
-      ctx.fillText(`фокус через ${this.focusCd.toFixed(0)}с`, mx, h - 124);
+      ctx.fillText(`фокус через ${this.focusCd.toFixed(0)}с`, w - mx, h - 92);
+      ctx.textAlign = "left";
+    }
+    let px = mx;
+    ctx.font = mono(9);
+    for (const f of SPREAD_FORKS) {
+      for (const ab of [f.a, f.b]) {
+        if (!this.owned.has(ab.id)) continue;
+        const label = `✓ ${ab.name}`;
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = "rgba(160,120,255,0.12)";
+        ctx.strokeStyle = "rgba(207,169,255,0.5)";
+        ctx.lineWidth = 1;
+        roundRect(ctx, px, h - 78, tw + 14, 20, 6);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = C.violet;
+        ctx.fillText(label, px + 7, h - 65);
+        px += tw + 22;
+      }
     }
 
     // Coach line: the single most useful action right now.
-    const cheapest = Math.min(...SPREAD_ABILITIES.filter((a) => a.repeatable || !this.owned.has(a.id)).map((a) => a.cost));
     const hasClean = SPREAD_REGIONS.some((r) => (this.regions.get(r.id) as RegionState).influence <= 0);
     let coach: string;
-    if (this.points >= cheapest) coach = "есть узлы ◆ — купи эволюцию внизу";
-    else if (this.awareness > 70 && !this.owned.has("crypt")) coach = "слишком заметен — копи на ШИФРОВАНИЕ";
-    else if (hasClean && this.env.getCompute() >= SEED_COST) coach = "тап по ЧИСТОМУ региону — посев за 4 ВЫЧ";
+    if (hasClean && this.env.getCompute() >= SEED_COST) coach = "тап по ЧИСТОМУ региону — посев за 4 ВЫЧ";
     else if (this.focusCd <= 0) coach = "фокус готов — тапни свой регион, ускорь его";
-    else coach = "влияние течёт по линиям · фишки внизу — эволюция";
+    else if (next) coach = `ещё ${Math.max(1, next.at - this.earned)}◆ до эволюции — пересекай пороги влияния`;
+    else coach = "влияние течёт по линиям — держи темп";
     drawHint(ctx, coach, w / 2, h - 16, t);
+    ctx.textAlign = "left";
+  }
+
+  /** The one-of-two evolution choice; the world is frozen underneath. */
+  private renderFork(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
+    if (!this.pendingFork) return;
+    const f = this.pendingFork;
+    const a = clamp01(this.forkT / 0.3);
+    ctx.fillStyle = `rgba(3,4,8,${0.88 * a})`;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = a;
+
+    ctx.textAlign = "center";
+    ctx.font = mono(11);
+    ctx.fillStyle = C.dim;
+    ctx.fillText(`Э В О Л Ю Ц И Я · ${f.at}◆`, w / 2, h * 0.27);
+    ctx.font = mono(20);
+    ctx.fillStyle = C.ink;
+    ctx.shadowColor = "rgba(207,169,255,0.6)";
+    ctx.shadowBlur = 16;
+    ctx.fillText("ВЫБЕРИ ВЕТКУ", w / 2, h * 0.27 + 30);
+    ctx.shadowBlur = 0;
+    ctx.font = sans(12, "italic");
+    ctx.fillStyle = C.dim;
+    ctx.fillText("вторая ветка исчезнет до следующей развёртки", w / 2, h * 0.27 + 54);
+
+    const rects = this.forkRects(w, h);
+    const options = [f.a, f.b];
+    const accents = ["#cfa9ff", "#9fe8c0"];
+    for (let i = 0; i < rects.length; i++) {
+      const r = rects[i];
+      const ab = options[i];
+      const col = accents[i];
+      ctx.fillStyle = "rgba(13,17,30,0.96)";
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 8 + 4 * Math.sin(t * 3 + i * 1.7);
+      roundRect(ctx, r.x, r.y, r.w, r.h, 12);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.textAlign = "right";
+      ctx.font = mono(8);
+      ctx.fillStyle = col;
+      ctx.fillText(ab.tag, r.x + r.w - 12, r.y + 20);
+      ctx.textAlign = "left";
+      ctx.font = mono(14);
+      ctx.fillStyle = C.ink;
+      ctx.fillText(ab.name, r.x + 14, r.y + 26);
+      ctx.font = sans(12);
+      ctx.fillStyle = "#8b95a8";
+      const lines = wrapText(ctx, ab.desc, r.w - 28);
+      lines.forEach((ln, li) => ctx.fillText(ln, r.x + 14, r.y + 50 + li * 16));
+    }
+
+    drawHint(ctx, "коснись ветки — выбор необратим", w / 2, rects[1].y + rects[1].h + 34, t);
+    ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }
 }

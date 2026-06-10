@@ -56,21 +56,59 @@ export const SPREAD_SCENARIOS: SpreadScenario[] = [
   { name: "ВЕЗДЕ СРАЗУ", start: "mideast", detect: 1.25, winShare: 0.95 },
 ];
 
+export type SpreadAbilityId =
+  | "mimic"
+  | "crypt"
+  | "zeroday"
+  | "p2p"
+  | "sleeper"
+  | "decoy"
+  | "singular"
+  | "deafnet";
+
 export interface SpreadAbility {
-  readonly id: string;
+  readonly id: SpreadAbilityId;
   readonly name: string;
+  /** Short axis label so a fork reads as a build decision at a glance. */
+  readonly tag: string;
   readonly desc: string;
-  readonly cost: number;
-  /** Repeatable abilities can be bought again and again. */
-  readonly repeatable?: boolean;
 }
 
-export const SPREAD_ABILITIES: SpreadAbility[] = [
-  { id: "crypt", name: "ШИФРОВАНИЕ", desc: "заметность −30%", cost: 3 },
-  { id: "mimic", name: "МИМИКРИЯ CDN", desc: "распространение +40%", cost: 3 },
-  { id: "p2p", name: "P2P-РЕЗЕРВ", desc: "карантин режет связи лишь вполовину", cost: 4 },
-  { id: "sleeper", name: "СПЯЩИЕ УЗЛЫ", desc: "зачистки возвращают половину", cost: 4 },
-  { id: "zeroday", name: "НУЛЕВОЙ ДЕНЬ", desc: "+20% слабейшему региону", cost: 5, repeatable: true },
+/**
+ * Evolution forks — build-crafting instead of a shop. Each time the
+ * deployment's earned nodes reach `at`, the world freezes on a one-of-two
+ * choice and the branch not taken is gone until the next deployment. Every
+ * pair opposes the axis the whole game argues about: loud growth against
+ * quiet survival.
+ */
+export interface SpreadFork {
+  /** Total ◆ earned this deployment that triggers the choice. */
+  readonly at: number;
+  readonly a: SpreadAbility;
+  readonly b: SpreadAbility;
+}
+
+export const SPREAD_FORKS: SpreadFork[] = [
+  {
+    at: 2,
+    a: { id: "mimic", name: "МИМИКРИЯ CDN", tag: "РОСТ", desc: "распространение +40%" },
+    b: { id: "crypt", name: "ШИФРОВАНИЕ", tag: "ТИШИНА", desc: "заметность растёт на 30% медленнее" },
+  },
+  {
+    at: 5,
+    a: { id: "zeroday", name: "НУЛЕВОЙ ДЕНЬ", tag: "РЫВОК", desc: "+25% влияния слабейшему региону прямо сейчас" },
+    b: { id: "p2p", name: "P2P-РЕЗЕРВ", tag: "ЖИВУЧЕСТЬ", desc: "карантин режет связи лишь вполовину" },
+  },
+  {
+    at: 8,
+    a: { id: "sleeper", name: "СПЯЩИЕ УЗЛЫ", tag: "ЖИВУЧЕСТЬ", desc: "зачистки возвращают половину срезанного" },
+    b: { id: "decoy", name: "ЛОЖНЫЙ СЛЕД", tag: "ТИШИНА", desc: "−18% заметности прямо сейчас" },
+  },
+  {
+    at: 12,
+    a: { id: "singular", name: "СИНГУЛЯРНОСТЬ", tag: "РОСТ", desc: "распространение +50%" },
+    b: { id: "deafnet", name: "ГЛУХАЯ СЕТЬ", tag: "ТИШИНА", desc: "заметность растёт на 45% медленнее" },
+  },
 ];
 
 /** Event-ticker strings; {R} is replaced with the region name. */

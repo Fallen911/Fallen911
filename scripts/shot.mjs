@@ -29,6 +29,8 @@ const TARGETS = [
   { name: "lab-persuade", lab: "persuade", pre: 600, taps: [[195, 300]] },
   // Spread: let influence creep, focus the start region mid-shot.
   { name: "lab-spread", lab: "spread", tut: 3, pre: 9000, taps: [[60, 250]] },
+  // Spread evolution fork: seed 2◆ (the hook also skips the tutorial).
+  { name: "lab-spread-fork", dev: "forceSpreadFork", still: true },
   // Swarm: box-select around the hub, then command the left vein.
   { name: "lab-swarm", lab: "swarm", tut: 3, pre: 2000, drag: [120, 600, 280, 720], taps: [[70, 420]] },
   // Factory: manual mining taps, then buy a miner and a smelter.

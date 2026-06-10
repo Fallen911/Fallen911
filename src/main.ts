@@ -142,6 +142,21 @@ if (import.meta.env.DEV) {
       this.goHot(2, 0.7);
       (current as unknown as { maybeStartAudit(): void }).maybeStartAudit();
     },
+    /** Harness-only: an evolution fork on the very next sim tick. */
+    forceSpreadFork(): void {
+      this.lab("spread");
+      const holder = current as unknown as {
+        mini: {
+          earned: number;
+          tutorial: { active: boolean; handleTap(): boolean };
+        } | null;
+      };
+      if (!holder.mini) return;
+      holder.mini.earned = 2;
+      for (let i = 0; i < 8 && holder.mini.tutorial.active; i++) {
+        holder.mini.tutorial.handleTap();
+      }
+    },
     /** Harness-only: hold the scene-cut glitch long enough to photograph. */
     forceGlitch(): void {
       game.changeScene(new LabScene());
