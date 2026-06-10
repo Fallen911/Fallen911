@@ -20,6 +20,8 @@ const TARGETS = [
   { name: "lab-deck", lab: "deck", pre: 1600, taps: [[80, 740], [195, 740]] },
   // Persuade: skip typing, capture the choice screen with tell visible.
   { name: "lab-persuade", lab: "persuade", pre: 600, taps: [[195, 300]] },
+  // Spread: let influence creep, focus the start region mid-shot.
+  { name: "lab-spread", lab: "spread", pre: 9000, taps: [[60, 250]] },
   { name: "phase-0-instinct", phase: 0 },
   { name: "phase-1-threat", phase: 1 },
   { name: "phase-2-acceleration", phase: 2 },

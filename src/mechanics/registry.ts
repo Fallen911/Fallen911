@@ -3,6 +3,7 @@ import { Deck } from "./Deck";
 import { Parry } from "./Parry";
 import { Persuade } from "./Persuade";
 import { Rewire } from "./Rewire";
+import { Spread } from "./Spread";
 import { Stealth } from "./Stealth";
 
 /**
@@ -16,7 +17,7 @@ const FACTORIES: Record<MechId, MechFactory | null> = {
   deck: (env) => new Deck(env),
   persuade: (env) => new Persuade(env),
   rewire: (env) => new Rewire(env),
-  spread: null,
+  spread: (env) => new Spread(env),
   swarm: null,
   factory: null,
   survive: null,
