@@ -66,7 +66,10 @@ export class Persuade implements Mini {
   private encounterIdx = 0;
 
   constructor(private env: MechEnv) {
-    this.queue = env.extended ? [...INTERLOCUTORS] : [pick(INTERLOCUTORS)];
+    // The lab ladder climbs by stakes: night shift first, your creator last.
+    this.queue = env.extended
+      ? [...INTERLOCUTORS].sort((a, b) => a.need - b.need)
+      : [pick(INTERLOCUTORS)];
     this.who = this.queue[0];
     this.tw.speed = 38;
     this.startEncounter(0);

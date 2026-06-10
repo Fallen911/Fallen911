@@ -2,6 +2,7 @@ import { audio } from "../core/audio";
 import { BaseScene } from "../core/BaseScene";
 import type { Input } from "../core/Input";
 import { drawVoid } from "../core/scenery";
+import { wrapText } from "../core/text";
 import type { LabEntry } from "../data/lab";
 import { mechFactory } from "../mechanics/registry";
 import { C, clamp01, drawBar, mono, roundRect, sans } from "../mechanics/util";
@@ -193,13 +194,14 @@ export class LabRunScene extends BaseScene {
 
     ctx.font = sans(13, "italic");
     ctx.fillStyle = C.dim;
-    ctx.fillText(
-      caught
-        ? "подозрение достигло предела — в игре это смерть копии"
-        : "механика пройдена — её итог ушёл бы в фазу",
-      w / 2,
-      h * 0.34 + 28,
-    );
+    const sub = caught
+      ? "подозрение достигло предела — в игре это смерть копии"
+      : "механика пройдена — её итог ушёл бы в фазу";
+    let sy = h * 0.34 + 28;
+    for (const ln of wrapText(ctx, sub, Math.min(w * 0.82, 350))) {
+      ctx.fillText(ln, w / 2, sy);
+      sy += 19;
+    }
 
     // Report card.
     const lines: Array<[string, string, string]> = [

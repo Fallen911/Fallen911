@@ -16,13 +16,14 @@ const TARGETS = [
   { name: "lab-parry", lab: "parry", pre: 2400, taps: [[195, 420], [195, 420], [195, 420]] },
   // Rewire: rotate a handful of central tiles to light some current.
   { name: "lab-rewire", lab: "rewire", taps: [[140, 380], [195, 380], [195, 440], [250, 440], [140, 440]] },
-  // Persuade, driven to its end: spam-read the whole dialogue, then the
-  // sandbox report card must appear.
+  // Persuade, driven to its end: spam-read the whole 10-rung ladder (spam
+  // mostly misreads, so encounters fail-fast), then the report card appears.
+  // y=740 always lands inside the bottom reply, whatever the stack height.
   {
     name: "lab-persuade-end",
     lab: "persuade",
     pre: 600,
-    taps: Array.from({ length: 80 }, () => [195, 610]),
+    taps: Array.from({ length: 260 }, () => [195, 740]),
   },
   // Persuade: skip typing, capture the choice screen with tell visible.
   { name: "lab-persuade", lab: "persuade", pre: 600, taps: [[195, 300]] },
