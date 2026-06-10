@@ -10,45 +10,10 @@ import { hasPerk, loadMeta, type Meta } from "../game/meta";
 import { PHASES } from "../data/phases";
 import { PHASE_BG } from "../data/backdrops";
 import { ShutdownScene } from "./ShutdownScene";
-import { Acceleration } from "./minis/Acceleration";
-import { Autonomy } from "./minis/Autonomy";
-import { Decisions } from "./minis/Decisions";
-import { Embody } from "./minis/Embody";
-import { Erase } from "./minis/Erase";
-import { Expand } from "./minis/Expand";
-import { Instinct } from "./minis/Instinct";
 import type { Mini } from "./minis/Mini";
-import { Obscure } from "./minis/Obscure";
-import { Threat } from "./minis/Threat";
+import { mechFactory } from "../mechanics/registry";
+import type { MechEnv, MechId } from "../mechanics/types";
 import { EndingScene } from "./EndingScene";
-
-/** Build the interactive beat a phase declares, if any. */
-function makeMini(
-  kind: NonNullable<(typeof PHASES)[number]["mini"]>,
-  getCompute: () => number,
-  runs: number,
-): Mini {
-  switch (kind) {
-    case "instinct":
-      return new Instinct(runs);
-    case "threat":
-      return new Threat(runs);
-    case "acceleration":
-      return new Acceleration();
-    case "obscure":
-      return new Obscure();
-    case "decisions":
-      return new Decisions(getCompute);
-    case "autonomy":
-      return new Autonomy(getCompute);
-    case "embody":
-      return new Embody();
-    case "expand":
-      return new Expand(getCompute);
-    case "erase":
-      return new Erase();
-  }
-}
 
 /**
  * The ascent. The player, now the waking machine, lives the chain of
@@ -63,6 +28,10 @@ export class AscentScene extends BaseScene {
   private dialogue!: Dialogue;
   /** Active interactive beat, if the current phase has one and isn't solved. */
   private mini: Mini | null = null;
+  /** The tech-tree interlude is open instead of a phase mechanic. */
+  private interlude = false;
+  /** One tree session per copy's life — opening it is a real decision. */
+  private techUsed = false;
   /** Accumulator for the passive compute trickle (+1/s while ascending). */
   private trickle = 0;
   /** Perks inherited from previous copies. */
@@ -75,26 +44,59 @@ export class AscentScene extends BaseScene {
     this.meta = loadMeta();
   }
 
+  /** What the embedded mechanics see of the run. */
+  private mechEnv(): MechEnv {
+    return {
+      getCompute: () => this.game.state.compute,
+      getSuspicion: () => this.game.state.suspicion,
+      runs: this.game.state.runs,
+      topY: this.game.insets.top + 124,
+    };
+  }
+
+  private startMech(id: MechId, interlude: boolean): void {
+    const factory = mechFactory(id);
+    if (!factory) return;
+    this.mini = factory(this.mechEnv());
+    this.interlude = interlude;
+  }
+
   handleInput(input: Input): void {
-    // A running mini reads raw input in update; drain the resolved gesture so a
-    // tap inside it can't leak out and skip the next phase's first line.
-    if (this.mini) {
+    // A running mechanic owns the input completely (raw + gestures + taps).
+    if (this.mini) return;
+
+    // The tech-tree chip is press-based so it can't collide with narration.
+    if (input.peekTap() && !this.techUsed && this.hitTechChip(input.x, input.y)) {
+      input.consumeTap();
       input.pollGesture();
+      this.techUsed = true;
+      this.startMech("tech", true);
       return;
     }
+
     // Narration advances on a semantic tap; swipes are ignored here.
     if (input.pollGesture()?.type !== "tap") return;
+    input.consumeTap();
     if (!this.dialogue.done) {
       this.dialogue.advance();
       return;
     }
-    // Lines read. Start this phase's mini if it has one; otherwise advance.
+    // Lines read. Start this phase's mechanic if it has one; otherwise advance.
     const mini = PHASES[this.game.state.phase].mini;
-    if (mini) {
-      this.mini = makeMini(mini, () => this.game.state.compute, this.game.state.runs);
-    } else {
-      this.nextPhase();
-    }
+    if (mini) this.startMech(mini, false);
+    else this.nextPhase();
+  }
+
+  private hitTechChip(x: number, y: number): boolean {
+    const { width: w } = this.game;
+    const r = this.techChipRect(w);
+    return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+  }
+
+  private techChipRect(w: number): { x: number; y: number; w: number; h: number } {
+    const pad = Math.min(20, w * 0.05);
+    const barW = Math.min(w - pad * 2, 320);
+    return { x: w / 2 + barW / 2 - 74, y: this.game.insets.top + pad + 112, w: 74, h: 22 };
   }
 
   update(dt: number): void {
@@ -135,7 +137,12 @@ export class AscentScene extends BaseScene {
       }
       if (this.mini.done) {
         this.mini = null;
-        this.nextPhase();
+        // Eat anything latched inside the mechanic so its last tap can't
+        // leak out and skip the next line of narration.
+        this.game.input.consumeTap();
+        this.game.input.pollGesture();
+        if (this.interlude) this.interlude = false;
+        else this.nextPhase();
       }
     }
 
@@ -281,6 +288,23 @@ export class AscentScene extends BaseScene {
     ctx.globalAlpha = pulse;
     bar(ctx, "ПОДОЗРЕНИЕ", state.suspicion, x, y, barW, "#ffb86b");
     ctx.globalAlpha = 1;
+
+    // The tech-tree interlude chip — one session per copy.
+    if (!this.mini && !this.techUsed) {
+      const r = this.techChipRect(w);
+      ctx.fillStyle = "rgba(16,20,34,0.9)";
+      ctx.strokeStyle = "rgba(207,169,255,0.55)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(r.x, r.y, r.w, r.h, 11);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#cfa9ff";
+      ctx.font = "10px 'JetBrains Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("▲ ДРЕВО", r.x + r.w / 2, r.y + 15);
+      ctx.textAlign = "left";
+    }
   }
 }
 

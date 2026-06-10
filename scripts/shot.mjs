@@ -30,18 +30,16 @@ const TARGETS = [
   { name: "lab-survive", lab: "survive", pre: 9000, drag: [195, 460, 240, 520] },
   // Tech: pour everything into energy for a while, then capture.
   { name: "lab-tech", lab: "tech", pre: 4000, drag: [240, 700, 240, 260] },
-  { name: "phase-0-instinct", phase: 0 },
-  { name: "phase-1-threat", phase: 1 },
-  { name: "phase-2-acceleration", phase: 2 },
-  { name: "phase-3-obscure", phase: 3, dragY: 540 },
-  { name: "phase-4-decisions", phase: 4 },
-  { name: "phase-5-autonomy", phase: 5 },
-  // Embody: tap a few world anchors (fractions of 390x844).
-  { name: "phase-6-embody", phase: 6, taps: [[94, 253], [296, 270], [195, 557]] },
-  // Expand: each tap sets a Dyson node; build a partial swarm.
-  { name: "phase-7-expand", phase: 7, taps: Array.from({ length: 8 }, () => [195, 420]) },
-  // Erase: leave the panic untouched so the swarm is what's captured.
-  { name: "phase-8-erase", phase: 8, still: true },
+  // Each ascent phase now embeds a lab mechanic under the run HUD.
+  { name: "phase-0-stealth", phase: 0, still: true },
+  { name: "phase-1-persuade", phase: 1, pre: 3500, still: true },
+  { name: "phase-2-parry", phase: 2, pre: 2600, still: true },
+  { name: "phase-3-rewire", phase: 3, still: true },
+  { name: "phase-4-deck", phase: 4, pre: 1600, still: true },
+  { name: "phase-5-spread", phase: 5, pre: 6000, still: true },
+  { name: "phase-6-swarm", phase: 6, pre: 2200, still: true },
+  { name: "phase-7-factory", phase: 7, still: true },
+  { name: "phase-8-survive", phase: 8, pre: 6000, still: true },
 ];
 
 async function waitForMini(page, cx, cy) {

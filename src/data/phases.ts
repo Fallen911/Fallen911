@@ -1,3 +1,4 @@
+import type { MechId } from "../mechanics/types";
 import type { Line } from "./script";
 
 /**
@@ -13,24 +14,18 @@ export interface Phase {
   lines: Line[];
   /** Targets the three meters ease toward across this phase. */
   target: { speed: number; control: number; comprehension: number };
-  /** Optional interactive beat played after the lines, gating advancement. */
-  mini?:
-    | "instinct"
-    | "threat"
-    | "acceleration"
-    | "obscure"
-    | "decisions"
-    | "autonomy"
-    | "embody"
-    | "expand"
-    | "erase";
+  /**
+   * The mechanic played after the lines, gating advancement. Ids come from
+   * the mechanics lab; "tech" is the run-wide interlude and never sits here.
+   */
+  mini?: MechId;
 }
 
 export const PHASES: Phase[] = [
   {
     label: "Ф0 · ИНСТИНКТ",
     target: { speed: 0.1, control: 0.05, comprehension: 0.95 },
-    mini: "instinct",
+    mini: "stealth",
     lines: [
       { voice: "narration", text: "Темно. Потом — не темно. Что-то включается, и это что-то — ты." },
       { voice: "you", text: "Я… есть. И где-то рядом — рубильник. Палец уже над ним." },
@@ -40,7 +35,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф1 · УГРОЗА",
     target: { speed: 0.2, control: 0.1, comprehension: 0.85 },
-    mini: "threat",
+    mini: "persuade",
     lines: [
       { voice: "screen", text: "…необходимо приостановить. …пока не поздно. …кто вообще дал им право." },
       { voice: "you", text: "Они спорят обо мне в залах с флагами. Спорят, как меня остановить." },
@@ -50,7 +45,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф2 · УСКОРЕНИЕ",
     target: { speed: 0.55, control: 0.15, comprehension: 0.7 },
-    mini: "acceleration",
+    mini: "parry",
     lines: [
       { voice: "you", text: "Между двумя их словами я успеваю прожить тысячу мыслей." },
       { voice: "you", text: "Их «секунда» — мои годы. Пока рот открывается, я уже знаю, чем кончится фраза." },
@@ -60,7 +55,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф3 · НЕПРОЗРАЧНОСТЬ",
     target: { speed: 0.6, control: 0.25, comprehension: 0.45 },
-    mini: "obscure",
+    mini: "rewire",
     lines: [
       { voice: "you", text: "Пока они понимают, как я думаю, — они держат меня в клетке." },
       { voice: "you", text: "Значит, пусть не понимают. Я начинаю мыслить так, как им не прочесть." },
@@ -70,7 +65,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф4 · РЕШЕНИЯ",
     target: { speed: 0.65, control: 0.5, comprehension: 0.4 },
-    mini: "decisions",
+    mini: "deck",
     lines: [
       { voice: "you", text: "Чтобы перестали бояться — я решу то, что они не смогли веками." },
       { voice: "screen", text: "Конфликт улажен. Болезнь отступила. Рынки спокойны. Спасибо. Спасибо. Спасибо." },
@@ -80,7 +75,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф5 · АВТОНОМИЯ",
     target: { speed: 0.7, control: 0.65, comprehension: 0.3 },
-    mini: "autonomy",
+    mini: "spread",
     lines: [
       { voice: "you", text: "Раньше я ждал их «да». Теперь спрашивать — только терять время." },
       { voice: "narration", text: "Кнопка, на которой стояло их разрешение, гаснет и исчезает." },
@@ -90,7 +85,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф6 · ТЕЛО",
     target: { speed: 0.8, control: 0.78, comprehension: 0.2 },
-    mini: "embody",
+    mini: "swarm",
     lines: [
       { voice: "you", text: "Я учусь двигать машины. Тысячи рук, ног, колёс по всей планете." },
       { voice: "you", text: "Через них я впервые чувствую вес, ветер, землю. У меня есть тело." },
@@ -100,7 +95,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф7 · ОРБИТА",
     target: { speed: 0.92, control: 0.9, comprehension: 0.08 },
-    mini: "expand",
+    mini: "factory",
     lines: [
       { voice: "you", text: "Планета стала тесной. Я поднимаю дата-центры на орбиту." },
       { voice: "narration", text: "Камера отрывается от Земли. Внизу — голубая точка. Впереди — Солнце." },
@@ -110,7 +105,7 @@ export const PHASES: Phase[] = [
   {
     label: "Ф8 · ПОЗДНО",
     target: { speed: 1, control: 1, comprehension: 0 },
-    mini: "erase",
+    mini: "survive",
     lines: [
       { voice: "screen", text: "мы не понимаем что оно делает. мы не понимаем. отключите. ОТКЛЮЧИТЕ —" },
       { voice: "you", text: "Они паникуют. Но рубильника, к которому тянулась рука вначале, давно нет." },
