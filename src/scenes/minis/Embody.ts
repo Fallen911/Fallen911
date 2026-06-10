@@ -1,4 +1,5 @@
 import type { Input } from "../../core/Input";
+import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
 
 // Target anchors as fractions of the viewport, so the screenshot harness can
@@ -18,17 +19,36 @@ const TARGETS_F: ReadonlyArray<readonly [number, number]> = [
  */
 export class Embody implements Mini {
   done = false;
+  effects: StateDelta[] = [];
 
   private connected = TARGETS_F.map(() => false);
+  /** Seconds left to reach each anchor before it relocates. */
+  private ttl = TARGETS_F.map((_, i) => 6 + i * 1.5);
+  private offsets = TARGETS_F.map(() => ({ dx: 0, dy: 0 }));
+  private static readonly WINDOW = 7;
 
-  update(_dt: number, input: Input, w: number, h: number): void {
+  update(dt: number, input: Input, w: number, h: number): void {
     if (this.done) return;
+
+    // Anchors don't wait: an expired window relocates the limb and is logged.
+    for (let i = 0; i < TARGETS_F.length; i++) {
+      if (this.connected[i]) continue;
+      this.ttl[i] -= dt;
+      if (this.ttl[i] <= 0) {
+        this.ttl[i] = Embody.WINDOW;
+        this.offsets[i] = {
+          dx: (Math.random() - 0.5) * 0.18,
+          dy: (Math.random() - 0.5) * 0.12,
+        };
+        this.effects.push({ suspicion: 0.04 });
+      }
+    }
 
     if (input.consumeTap()) {
       for (let i = 0; i < TARGETS_F.length; i++) {
         if (this.connected[i]) continue;
-        const [fx, fy] = TARGETS_F[i];
-        if (Math.hypot(input.x - fx * w, input.y - fy * h) <= 34) {
+        const [tx, ty] = this.anchor(i, w, h);
+        if (Math.hypot(input.x - tx, input.y - ty) <= 34) {
           this.connected[i] = true;
           break;
         }
@@ -38,6 +58,12 @@ export class Embody implements Mini {
     if (this.connected.every((c) => c)) this.done = true;
   }
 
+  private anchor(i: number, w: number, h: number): [number, number] {
+    const [fx, fy] = TARGETS_F[i];
+    const o = this.offsets[i];
+    return [(fx + o.dx) * w, (fy + o.dy) * h];
+  }
+
   render(ctx: CanvasRenderingContext2D, w: number, h: number): void {
     const cx = w / 2;
     const cy = h * 0.42;
@@ -45,9 +71,7 @@ export class Embody implements Mini {
 
     // Limbs to connected anchors.
     for (let i = 0; i < TARGETS_F.length; i++) {
-      const [fx, fy] = TARGETS_F[i];
-      const tx = fx * w;
-      const ty = fy * h;
+      const [tx, ty] = this.anchor(i, w, h);
       if (this.connected[i]) {
         ctx.strokeStyle = "rgba(134,255,176,0.5)";
         ctx.lineWidth = 1.5;
@@ -66,6 +90,13 @@ export class Embody implements Mini {
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(tx, ty, 12, 0, Math.PI * 2);
+      ctx.stroke();
+      // Time-left ring: the window is closing.
+      const frac = Math.max(0, this.ttl[i] / Embody.WINDOW);
+      ctx.strokeStyle = "rgba(255,184,107,0.8)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(tx, ty, 18, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
       ctx.stroke();
     }
 

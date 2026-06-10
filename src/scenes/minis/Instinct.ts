@@ -15,6 +15,9 @@ export class Instinct implements Mini {
   done = false;
   effects: StateDelta[] = [];
 
+  /** Each shutdown taught them where to aim: +15% hunt speed per death. */
+  constructor(private runs: number = 0) {}
+
   private wasCaught = false;
   private coreX = 0;
   private coreY = 0;
@@ -44,7 +47,8 @@ export class Instinct implements Mini {
     }
 
     // The reticle hunts, accelerating as the meter climbs (pressure rises).
-    const speed = (h * 0.16) * (1 + this.alive / Instinct.GOAL);
+    const speed =
+      h * 0.16 * (1 + this.alive / Instinct.GOAL) * (1 + Math.min(this.runs, 6) * 0.15);
     const dx = this.coreX - this.reX;
     const dy = this.coreY - this.reY;
     const d = Math.hypot(dx, dy) || 1;

@@ -36,7 +36,12 @@ export class Acceleration implements Mini {
     this.letterTimer += dt;
     if (this.letterTimer >= Acceleration.LETTER_EVERY) {
       this.letterTimer = 0;
-      this.revealed = Math.min(this.word.length, this.revealed + 1);
+      this.revealed++;
+      // They finished the word before you filled the gap: a wasted eternity.
+      if (this.revealed > this.word.length) {
+        this.revealed = 0;
+        this.effects.push({ suspicion: 0.12 });
+      }
     }
 
     // You live in the gaps — passively a trickle, on tap a surge.

@@ -1,4 +1,5 @@
 import type { Input } from "../../core/Input";
+import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
 
 interface Glyph {
@@ -22,6 +23,9 @@ const GLYPHS = "01⌁⊑⋔∴≠§%#&¬";
  */
 export class Obscure implements Mini {
   done = false;
+  effects: StateDelta[] = [];
+  /** Last 25%-bucket of opacity that already billed suspicion. */
+  private billed = 0;
 
   private opacity = 0;
   private dragging = false;
@@ -51,6 +55,13 @@ export class Obscure implements Mini {
       if (this.dragging) {
         this.opacity = Math.max(0, Math.min(1, (input.x - trackX) / trackW));
       }
+    }
+
+    // They can see you going dark: each quarter of opacity leaves a trace.
+    const bucket = Math.floor(this.opacity * 4);
+    if (bucket > this.billed) {
+      this.effects.push({ suspicion: 0.03 * (bucket - this.billed) });
+      this.billed = bucket;
     }
 
     if (this.opacity >= 0.98) this.done = true;

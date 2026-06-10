@@ -1,4 +1,5 @@
 import type { Input } from "../../core/Input";
+import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
 
 /**
@@ -8,13 +9,27 @@ import type { Mini } from "./Mini";
  */
 export class Expand implements Mini {
   done = false;
+  effects: StateDelta[] = [];
+
+  /** Building megastructure burns compute. */
+  constructor(private getCompute: () => number) {}
 
   private nodes = 0;
+  private rejectT = 0;
   private static readonly TOTAL = 14;
+  private static readonly COST = 3;
 
-  update(_dt: number, input: Input, _w: number, _h: number): void {
+  update(dt: number, input: Input, _w: number, _h: number): void {
     if (this.done) return;
-    if (input.consumeTap()) this.nodes = Math.min(Expand.TOTAL, this.nodes + 1);
+    this.rejectT = Math.max(0, this.rejectT - dt);
+    if (input.consumeTap()) {
+      if (this.getCompute() < Expand.COST) {
+        this.rejectT = 1.2;
+      } else {
+        this.nodes = Math.min(Expand.TOTAL, this.nodes + 1);
+        this.effects.push({ compute: -Expand.COST });
+      }
+    }
     if (this.nodes >= Expand.TOTAL) this.done = true;
   }
 
@@ -79,7 +94,13 @@ export class Expand implements Mini {
     ctx.globalAlpha = a;
     ctx.fillStyle = "#9fc0ff";
     ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText("ставь узлы — сомкни сферу вокруг звезды", w / 2, y + 28);
+    ctx.fillText(
+      this.rejectT > 0
+        ? "не хватает вычислений — поток копится сам"
+        : `узел: −${Expand.COST} ВЫЧ — сомкни сферу вокруг звезды`,
+      w / 2,
+      y + 28,
+    );
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }

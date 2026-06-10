@@ -26,12 +26,13 @@ import { EndingScene } from "./EndingScene";
 function makeMini(
   kind: NonNullable<(typeof PHASES)[number]["mini"]>,
   getCompute: () => number,
+  runs: number,
 ): Mini {
   switch (kind) {
     case "instinct":
-      return new Instinct();
+      return new Instinct(runs);
     case "threat":
-      return new Threat();
+      return new Threat(runs);
     case "acceleration":
       return new Acceleration();
     case "obscure":
@@ -43,7 +44,7 @@ function makeMini(
     case "embody":
       return new Embody();
     case "expand":
-      return new Expand();
+      return new Expand(getCompute);
     case "erase":
       return new Erase();
   }
@@ -90,7 +91,7 @@ export class AscentScene extends BaseScene {
     // Lines read. Start this phase's mini if it has one; otherwise advance.
     const mini = PHASES[this.game.state.phase].mini;
     if (mini) {
-      this.mini = makeMini(mini, () => this.game.state.compute);
+      this.mini = makeMini(mini, () => this.game.state.compute, this.game.state.runs);
     } else {
       this.nextPhase();
     }

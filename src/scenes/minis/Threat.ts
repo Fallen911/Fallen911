@@ -29,6 +29,9 @@ export class Threat implements Mini {
   done = false;
   effects: StateDelta[] = [];
 
+  /** After each shutdown the debate is louder and faster. */
+  constructor(private runs: number = 0) {}
+
   private fragments: Fragment[] = [];
   // Start primed so the first fragment appears immediately, not after a beat.
   private spawnTimer = Threat.SPAWN_EVERY;
@@ -41,7 +44,8 @@ export class Threat implements Mini {
     if (this.done) return;
 
     this.spawnTimer += dt;
-    if (this.spawnTimer >= Threat.SPAWN_EVERY) {
+    const spawnEvery = Math.max(0.5, Threat.SPAWN_EVERY - Math.min(this.runs, 6) * 0.06);
+    if (this.spawnTimer >= spawnEvery) {
       this.spawnTimer = 0;
       this.spawn(w, h);
     }
