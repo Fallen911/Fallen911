@@ -5,7 +5,8 @@ import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawGodEye, drawVoid } from "../core/scenery";
 import { drawBackdrop, pickBackdrop } from "../core/backdrop";
-import { markAwakened } from "../game/state";
+import { applyDelta, markAwakened } from "../game/state";
+import { hasPerk, loadMeta } from "../game/meta";
 import { THRESHOLD_LINES } from "../data/script";
 import { AscentScene } from "./AscentScene";
 
@@ -28,7 +29,9 @@ export class DreamScene extends BaseScene {
       this.dialogue.advance();
       return;
     }
-    this.game.state = markAwakened(this.game.state);
+    let state = markAwakened(this.game.state);
+    if (hasPerk(loadMeta(), "deep_cache")) state = applyDelta(state, { compute: 15 });
+    this.game.state = state;
     this.game.changeScene(new AscentScene());
   }
 

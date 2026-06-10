@@ -6,6 +6,7 @@ import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
 import { drawBackdrop, pickBackdrop } from "../core/backdrop";
 import { applyDelta, easeMeters, setPhase } from "../game/state";
+import { hasPerk, loadMeta, type Meta } from "../game/meta";
 import { PHASES } from "../data/phases";
 import { PHASE_BG } from "../data/backdrops";
 import { ShutdownScene } from "./ShutdownScene";
@@ -63,11 +64,14 @@ export class AscentScene extends BaseScene {
   private mini: Mini | null = null;
   /** Accumulator for the passive compute trickle (+1/s while ascending). */
   private trickle = 0;
+  /** Perks inherited from previous copies. */
+  private meta!: Meta;
 
   protected start(): void {
     const { width, height, state } = this.game;
     this.starfield = new Starfield(width, height);
     this.dialogue = new Dialogue(PHASES[state.phase].lines);
+    this.meta = loadMeta();
   }
 
   handleInput(input: Input): void {
@@ -105,19 +109,26 @@ export class AscentScene extends BaseScene {
       dt,
     );
 
-    // Idle thought is still thought: compute trickles in at +1/s.
+    // Idle thought is still thought: compute trickles in every second.
+    const trickleRate = hasPerk(this.meta, "fast_trickle") ? 2 : 1;
     this.trickle += dt;
     while (this.trickle >= 1) {
       this.trickle -= 1;
-      this.game.state = applyDelta(this.game.state, { compute: 1 });
+      this.game.state = applyDelta(this.game.state, { compute: trickleRate });
     }
 
     if (this.mini) {
       this.mini.update(dt, this.game.input, w, h);
-      // Apply the consequences the mechanic produced this frame.
+      // Apply the consequences the mechanic produced this frame; a quiet mind
+      // leaves fainter traces in their logs.
       if (this.mini.effects?.length) {
+        const quiet = hasPerk(this.meta, "quiet_mind");
         for (const d of this.mini.effects) {
-          this.game.state = applyDelta(this.game.state, d);
+          const scaled =
+            quiet && d.suspicion && d.suspicion > 0
+              ? { ...d, suspicion: d.suspicion * 0.7 }
+              : d;
+          this.game.state = applyDelta(this.game.state, scaled);
         }
         this.mini.effects.length = 0;
       }
