@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import { BaseScene } from "../core/BaseScene";
 import type { Input } from "../core/Input";
 import { Dialogue } from "../core/Dialogue";
@@ -54,6 +55,7 @@ export class AscentScene extends BaseScene {
   private startMech(id: MechId): void {
     const factory = mechFactory(id);
     if (!factory) return;
+    audio.stopVoice();
     this.mini = factory(this.mechEnv());
   }
 
@@ -76,6 +78,8 @@ export class AscentScene extends BaseScene {
 
   update(dt: number): void {
     const { width: w, height: h } = this.game;
+    const { comprehension, phase } = this.game.state;
+    audio.setMood(comprehension < 0.25 ? "wrath" : phase >= 5 ? "tension" : "calm");
     this.starfield.resize(w, h);
     this.starfield.update(dt);
     this.dialogue.update(dt);

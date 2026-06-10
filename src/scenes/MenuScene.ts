@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import { BaseScene } from "../core/BaseScene";
 import type { Input } from "../core/Input";
 import { Starfield } from "../core/Starfield";
@@ -29,6 +30,7 @@ export class MenuScene extends BaseScene {
   private glitchT = 0;
 
   protected start(): void {
+    audio.setMood("calm");
     const meta = loadMeta();
     this.starfield = new Starfield(this.game.width, this.game.height, 70);
     this.items = [
@@ -48,8 +50,20 @@ export class MenuScene extends BaseScene {
   handleInput(input: Input): void {
     this.hot = this.itemAt(input.x, input.y);
     if (input.pollGesture()?.type !== "tap") return;
+    // Sound/voice chips sit above the version line.
+    const ty = this.game.height - Math.max(40, this.game.insets.bottom + 32);
+    if (input.y > ty - 16 && input.y < ty + 10) {
+      if (input.x < this.game.width / 2) {
+        audio.toggleSound();
+      } else {
+        audio.toggleVoice();
+      }
+      audio.play("tap");
+      return;
+    }
     const idx = this.itemAt(input.x, input.y);
     if (idx < 0) return;
+    audio.play("tap");
     const item = this.items[idx];
     if (item.id === "play") {
       this.game.changeScene(new IntroScene());
@@ -151,6 +165,13 @@ export class MenuScene extends BaseScene {
     }
 
     ctx.textAlign = "center";
+    // Audio toggles.
+    const togY = h - Math.max(40, this.game.insets.bottom + 32);
+    ctx.font = mono(11);
+    ctx.fillStyle = audio.soundOn ? C.accentSoft : C.dim;
+    ctx.fillText(`♪ ЗВУК ${audio.soundOn ? "ВКЛ" : "ВЫКЛ"}`, cx - 70, togY);
+    ctx.fillStyle = audio.voiceOn ? C.accentSoft : C.dim;
+    ctx.fillText(`ГОЛОС ${audio.voiceOn ? "ВКЛ" : "ВЫКЛ"}`, cx + 70, togY);
     ctx.fillStyle = C.dim;
     ctx.font = mono(10);
     ctx.fillText(

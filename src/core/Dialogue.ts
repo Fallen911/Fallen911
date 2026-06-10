@@ -1,4 +1,5 @@
 import type { Line } from "../data/script";
+import { audio } from "./audio";
 import { Typewriter } from "./text";
 
 export interface VoiceStyle {
@@ -59,6 +60,7 @@ export class Dialogue {
   constructor(private lines: Line[]) {
     this.tw.setText(lines[0].text);
     this.tw.speed = voiceStyle(lines[0].voice).speed;
+    speakLine(lines[0]);
   }
 
   current(): Line {
@@ -80,8 +82,15 @@ export class Dialogue {
       const line = this.lines[this.index];
       this.tw.setText(line.text);
       this.tw.speed = voiceStyle(line.voice).speed;
+      speakLine(line);
     } else {
       this.done = true;
+      audio.stopVoice();
     }
   }
+}
+
+/** Route a script line into the synthetic voice. */
+function speakLine(line: Line): void {
+  audio.speak(line.text, line.voice === "narration" || line.voice === "screen" ? "narration" : "you");
 }

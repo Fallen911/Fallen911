@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -132,6 +133,7 @@ export class Factory implements Mini {
     const ms = T.milestones[this.milestoneIdx];
     if (ms !== undefined && this.sphere >= ms) {
       this.milestoneIdx++;
+      audio.play("launch");
       this.effects.push({ control: T.milestoneControl, compute: T.milestoneCompute });
       const ev = FACTORY_EVENTS[ms];
       if (ev) {
@@ -184,6 +186,7 @@ export class Factory implements Mini {
       const mb = this.mineRect(w, h);
       if (x >= mb.x && x <= mb.x + mb.w && y >= mb.y && y <= mb.y + mb.h) {
         this.stocks.mat += T.tapYield;
+        audio.play("step");
         this.tapFlash = 1;
         this.fx.burst(x, y, { count: 8, speed: 90, color: "255,217,138", life: 0.4 });
         return;
@@ -198,6 +201,7 @@ export class Factory implements Mini {
           const cost = this.machineCost(id);
           if (this.env.getCompute() >= cost) {
             this.effects.push({ compute: -cost });
+            audio.play("tap");
             this.counts[id]++;
             this.bought[id]++;
             this.fx.burst(bx + 40, r.y + r.h / 2, { count: 10, color: "150,210,255", glow: true });

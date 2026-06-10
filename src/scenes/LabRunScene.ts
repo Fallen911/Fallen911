@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import { BaseScene } from "../core/BaseScene";
 import type { Input } from "../core/Input";
 import { drawVoid } from "../core/scenery";
@@ -33,6 +34,7 @@ export class LabRunScene extends BaseScene {
   }
 
   protected start(): void {
+    audio.setMood("tension");
     this.restart();
   }
 
@@ -72,6 +74,7 @@ export class LabRunScene extends BaseScene {
       const leftX = w / 2 - bw - gap / 2;
       const rightX = w / 2 + gap / 2;
       if (input.y >= by && input.y <= by + 52) {
+        audio.play("tap");
         if (input.x >= leftX && input.x <= leftX + bw) this.restart();
         else if (input.x >= rightX && input.x <= rightX + bw)
           this.game.changeScene(new LabScene());
@@ -114,9 +117,14 @@ export class LabRunScene extends BaseScene {
 
     if (this.suspicion >= 1) {
       this.verdict = "caught";
+      audio.play("lose");
+      audio.stopVoice();
       return;
     }
-    if (this.mini.done) this.verdict = "done";
+    if (this.mini.done) {
+      this.verdict = "done";
+      audio.play("win");
+    }
   }
 
   render(ctx: CanvasRenderingContext2D): void {

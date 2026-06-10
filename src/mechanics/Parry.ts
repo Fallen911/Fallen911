@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -216,6 +217,7 @@ export class Parry implements Mini {
         color: s.deep ? "255,217,138" : "150,210,255",
         glow: true,
       });
+      audio.play(s.deep ? "pickup" : "good");
       this.gateFlash = 1;
       if (s.deep) this.freezeT = 0.07;
       return;
@@ -224,6 +226,7 @@ export class Parry implements Mini {
       s.used = true;
       this.combo = 0;
       this.effects.push({ suspicion: 0.14 });
+      audio.play("caught");
       this.floats.spawn(gx, cy - 46, "СКАН ЗАСЁК ТЕБЯ", C.danger, 1.4);
       this.fx.burst(gx, cy, { count: 30, speed: 240, color: "255,77,94" });
       this.shake.trigger(9);
@@ -235,6 +238,7 @@ export class Parry implements Mini {
       s.used = true;
       this.combo = 0;
       this.effects.push({ suspicion: 0.05 });
+      audio.play("bad");
       this.floats.spawn(gx, cy - 46, "СБИЛ ИХ МЫСЛЬ", C.warn, 1.1);
       this.shake.trigger(4);
       this.errFlash = 0.7;

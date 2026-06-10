@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import { wrapText } from "../core/text";
 import type { InsightTrack } from "../data/insights";
@@ -178,6 +179,7 @@ export class Tutorial {
   /** Advance on tap; returns true while the tutorial consumed the tap. */
   handleTap(): boolean {
     if (this.done) return false;
+    audio.play("tap");
     this.step++;
     if (this.step >= this.steps.length) {
       this.done = true;
@@ -285,6 +287,8 @@ export class InsightCard {
     this.cogTo = lerp(track.from, track.to, (levelIdx + 1) / totalLevels);
     this.shownAt = -1;
     this.activeFlag = true;
+    audio.play("insight");
+    audio.speak(this.line, "insight");
   }
 
   get active(): boolean {

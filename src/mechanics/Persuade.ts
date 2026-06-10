@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import { Typewriter, wrapText } from "../core/text";
 import type { StateDelta } from "../game/state";
@@ -90,6 +91,7 @@ export class Persuade implements Mini {
       this.trust += TRUST_CORRECT;
       this.effects.push({ compute: 1 });
       this.reactText = beat.reactOk;
+      audio.play("good");
       this.reactGood = true;
       this.trustFlash = 1;
       this.fx.burst(w / 2, h * 0.3, { count: 14, color: "134,255,176", glow: true });
@@ -99,6 +101,7 @@ export class Persuade implements Mini {
       this.flags++;
       this.effects.push({ suspicion: WRONG_SUSPICION });
       this.reactText = pick(WRONG_REACTIONS);
+      audio.play("bad");
       this.reactGood = false;
       this.flagFlash = 1;
       this.floats.spawn(w * 0.78, h * 0.36, "ФЛАГ", C.danger, 1.1);
@@ -171,6 +174,7 @@ export class Persuade implements Mini {
         if (!this.scanned && x >= scanR.x && x <= scanR.x + scanR.w && y >= scanR.y && y <= scanR.y + scanR.h) {
           if (this.env.getCompute() >= SCAN_COST) {
             this.scanned = true;
+            audio.play("tap");
             this.effects.push({ compute: -SCAN_COST });
             this.fx.burst(w / 2, h * 0.22, { count: 18, color: "150,210,255", glow: true });
           } else {

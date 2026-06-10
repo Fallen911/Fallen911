@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -197,6 +198,7 @@ export class Swarm implements Mini {
     }
 
     const ping = (color: string): void => {
+      audio.play("step");
       this.fx.burst(px, py, { count: 10, speed: 70, color, glow: true, life: 0.4 });
     };
 
@@ -451,6 +453,7 @@ export class Swarm implements Mini {
         r.capture = Math.min(1, r.capture + CAPTURE_RATE * crew * dt);
         if (r.capture >= 1) {
           r.owned = true;
+          audio.play("good");
           this.effects.push({ control: 0.02, compute: 3 });
           this.fx.burst(this.sx(r.x), this.sy(r.y), { count: 26, speed: 180, color: "207,169,255", glow: true });
           this.floats.spawn(this.sx(r.x), this.sy(r.y) - 22, "РЕТРАНСЛЯТОР НАШ", C.violet, 1.3);
@@ -504,6 +507,7 @@ export class Swarm implements Mini {
       });
     }
     this.raidWave++;
+    audio.play("caught");
     this.floats.spawn(this.sx(0.5), this.fieldY + 30, `РЕЙД · ВОЛНА ${this.raidWave}`, C.danger, 1.4);
     this.shake.trigger(5);
   }

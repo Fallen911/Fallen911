@@ -1,4 +1,5 @@
 import "./style.css";
+import { audio } from "./core/audio";
 import { Input } from "./core/Input";
 import { UIOverlay } from "./core/ui";
 import { Assets } from "./core/Assets";
@@ -79,6 +80,10 @@ for (const [key, set] of Object.entries(BACKDROPS)) {
   game.assets.load(key, set.p);
   if (set.l) game.assets.load(`${key}:l`, set.l);
 }
+
+// Audio contexts may only start inside a user gesture; resume on every
+// pointerdown so backgrounding/iOS suspensions recover too.
+canvas.addEventListener("pointerdown", () => audio.unlock());
 
 // Boot.
 current = new MenuScene();

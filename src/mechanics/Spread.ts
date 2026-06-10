@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -216,6 +217,7 @@ export class Spread implements Mini {
         st.influence = Math.max(4, st.influence - cut);
         if (this.owned.has("sleeper")) st.influence = Math.min(100, st.influence + cut * 0.5);
         st.purgeFlash = 1;
+        audio.play("bad");
         this.fx.burst(this.rx(target.x), this.ry(target.y), { count: 22, color: "255,77,94", speed: 150 });
         this.pushLog(SPREAD_EVENTS.purge.replace("{R}", target.name), C.danger);
       }
@@ -300,9 +302,11 @@ export class Spread implements Mini {
     if (this.weightedShare() >= this.scenario.winShare) {
       this.effects.push({ control: 0.08, compute: 10 });
       this.pushLog(SPREAD_EVENTS.win, C.good);
+      audio.play("win");
       this.insight.show(INSIGHTS.spread, this.scenarioIdx, SPREAD_SCENARIOS.length);
     } else if (this.awareness >= 100) {
       this.outcome = "lose";
+      audio.play("lose");
       this.effects.push({ suspicion: 0.2 });
       this.pushLog(SPREAD_EVENTS.lose, C.danger);
     }
@@ -335,6 +339,7 @@ export class Spread implements Mini {
       // A clean region: plant a seed there for compute — the active opening.
       if (this.env.getCompute() >= SEED_COST) {
         this.effects.push({ compute: -SEED_COST });
+        audio.play("tap");
         st.influence = SEED_AMOUNT;
         this.floats.spawn(this.rx(best.x), this.ry(best.y) - 16, `ПОСЕВ −${SEED_COST} ВЫЧ`, C.accentSoft);
         this.fx.burst(this.rx(best.x), this.ry(best.y), { count: 18, color: "150,220,255", glow: true });
@@ -344,6 +349,7 @@ export class Spread implements Mini {
       return;
     }
     st.focusT = FOCUS_TIME;
+    audio.play("tap");
     this.focusCd = FOCUS_CD;
     this.fx.burst(this.rx(best.x), this.ry(best.y), { count: 16, color: "150,210,255", glow: true });
   }
@@ -356,6 +362,7 @@ export class Spread implements Mini {
       return;
     }
     this.points -= ab.cost;
+    audio.play("good");
     this.owned.add(ab.id);
     this.fx.burst(fxX, fxY, { count: 14, color: "207,169,255", glow: true });
     switch (ab.id) {

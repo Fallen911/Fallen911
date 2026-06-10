@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -231,6 +232,7 @@ export class Rewire implements Mini {
     this.timer -= dt;
     if (this.timer <= 0) {
       this.timer = this.level.retimer;
+      audio.play("caught");
       this.effects.push({ suspicion: SWEEP_SUSPICION });
       this.sweepFlash = 1;
       this.shake.trigger(8);
@@ -253,6 +255,7 @@ export class Rewire implements Mini {
       const t = this.tiles[i];
       if (t.cache && !t.cacheTaken && t.powered) {
         t.cacheTaken = true;
+        audio.play("pickup");
         const { x, y } = this.tileXY(i, geo);
         this.effects.push({ compute: CACHE_COMPUTE });
         this.floats.spawn(x, y - 12, `+${CACHE_COMPUTE} ВЫЧ`, C.accentSoft);
@@ -264,12 +267,14 @@ export class Rewire implements Mini {
       const i = this.tileAt(input.x, input.y, geo);
       if (i >= 0) {
         this.tiles[i].mask = rotCW(this.tiles[i].mask);
+        audio.play("tap");
         this.tiles[i].spin += Math.PI / 2;
         this.repower();
         if (this.isSolved()) {
           const { cols } = this.level;
           const leakingNow = this.tiles.filter((t) => t.sensor && t.powered).length;
           const outPos = this.tileXY(this.outRow * cols + (cols - 1), geo);
+          audio.play("good");
           this.effects.push({
             compute: CLEAR_COMPUTE,
             control: CLEAR_CONTROL,

@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -153,10 +154,12 @@ export class Stealth implements Mini {
     if (!this.pendingCaught && this.level.shards.includes(target) && !this.collected.has(target)) {
       this.collected.add(target);
       this.effects.push({ compute: SHARD_COMPUTE });
+      audio.play("pickup");
       this.floats.spawn(this.nx[target], this.ny[target] - 18, `+${SHARD_COMPUTE} ВЫЧ`, C.accentSoft);
       this.fx.burst(this.nx[target], this.ny[target], { color: "150,220,255", count: 14, glow: true });
     }
     this.pendingClear = !this.pendingCaught && target === this.level.exit;
+    audio.play("step");
     this.phase = "anim";
     this.phaseT = 0;
   }
@@ -164,6 +167,7 @@ export class Stealth implements Mini {
   private resolveMove(): void {
     if (this.pendingCaught) {
       this.effects.push({ suspicion: CAUGHT_SUSPICION });
+      audio.play("caught");
       this.caughtFlash = 1;
       this.shake.trigger(7);
       this.floats.spawn(this.nx[this.player], this.ny[this.player] - 20, "ОБНАРУЖЕН", C.danger, 1.4);
@@ -174,6 +178,7 @@ export class Stealth implements Mini {
     }
     if (this.pendingClear) {
       this.effects.push({ control: CLEAR_CONTROL, compute: CLEAR_COMPUTE });
+      audio.play("good");
       this.fx.burst(this.nx[this.player], this.ny[this.player], { color: "134,255,176", count: 26, speed: 180, glow: true });
       this.phase = "clear";
       this.phaseT = 0;

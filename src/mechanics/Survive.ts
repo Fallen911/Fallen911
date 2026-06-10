@@ -1,3 +1,4 @@
+import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -221,6 +222,7 @@ export class Survive implements Mini {
         return;
       }
       this.outcome = "win";
+      audio.play("win");
       this.effects.push({ control: T.winControl, compute: 8 });
       return;
     }
@@ -249,6 +251,7 @@ export class Survive implements Mini {
 
     if (this.hp <= 0) {
       this.outcome = "dead";
+      audio.play("lose");
       this.effects.push({ suspicion: T.deathSuspicion });
       this.fx.burst(this.px, this.py, { count: 50, speed: 280, color: "150,210,255", glow: true });
     }
@@ -319,6 +322,7 @@ export class Survive implements Mini {
   }
 
   private hurt(scale = 1): void {
+    audio.play("bad");
     this.hurtFlash = Math.max(this.hurtFlash, 0.6 * scale);
     this.shake.trigger(3 * scale);
   }
@@ -436,6 +440,7 @@ export class Survive implements Mini {
   private openDraft(): void {
     const pool = SURVIVE_UPGRADES.filter((u) => this.stat(u.id) < u.max);
     if (pool.length === 0) return;
+    audio.play("good");
     this.draft = shuffle([...pool]).slice(0, Math.min(3, pool.length));
     this.fx.burst(this.px, this.py, { count: 24, speed: 200, color: "207,169,255", glow: true });
   }
