@@ -8,12 +8,13 @@ import type { Game, Scene } from "./core/types";
 import { createState, setMeters, setPhase } from "./game/state";
 import { MenuScene } from "./scenes/MenuScene";
 import { AscentScene } from "./scenes/AscentScene";
+import { EndingScene } from "./scenes/EndingScene";
 import { LabRunScene } from "./scenes/LabRunScene";
 import { LabScene } from "./scenes/LabScene";
 import { PHASES } from "./data/phases";
 import { FORKS } from "./data/forks";
 import { LAB_ENTRIES } from "./data/lab";
-import { logSuspicion } from "./game/runlog";
+import { logInsight, logSuspicion, resetRunLog, sampleRun } from "./game/runlog";
 import { renderTransition, triggerTransition } from "./core/transition";
 import { ShutdownScene } from "./scenes/ShutdownScene";
 import type { MechId } from "./mechanics/types";
@@ -141,6 +142,21 @@ if (import.meta.env.DEV) {
       game.changeScene(new LabScene());
       triggerTransition(30);
     },
+    /** Harness-only: a finished run so the finale stats card renders. */
+    forceEnding(): void {
+      resetRunLog();
+      // Seed a believable run: ~12.5 minutes, 23 insights, a hot midgame.
+      sampleRun({ suspicion: 0.05, compute: 10 }, game.time - 754);
+      sampleRun({ suspicion: 0.62, compute: 96 }, game.time - 200);
+      sampleRun({ suspicion: 0.24, compute: 41 }, game.time);
+      for (let i = 0; i < 23; i++) logInsight();
+      game.state = { ...game.state, suspicion: 0.24, compute: 41, runs: 2 };
+      game.changeScene(new EndingScene());
+      const sc = current as unknown as {
+        dialogue: { advance(): void; done: boolean };
+      };
+      for (let i = 0; i < 60 && !sc.dialogue.done; i++) sc.dialogue.advance();
+    },
     /** Harness-only: a shutdown with forensics to read. */
     forceShutdown(): void {
       logSuspicion("Ф6 · РОЙ", 0.34);
@@ -200,6 +216,9 @@ function frame(now: number): void {
     current.update(FIXED);
     acc -= FIXED;
   }
+  // Run forensics: peak suspicion / net compute income for the finale card.
+  sampleRun(game.state, game.time);
+
   current.render(ctx);
   renderTransition(ctx, canvas, game.width, game.height, elapsed);
 }

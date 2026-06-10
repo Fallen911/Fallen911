@@ -2,6 +2,7 @@ import { audio } from "../core/audio";
 import type { Input } from "../core/Input";
 import { wrapText } from "../core/text";
 import type { InsightTrack } from "../data/insights";
+import { logInsight } from "../game/runlog";
 import type { TutorialStep } from "./types";
 
 /** Shared palette so the ten mechanics read as one game. */
@@ -287,6 +288,7 @@ export class InsightCard {
     this.cogTo = lerp(track.from, track.to, (levelIdx + 1) / totalLevels);
     this.shownAt = -1;
     this.activeFlag = true;
+    logInsight();
     audio.play("insight");
     audio.speak(this.line, "insight");
   }

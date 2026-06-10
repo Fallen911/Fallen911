@@ -37,8 +37,10 @@ const TARGETS = [
   { name: "lab-survive", lab: "survive", pre: 9000, drag: [195, 460, 240, 520] },
   // The Lucy beat: wave 2 lands at 18s and freezes the fight in a realization.
   { name: "lab-survive-insight", lab: "survive", pre: 19500, still: true },
-  // P2 polish: the scene-cut glitch held open so a still can catch it.
+  // P2 polish: the scene-cut glitch held open so a still can catch it,
+  // and the finale with a seeded run behind its shareable stats card.
   { name: "p2-glitch", dev: "forceGlitch", still: true },
+  { name: "p2-ending-card", dev: "forceEnding", still: true },
   // P0 beats: the route fork, the snap-audit, the shutdown forensics.
   { name: "p0-fork", dev: "forceFork", still: true },
   { name: "p0-audit", dev: "forceAudit", still: true },
