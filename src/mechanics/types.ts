@@ -31,6 +31,8 @@ export interface MechEnv {
   readonly extended?: boolean;
   /** Which slice/flavour of the mechanic the host wants (e.g. board set). */
   readonly variant?: number;
+  /** Snap-audit interlude: one tight board, no ladder. */
+  readonly audit?: boolean;
 }
 
 export type MechFactory = (env: MechEnv) => Mini;

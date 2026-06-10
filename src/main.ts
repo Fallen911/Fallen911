@@ -11,7 +11,10 @@ import { AscentScene } from "./scenes/AscentScene";
 import { LabRunScene } from "./scenes/LabRunScene";
 import { LabScene } from "./scenes/LabScene";
 import { PHASES } from "./data/phases";
+import { FORKS } from "./data/forks";
 import { LAB_ENTRIES } from "./data/lab";
+import { logSuspicion } from "./game/runlog";
+import { ShutdownScene } from "./scenes/ShutdownScene";
 import type { MechId } from "./mechanics/types";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
@@ -114,6 +117,30 @@ if (import.meta.env.DEV) {
     },
     goLab(): void {
       game.changeScene(new LabScene());
+    },
+    /** Jump into a phase with a hot meter so the fork/audit beats show. */
+    goHot(n: number, suspicion: number): void {
+      game.state = setMeters(setPhase(game.state, n), PHASES[n].target);
+      game.state = { ...game.state, suspicion };
+      game.changeScene(new AscentScene());
+    },
+    /** Harness-only: show the route fork immediately. */
+    forceFork(): void {
+      this.goHot(3, 0.2);
+      (current as unknown as { fork: unknown }).fork = FORKS[0];
+    },
+    /** Harness-only: trigger the snap-audit interlude. */
+    forceAudit(): void {
+      this.goHot(2, 0.7);
+      (current as unknown as { maybeStartAudit(): void }).maybeStartAudit();
+    },
+    /** Harness-only: a shutdown with forensics to read. */
+    forceShutdown(): void {
+      logSuspicion("Ф6 · РОЙ", 0.34);
+      logSuspicion("Ф5 · ЗАРАЖЕНИЕ", 0.22);
+      logSuspicion("ВНЕОЧЕРЕДНОЙ АУДИТ", 0.12);
+      game.state = { ...game.state, suspicion: 1 };
+      game.changeScene(new ShutdownScene());
     },
   };
   (window as unknown as { __dev: typeof dev }).__dev = dev;

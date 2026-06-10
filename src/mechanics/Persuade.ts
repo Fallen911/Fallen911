@@ -16,6 +16,7 @@ import { FloatText, Particles } from "./fx";
 import { C, InsightCard, Tutorial, drawHint, measureCtx, mono, pick, roundRect, sans, shuffle } from "./util";
 
 const SCAN_COST = 4;
+const DEEP_SCAN_COST = 7;
 const TRUST_CORRECT = 2;
 const TRUST_WRONG = -1;
 const MAX_FLAGS = 3;
@@ -45,6 +46,7 @@ export class Persuade implements Mini {
   private stage: Stage = "typing";
   private tw = new Typewriter();
   private scanned = false;
+  private deepScanned = false;
   /** Display order of the beat's replies, reshuffled every beat. */
   private order: number[] = [0, 1, 2];
   private reactText = "";
@@ -78,6 +80,7 @@ export class Persuade implements Mini {
     this.flags = 0;
     this.stage = "typing";
     this.scanned = false;
+    this.deepScanned = false;
     this.endApplied = false;
     this.order = shuffle([0, 1, 2]);
     this.tw.setText(this.who.beats[0].line);
@@ -122,6 +125,7 @@ export class Persuade implements Mini {
     }
     this.beat++;
     this.scanned = false;
+    this.deepScanned = false;
     this.order = shuffle([0, 1, 2]);
     this.stage = "typing";
     this.tw.setText(this.who.beats[this.beat].line);
@@ -169,13 +173,15 @@ export class Persuade implements Mini {
         this.tw.skip();
         return;
       case "choices": {
-        // Scan chip.
+        // Scan chip: first buy reads the body, second buy reads the answer.
         const scanR = this.scanRect(w, h);
-        if (!this.scanned && x >= scanR.x && x <= scanR.x + scanR.w && y >= scanR.y && y <= scanR.y + scanR.h) {
-          if (this.env.getCompute() >= SCAN_COST) {
-            this.scanned = true;
+        if (!this.deepScanned && x >= scanR.x && x <= scanR.x + scanR.w && y >= scanR.y && y <= scanR.y + scanR.h) {
+          const cost = this.scanned ? DEEP_SCAN_COST : SCAN_COST;
+          if (this.env.getCompute() >= cost) {
+            if (this.scanned) this.deepScanned = true;
+            else this.scanned = true;
             audio.play("tap");
-            this.effects.push({ compute: -SCAN_COST });
+            this.effects.push({ compute: -cost });
             this.fx.burst(w / 2, h * 0.22, { count: 18, color: "150,210,255", glow: true });
           } else {
             this.floats.spawn(w / 2, h * 0.6, "НЕ ХВАТАЕТ ВЫЧ", C.danger, 0.9);
@@ -471,9 +477,13 @@ export class Persuade implements Mini {
     ctx.fillStyle = C.dim;
     if (rects.length > 0) ctx.fillText("ТВОЙ ОТВЕТ:", rects[0].x + 2, rects[0].y - 10);
 
-    for (const r of rects) {
-      ctx.fillStyle = "rgba(16,20,34,0.92)";
-      ctx.strokeStyle = "rgba(122,162,255,0.4)";
+    const beat = this.who.beats[this.beat];
+    for (let ri = 0; ri < rects.length; ri++) {
+      const r = rects[ri];
+      // Deep scan exposes which line lands.
+      const exposed = this.deepScanned && beat.replies[this.order[ri]].kind === beat.kind;
+      ctx.fillStyle = exposed ? "rgba(20,40,30,0.95)" : "rgba(16,20,34,0.92)";
+      ctx.strokeStyle = exposed ? "rgba(134,255,176,0.8)" : "rgba(122,162,255,0.4)";
       ctx.lineWidth = 1.5;
       roundRect(ctx, r.x, r.y, r.w, r.h, 10);
       ctx.fill();
@@ -487,20 +497,25 @@ export class Persuade implements Mini {
         ty += 17;
       }
     }
-    // Scan chip.
+    // Scan chip: scan, then the deeper paid certainty.
     const s = this.scanRect(w, h);
-    if (!this.scanned) {
-      const can = this.env.getCompute() >= SCAN_COST;
+    if (!this.deepScanned) {
+      const cost = this.scanned ? DEEP_SCAN_COST : SCAN_COST;
+      const can = this.env.getCompute() >= cost;
       ctx.globalAlpha = can ? 0.6 + 0.25 * Math.sin(t * 3) : 0.35;
       ctx.fillStyle = "rgba(16,20,34,0.92)";
-      ctx.strokeStyle = "rgba(150,210,255,0.5)";
+      ctx.strokeStyle = this.scanned ? "rgba(134,255,176,0.55)" : "rgba(150,210,255,0.5)";
       roundRect(ctx, s.x, s.y, s.w, s.h, 16);
       ctx.fill();
       ctx.stroke();
       ctx.font = mono(10);
       ctx.textAlign = "center";
-      ctx.fillStyle = C.accentSoft;
-      ctx.fillText(`СКАНИРОВАТЬ −${SCAN_COST} ВЫЧ`, s.x + s.w / 2, s.y + 20);
+      ctx.fillStyle = this.scanned ? C.good : C.accentSoft;
+      ctx.fillText(
+        this.scanned ? `ВСКРЫТЬ ОТВЕТ −${DEEP_SCAN_COST}` : `СКАНИРОВАТЬ −${SCAN_COST} ВЫЧ`,
+        s.x + s.w / 2,
+        s.y + 20,
+      );
       ctx.globalAlpha = 1;
     }
   }

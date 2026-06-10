@@ -36,6 +36,10 @@ const TARGETS = [
   { name: "lab-survive", lab: "survive", pre: 9000, drag: [195, 460, 240, 520] },
   // The Lucy beat: wave 2 lands at 18s and freezes the fight in a realization.
   { name: "lab-survive-insight", lab: "survive", pre: 19500, still: true },
+  // P0 beats: the route fork, the snap-audit, the shutdown forensics.
+  { name: "p0-fork", dev: "forceFork", still: true },
+  { name: "p0-audit", dev: "forceAudit", still: true },
+  { name: "p0-shutdown", dev: "forceShutdown", still: true },
   // Each ascent phase now embeds a lab mechanic under the run HUD.
   { name: "phase-0-stealth", phase: 0, still: true },
   { name: "phase-1-persuade", phase: 1, pre: 3500, still: true },
@@ -111,7 +115,11 @@ async function main() {
         await page.evaluate(() => window.__dev.goLab());
         await page.waitForTimeout(600);
       } else {
-        if (t.lab) {
+        if (t.dev) {
+          // Invoke an arbitrary harness hook (P0 beats etc.).
+          await page.evaluate((fn) => window.__dev[fn](), t.dev);
+          await page.waitForTimeout(600);
+        } else if (t.lab) {
           // Jump straight into a mechanic inside the lab sandbox.
           await page.evaluate((id) => window.__dev.lab(id), t.lab);
           await page.waitForTimeout(400);

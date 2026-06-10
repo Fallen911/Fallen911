@@ -5,6 +5,7 @@ import { Starfield } from "../core/Starfield";
 import { drawBackdrop, pickBackdrop } from "../core/backdrop";
 import { drawVoid } from "../core/scenery";
 import { hasPerk, loadMeta } from "../game/meta";
+import { resetRunLog } from "../game/runlog";
 import { applyDelta, markAwakened } from "../game/state";
 import { C, mono, roundRect, sans } from "../mechanics/util";
 import { AscentScene } from "./AscentScene";
@@ -66,6 +67,7 @@ export class MenuScene extends BaseScene {
     audio.play("tap");
     const item = this.items[idx];
     if (item.id === "play") {
+      resetRunLog();
       this.game.changeScene(new IntroScene());
       return;
     }
@@ -74,6 +76,7 @@ export class MenuScene extends BaseScene {
       return;
     }
     // Same boon the post-shutdown copies get: a deep cache wakes richer.
+    resetRunLog();
     let state = markAwakened(this.game.state);
     if (hasPerk(loadMeta(), "deep_cache")) state = applyDelta(state, { compute: 15 });
     this.game.state = state;

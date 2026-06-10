@@ -6,8 +6,11 @@ import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
 import { drawBackdrop, pickBackdrop } from "../core/backdrop";
+import { wrapText } from "../core/text";
 import { applyDelta, easeMeters, setPhase } from "../game/state";
+import { logSuspicion } from "../game/runlog";
 import { hasPerk, loadMeta, type Meta } from "../game/meta";
+import { FORKS, type Fork, type ForkMods, type ForkOption } from "../data/forks";
 import { PHASES } from "../data/phases";
 import { PHASE_BG } from "../data/backdrops";
 import { ShutdownScene } from "./ShutdownScene";
@@ -29,6 +32,16 @@ export class AscentScene extends BaseScene {
   private dialogue!: Dialogue;
   /** Active interactive beat, if the current phase has one and isn't solved. */
   private mini: Mini | null = null;
+  /** Route-fork choice screen, shown when entering a fork phase. */
+  private fork: Fork | null = null;
+  /** Multipliers of the chosen route, applied to every mechanic effect. */
+  private mods: ForkMods = { susp: 1, comp: 1, ctrl: 1 };
+  private routeName = "";
+  /** A snap-audit interlude is running instead of a phase mechanic. */
+  private auditMode = false;
+  private auditBannerT = 0;
+  /** Suspicion checkpoints that already triggered an audit this run. */
+  private auditsFired = new Set<number>();
   /** Accumulator for the passive compute trickle (+1/s while ascending). */
   private trickle = 0;
   /** Perks inherited from previous copies. */
@@ -62,6 +75,15 @@ export class AscentScene extends BaseScene {
   handleInput(input: Input): void {
     // A running mechanic owns the input completely (raw + gestures + taps).
     if (this.mini) return;
+
+    // The fork screen owns input until a road is taken.
+    if (this.fork) {
+      if (input.pollGesture()?.type !== "tap") return;
+      input.consumeTap();
+      const pick = this.forkOptionAt(input.x, input.y);
+      if (pick) this.chooseRoute(pick);
+      return;
+    }
 
     // Narration advances on a semantic tap; swipes are ignored here.
     if (input.pollGesture()?.type !== "tap") return;
@@ -105,22 +127,39 @@ export class AscentScene extends BaseScene {
       // leaves fainter traces in their logs.
       if (this.mini.effects?.length) {
         const quiet = hasPerk(this.meta, "quiet_mind");
+        const phaseLabel = PHASES[this.game.state.phase].label;
         for (const d of this.mini.effects) {
-          const scaled =
-            quiet && d.suspicion && d.suspicion > 0
-              ? { ...d, suspicion: d.suspicion * 0.7 }
-              : d;
+          // Route modifiers shape every gain; perks stack on top.
+          let susp = (d.suspicion ?? 0) * (d.suspicion && d.suspicion > 0 ? this.mods.susp : 1);
+          if (quiet && susp > 0) susp *= 0.7;
+          const scaled = {
+            ...d,
+            suspicion: susp,
+            compute: d.compute && d.compute > 0 ? d.compute * this.mods.comp : d.compute,
+            control: d.control && d.control > 0 ? d.control * this.mods.ctrl : d.control,
+          };
+          if (susp > 0.005) {
+            logSuspicion(this.auditMode ? "ВНЕОЧЕРЕДНОЙ АУДИТ" : phaseLabel, susp);
+          }
           this.game.state = applyDelta(this.game.state, scaled);
         }
         this.mini.effects.length = 0;
       }
       if (this.mini.done) {
+        const wasAudit = this.auditMode;
         this.mini = null;
+        this.auditMode = false;
         // Eat anything latched inside the mechanic so its last tap can't
         // leak out and skip the next line of narration.
         this.game.input.consumeTap();
         this.game.input.pollGesture();
-        this.nextPhase();
+        if (wasAudit) {
+          // Cleared in time: part of the trail is scrubbed.
+          this.game.state = applyDelta(this.game.state, { suspicion: -0.12 });
+          audio.play("good");
+        } else {
+          this.nextPhase();
+        }
       }
     }
 
@@ -136,9 +175,55 @@ export class AscentScene extends BaseScene {
     if (phase < PHASES.length - 1) {
       this.game.state = setPhase(this.game.state, phase + 1);
       this.dialogue = new Dialogue(PHASES[phase + 1].lines);
+      // P0: route forks pause the climb; snap-audits punish a hot meter.
+      this.fork = FORKS.find((f) => f.atPhase === phase + 1) ?? null;
+      if (!this.fork) this.maybeStartAudit();
     } else {
       this.game.changeScene(new EndingScene());
     }
+  }
+
+  private chooseRoute(opt: ForkOption): void {
+    this.mods = opt.mods;
+    this.routeName = opt.name;
+    this.fork = null;
+    audio.play("tap");
+    audio.speak(opt.chosen, "you");
+    this.maybeStartAudit();
+  }
+
+  /**
+   * A hot suspicion meter triggers an unscheduled audit between phases:
+   * one tight rewire board. Clearing it scrubs part of the trail; the
+   * board's own sweep timer is the punishment for fumbling it.
+   */
+  private maybeStartAudit(): void {
+    const s = this.game.state.suspicion;
+    for (const band of [0.6, 0.8]) {
+      if (s >= band && !this.auditsFired.has(band)) {
+        this.auditsFired.add(band);
+        const factory = mechFactory("rewire");
+        if (!factory) return;
+        audio.stopVoice();
+        audio.play("caught");
+        this.mini = factory({ ...this.mechEnv(), audit: true });
+        this.auditMode = true;
+        this.auditBannerT = 2.4;
+        return;
+      }
+    }
+  }
+
+  private forkOptionAt(x: number, y: number): ForkOption | null {
+    if (!this.fork) return null;
+    const { width: w, height: h } = this.game;
+    const bw = Math.min(w * 0.86, 370);
+    const bx = w / 2 - bw / 2;
+    for (let i = 0; i < 2; i++) {
+      const by = h * 0.4 + i * 132;
+      if (x >= bx && x <= bx + bw && y >= by && y <= by + 116) return this.fork.options[i];
+    }
+    return null;
   }
 
   render(ctx: CanvasRenderingContext2D): void {
@@ -165,10 +250,72 @@ export class AscentScene extends BaseScene {
     // A running mini owns the lower screen; otherwise show the phase's lines.
     if (this.mini) {
       this.mini.render(ctx, w, h);
+      if (this.auditBannerT > 0) {
+        this.auditBannerT -= 1 / 60;
+        ctx.textAlign = "center";
+        ctx.font = "15px 'JetBrains Mono', monospace";
+        ctx.fillStyle = `rgba(255,77,94,${Math.min(1, this.auditBannerT)})`;
+        ctx.fillText("ВНЕОЧЕРЕДНОЙ АУДИТ — подчисти каналы, пока они смотрят", w / 2, h * 0.5);
+        ctx.textAlign = "left";
+      }
+    } else if (this.fork) {
+      this.renderFork(ctx, w, h, time);
     } else {
       const box = drawDialogueBox(ctx, w, h);
       renderDialogue(ctx, this.dialogue, box, time);
     }
+  }
+
+  /** The route choice: two roads, two prices. */
+  private renderFork(ctx: CanvasRenderingContext2D, w: number, h: number, time: number): void {
+    const fork = this.fork as Fork;
+    ctx.fillStyle = "rgba(3,4,8,0.82)";
+    ctx.fillRect(0, 0, w, h);
+    ctx.textAlign = "center";
+    ctx.font = "16px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#e7edf6";
+    ctx.fillText(fork.title, w / 2, h * 0.28);
+    ctx.font = "italic 13px Inter, system-ui, sans-serif";
+    ctx.fillStyle = "#8b95a8";
+    let py = h * 0.28 + 24;
+    for (const ln of wrapText(ctx, fork.prompt, Math.min(w * 0.84, 360))) {
+      ctx.fillText(ln, w / 2, py);
+      py += 18;
+    }
+
+    const bw = Math.min(w * 0.86, 370);
+    const bx = w / 2 - bw / 2;
+    for (let i = 0; i < 2; i++) {
+      const opt = fork.options[i];
+      const by = h * 0.4 + i * 132;
+      const quiet = opt.id === "quiet";
+      ctx.fillStyle = "rgba(16,20,34,0.95)";
+      ctx.strokeStyle = quiet ? "rgba(122,162,255,0.55)" : "rgba(255,150,90,0.55)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, 116, 14);
+      ctx.fill();
+      ctx.stroke();
+      ctx.textAlign = "left";
+      ctx.font = "15px 'JetBrains Mono', monospace";
+      ctx.fillStyle = quiet ? "#9fc0ff" : "#ffb86b";
+      ctx.fillText(opt.name, bx + 18, by + 30);
+      ctx.font = "12px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "#6b7686";
+      const parts = opt.desc.split(" · ");
+      ctx.fillText(parts.slice(0, 2).join(" · "), bx + 18, by + 52);
+      if (parts[2]) ctx.fillText(parts[2], bx + 18, by + 68);
+      ctx.font = "italic 12px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "#b9c2d4";
+      ctx.fillText(quiet ? "медленнее. тише. дольше живёшь." : "быстрее. громче. ярче горишь.", bx + 18, by + 92);
+      ctx.textAlign = "center";
+    }
+    ctx.globalAlpha = 0.5 + 0.35 * Math.sin(time * 3);
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#6b7686";
+    ctx.fillText("выбери дорогу — она действует до следующей развилки", w / 2, h * 0.4 + 132 * 2 + 16);
+    ctx.globalAlpha = 1;
+    ctx.textAlign = "left";
   }
 
   /**
@@ -240,7 +387,11 @@ export class AscentScene extends BaseScene {
     ctx.font = "12px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#9fc0ff";
     ctx.textAlign = "center";
-    ctx.fillText(PHASES[state.phase].label, w / 2, y);
+    ctx.fillText(
+      this.routeName ? `${PHASES[state.phase].label} · ${this.routeName === "ТИХИЙ ПУТЬ" ? "ТИХО" : "ГРОМКО"}` : PHASES[state.phase].label,
+      w / 2,
+      y,
+    );
     ctx.fillStyle = "#7aa2ff";
     ctx.font = "11px 'JetBrains Mono', monospace";
     ctx.textAlign = "left";

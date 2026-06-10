@@ -3,7 +3,7 @@ import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
 import { INSIGHTS } from "../data/insights";
-import { REWIRE_LEVELS, REWIRE_PHASE_BOARDS, type RewireLevel } from "../data/rewire";
+import { REWIRE_AUDIT_BOARD, REWIRE_LEVELS, REWIRE_PHASE_BOARDS, type RewireLevel } from "../data/rewire";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
 import { C, InsightCard, drawHint, mono, pick, shuffle } from "./util";
@@ -70,7 +70,9 @@ export class Rewire implements Mini {
   private levels: RewireLevel[];
 
   constructor(private env: MechEnv) {
-    if (env.extended) {
+    if (env.audit) {
+      this.levels = [REWIRE_AUDIT_BOARD];
+    } else if (env.extended) {
       this.levels = REWIRE_LEVELS;
     } else if ((env.variant ?? 0) >= 4) {
       // Second story appearance (Ф4): the harder "crisis" boards.
@@ -221,6 +223,10 @@ export class Rewire implements Mini {
       this.solvedT += dt;
       input.consumeTap();
       if (this.solvedT >= 1.0) {
+        if (this.env.audit) {
+          this.done = true;
+          return;
+        }
         const globalIdx = REWIRE_LEVELS.indexOf(this.level);
         this.insight.show(INSIGHTS.rewire, Math.max(0, globalIdx), REWIRE_LEVELS.length);
         this.solvedT = 0;

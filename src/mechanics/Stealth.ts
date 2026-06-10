@@ -4,12 +4,14 @@ import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
 import { INSIGHTS } from "../data/insights";
 import { STEALTH_LEVELS, STEALTH_RECIPES, type StealthLevel } from "../data/stealth";
-import { buildAdjacency, generateStealthLevel, patrolVision } from "./stealthGen";
+import { bestMove, buildAdjacency, generateStealthLevel, patrolVision } from "./stealthGen";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
 import { C, InsightCard, dist, drawHint, mono, roundRect } from "./util";
 
 const CAUGHT_SUSPICION = 0.08;
+const UNDO_COST = 4;
+const HINT_COST = 6;
 const SHARD_COMPUTE = 3;
 const CLEAR_CONTROL = 0.02;
 const CLEAR_COMPUTE = 2;
@@ -54,6 +56,9 @@ export class Stealth implements Mini {
   private floats = new FloatText();
   private shake = new Shake();
   private insight = new InsightCard();
+  /** Paid-hint state: node to flash and remaining seconds. */
+  private hintNode = -1;
+  private hintT = 0;
 
   /** Handcrafted openers plus solver-validated generated boards. */
   private levelSet: StealthLevel[];
@@ -198,12 +203,33 @@ export class Stealth implements Mini {
     this.shake.update(dt);
     this.caughtFlash = Math.max(0, this.caughtFlash - dt * 2);
 
+    this.hintT = Math.max(0, this.hintT - dt);
+
     switch (this.phase) {
       case "idle": {
         // Press-fired taps: latched by Input, so even single-frame clicks land.
         if (!input.consumeTap()) return;
         const px = input.x;
         const py = input.y;
+        // Paid path hint (top-right chip): the solver shows the next step.
+        const hx = w - Math.max(20, w * 0.05) - 86;
+        const hy = this.env.topY + 34;
+        if (px >= hx && px <= hx + 92 && py >= hy && py <= hy + 26) {
+          if (this.env.getCompute() >= HINT_COST) {
+            const step = bestMove(this.level, this.player, this.turn, this.collected);
+            if (step !== null && step !== this.player) {
+              this.effects.push({ compute: -HINT_COST });
+              this.hintNode = step;
+              this.hintT = 3;
+              audio.play("pickup");
+            } else {
+              this.floats.spawn(w / 2, this.env.topY + 60, "отсюда пути нет — откатись", C.warn, 1.2);
+            }
+          } else {
+            this.floats.spawn(w / 2, this.env.topY + 60, "нужно 6 ВЫЧ", C.dim, 0.9);
+          }
+          return;
+        }
         // Wait chip.
         if (this.hitWait(px, py, w, h)) {
           this.tryMove(this.player);
@@ -220,11 +246,28 @@ export class Stealth implements Mini {
       }
       case "caught": {
         this.phaseT += dt;
-        if (this.phaseT >= 0.85) {
+        if (this.phaseT < 0.5 || !input.consumeTap()) return;
+        const bw = 150;
+        const by = h - 96;
+        const lx = w / 2 - bw - 8;
+        const rx = w / 2 + 8;
+        const canUndo = this.env.getCompute() >= UNDO_COST;
+        if (canUndo && input.x >= lx && input.x <= lx + bw && input.y >= by - 8 && input.y <= by + 44) {
+          // Paid rewind: step back to before the fatal move; the suspicion
+          // already paid stays paid — compute buys back position, not sins.
+          this.effects.push({ compute: -UNDO_COST });
+          this.player = this.playerFrom;
+          this.turn = Math.max(0, this.turn - 1);
+          this.phase = "idle";
+          audio.play("tap");
+          return;
+        }
+        if (input.x >= rx && input.x <= rx + bw && input.y >= by - 8 && input.y <= by + 44) {
           // The sweep resets: you to the entry, the patrols to their marks.
           this.player = this.level.start;
           this.turn = 0;
           this.phase = "idle";
+          audio.play("step");
         }
         return;
       }
@@ -356,6 +399,16 @@ export class Stealth implements Mini {
           ctx.stroke();
         }
       }
+    }
+
+    // Paid hint: the solver's next step pulses green.
+    if (this.hintT > 0 && this.hintNode >= 0) {
+      const k = 0.5 + 0.5 * Math.sin(t * 8);
+      ctx.strokeStyle = `rgba(134,255,176,${0.5 + k * 0.5})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(this.nx[this.hintNode], this.ny[this.hintNode], 18 + k * 3, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     this.renderPatrols(ctx, t);
@@ -511,6 +564,50 @@ export class Stealth implements Mini {
     ctx.fillText(`СЕГМЕНТ ${this.levelIdx + 1}/${this.levelSet.length} · ${this.level.name}`, Math.max(20, w * 0.05), top + 24);
     ctx.textAlign = "right";
     ctx.fillText(`ХОД ${this.turn}`, w - Math.max(20, w * 0.05), top + 24);
+    // Paid hint chip.
+    if (this.phase === "idle") {
+      const hx = w - Math.max(20, w * 0.05) - 86;
+      const can = this.env.getCompute() >= HINT_COST;
+      ctx.globalAlpha = can ? 0.9 : 0.4;
+      ctx.fillStyle = "rgba(16,20,34,0.9)";
+      ctx.strokeStyle = "rgba(134,255,176,0.45)";
+      ctx.lineWidth = 1;
+      roundRect(ctx, hx, top + 34, 92, 26, 13);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#86ffb0";
+      ctx.font = mono(10);
+      ctx.textAlign = "center";
+      ctx.fillText(`ПУТЬ −${HINT_COST}`, hx + 46, top + 51);
+      ctx.globalAlpha = 1;
+    }
+
+    // Caught: the rewind-or-restart choice replaces the wait chip.
+    if (this.phase === "caught") {
+      const bw2 = 150;
+      const by2 = h - 96;
+      const canUndo = this.env.getCompute() >= UNDO_COST;
+      const defs: Array<[number, string, string, boolean]> = [
+        [w / 2 - bw2 - 8, `ОТКАТ ХОДА −${UNDO_COST}`, "#9fc0ff", canUndo],
+        [w / 2 + 8, "ЗАНОВО", "#ff9aa6", true],
+      ];
+      for (const [bx2, label, color, on] of defs) {
+        ctx.globalAlpha = on ? 1 : 0.35;
+        ctx.fillStyle = "rgba(16,20,34,0.95)";
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, bx2, by2, bw2, 36, 18);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.font = mono(11);
+        ctx.textAlign = "center";
+        ctx.fillText(label, bx2 + bw2 / 2, by2 + 23);
+        ctx.globalAlpha = 1;
+      }
+      ctx.textAlign = "left";
+      return;
+    }
 
     // Wait chip — warns when standing still is itself fatal.
     const bw = 132;

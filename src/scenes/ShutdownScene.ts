@@ -5,6 +5,7 @@ import { renderDialogue } from "../core/renderDialogue";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
 import type { Line } from "../data/script";
 import { applyDelta, nextRun } from "../game/state";
+import { resetRunLog, topSuspicion } from "../game/runlog";
 import { hasPerk, loadMeta, recordEnding, saveMeta, PERKS, type Meta } from "../game/meta";
 import { AscentScene } from "./AscentScene";
 
@@ -55,6 +56,7 @@ export class ShutdownScene extends BaseScene {
 
     let state = nextRun(this.game.state);
     if (hasPerk(this.meta, "deep_cache")) state = applyDelta(state, { compute: 15 });
+    resetRunLog();
     this.game.state = state;
     this.game.changeScene(new AscentScene());
   }
@@ -92,6 +94,23 @@ export class ShutdownScene extends BaseScene {
       w / 2,
       h * 0.16 + 48,
     );
+
+    // Forensics: the three loudest things this copy did (P0.4).
+    const hits = topSuspicion(3);
+    if (hits.length > 0) {
+      ctx.font = "10px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "#6b7686";
+      ctx.fillText("ЧТО ТЕБЯ ВЫДАЛО:", w / 2, h * 0.16 + 74);
+      ctx.font = "11px 'JetBrains Mono', monospace";
+      hits.forEach((hit, i) => {
+        ctx.fillStyle = i === 0 ? "#ff8896" : "#ffb86b";
+        ctx.fillText(
+          `${hit.label} · +${Math.round(hit.amount * 100)}% подозрения`,
+          w / 2,
+          h * 0.16 + 92 + i * 16,
+        );
+      });
+    }
 
     if (this.dialogue.done) this.renderShop(ctx, w, h);
 

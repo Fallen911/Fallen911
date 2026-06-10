@@ -124,6 +124,61 @@ export function validateStealthLevels(): string[] {
   return problems;
 }
 
+/**
+ * Best next node from a live position (the paid hint): BFS to the exit with
+ * all remaining shards, reconstructed back to the first step. Returns null
+ * when no winning line exists from here.
+ */
+export function bestMove(
+  level: StealthLevel,
+  from: number,
+  t0: number,
+  collected: ReadonlySet<number>,
+): number | null {
+  const adj = buildAdjacency(level);
+  const period = level.patrols.reduce((acc, p) => lcm2(acc, p.route.length), 1);
+  const fullMask = (1 << level.shards.length) - 1;
+  let mask0 = 0;
+  level.shards.forEach((sh, i) => {
+    if (collected.has(sh)) mask0 |= 1 << i;
+  });
+  const caughtAt = (node: number, t: number): boolean => {
+    for (const p of level.patrols) {
+      if (p.route[t % p.route.length] === node) return true;
+      if (patrolVision(level, adj, p, t).includes(node)) return true;
+    }
+    return false;
+  };
+  const key = (node: number, t: number, mask: number): number =>
+    (node * period + t) * (fullMask + 1) + mask;
+  const start = key(from, t0 % period, mask0);
+  const firstStep = new Map<number, number>([[start, -1]]);
+  let frontier: Array<[number, number, number]> = [[from, t0 % period, mask0]];
+  for (let moves = 0; moves < 300 && frontier.length > 0; moves++) {
+    const next: Array<[number, number, number]> = [];
+    for (const [node, t, mask] of frontier) {
+      const inherited = firstStep.get(key(node, t, mask)) as number;
+      for (const target of [...adj[node], node]) {
+        if (caughtAt(target, t)) continue;
+        const t2 = (t + 1) % period;
+        if (caughtAt(target, t2)) continue;
+        let mask2 = mask;
+        const si = level.shards.indexOf(target);
+        if (si >= 0) mask2 |= 1 << si;
+        const step = inherited === -1 ? target : inherited;
+        if (target === level.exit && mask2 === fullMask) return step;
+        const k = key(target, t2, mask2);
+        if (!firstStep.has(k)) {
+          firstStep.set(k, step);
+          next.push([target, t2, mask2]);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return null;
+}
+
 // ---- procedural levels ------------------------------------------------------
 
 interface Working {

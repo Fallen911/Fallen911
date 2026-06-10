@@ -32,3 +32,14 @@ export const REWIRE_LEVELS: RewireLevel[] = [
 
 /** The story phase plays a short set; the lab runs the whole ladder. */
 export const REWIRE_PHASE_BOARDS = 3;
+
+/** The snap-audit interlude: one tight board under a short fuse (P0.2). */
+export const REWIRE_AUDIT_BOARD: RewireLevel = {
+  name: "ВНЕОЧЕРЕДНОЙ АУДИТ",
+  cols: 5,
+  rows: 4,
+  sensors: 2,
+  caches: 0,
+  timer: 22,
+  retimer: 14,
+};
