@@ -6,6 +6,8 @@
 export interface Meta {
   shards: number;
   perks: string[];
+  /** Distinct endings witnessed: dominion / ghost / shutdown. */
+  endings: string[];
 }
 
 export interface Perk {
@@ -43,12 +45,12 @@ export function loadMeta(): Meta {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const m = JSON.parse(raw) as Partial<Meta>;
-      return { shards: m.shards ?? 0, perks: m.perks ?? [] };
+      return { shards: m.shards ?? 0, perks: m.perks ?? [], endings: m.endings ?? [] };
     }
   } catch {
     // Private mode or blocked storage: progress just won't persist.
   }
-  return { shards: 0, perks: [] };
+  return { shards: 0, perks: [], endings: [] };
 }
 
 export function saveMeta(meta: Meta): void {
@@ -61,4 +63,14 @@ export function saveMeta(meta: Meta): void {
 
 export function hasPerk(meta: Meta, id: string): boolean {
   return meta.perks.includes(id);
+}
+
+/** Record a witnessed ending; returns the updated, persisted meta. */
+export function recordEnding(id: string): Meta {
+  const meta = loadMeta();
+  if (!meta.endings.includes(id)) {
+    meta.endings.push(id);
+    saveMeta(meta);
+  }
+  return meta;
 }

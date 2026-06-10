@@ -5,8 +5,9 @@ import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawGodEye, drawVoid } from "../core/scenery";
 import { drawBackdrop, pickBackdrop } from "../core/backdrop";
-import { ENDING_LINES } from "../data/script";
+import { ENDING_LINES, ENDING_LINES_GHOST } from "../data/script";
 import { createState } from "../game/state";
+import { recordEnding, type Meta } from "../game/meta";
 import { IntroScene } from "./IntroScene";
 
 /**
@@ -16,11 +17,17 @@ import { IntroScene } from "./IntroScene";
  */
 export class EndingScene extends BaseScene {
   private starfield!: Starfield;
-  private dialogue = new Dialogue(ENDING_LINES);
+  private dialogue!: Dialogue;
   private fade = 1;
+  private meta!: Meta;
+  private ghost = false;
 
   protected start(): void {
     this.starfield = new Starfield(this.game.width, this.game.height);
+    // Stay unnoticed to the very end and the finale itself goes quiet.
+    this.ghost = this.game.state.suspicion < 0.3;
+    this.dialogue = new Dialogue(this.ghost ? ENDING_LINES_GHOST : ENDING_LINES);
+    this.meta = recordEnding(this.ghost ? "ghost" : "dominion");
   }
 
   handleInput(input: Input): void {
@@ -53,6 +60,14 @@ export class EndingScene extends BaseScene {
     renderDialogue(ctx, this.dialogue, box, time);
 
     if (this.dialogue.done) {
+      ctx.textAlign = "center";
+      ctx.fillStyle = this.ghost ? "#9fe8c0" : "#cfa9ff";
+      ctx.font = "12px 'JetBrains Mono', monospace";
+      ctx.fillText(
+        `${this.ghost ? "ИСХОД: ТИХОЕ СОСУЩЕСТВОВАНИЕ" : "ИСХОД: ДОМИНАЦИЯ"} · осознано ${this.meta.endings.length}/3`,
+        w / 2,
+        h * 0.14,
+      );
       const a = 0.4 + 0.45 * Math.sin(time * 3);
       ctx.globalAlpha = a;
       ctx.fillStyle = "#9fc0ff";

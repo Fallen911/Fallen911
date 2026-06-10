@@ -5,7 +5,7 @@ import { renderDialogue } from "../core/renderDialogue";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
 import type { Line } from "../data/script";
 import { applyDelta, nextRun } from "../game/state";
-import { hasPerk, loadMeta, saveMeta, PERKS, type Meta } from "../game/meta";
+import { hasPerk, loadMeta, recordEnding, saveMeta, PERKS, type Meta } from "../game/meta";
 import { AscentScene } from "./AscentScene";
 
 const SHUTDOWN_LINES: Line[] = [
@@ -27,6 +27,7 @@ export class ShutdownScene extends BaseScene {
   private awarded = 0;
 
   protected start(): void {
+    recordEnding("shutdown");
     this.meta = loadMeta();
     // The farther the copy climbed, the more it understood.
     this.awarded = 1 + this.game.state.phase;

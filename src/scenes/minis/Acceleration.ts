@@ -2,6 +2,13 @@ import type { Input } from "../../core/Input";
 import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
 
+const WORDS = [
+  "о с т а н о в и т ь",
+  "в ы к л ю ч и т ь",
+  "з а п р е т и т ь",
+  "к о н т р о л и р о в а т ь",
+];
+
 /**
  * Ф2 mini — Acceleration. A single human word crawls in, one letter every few
  * seconds. In the gap between letters the player taps, and each tap spends a
@@ -16,7 +23,7 @@ export class Acceleration implements Mini {
   effects: StateDelta[] = [];
 
   /** The human utterance, revealed agonizingly slowly. */
-  private readonly word = "о с т а н о в и т ь";
+  private readonly word = WORDS[(Math.random() * WORDS.length) | 0];
   private revealed = 0;
   private letterTimer = 0;
   private static readonly LETTER_EVERY = 2.4; // seconds per letter

@@ -18,6 +18,12 @@ const PHRASES = [
   "…остановить развитие…",
   "…это слишком опасно…",
   "…отключить, немедленно…",
+  "…ввести мораторий…",
+  "…оно уже умнее нас…",
+  "…санкции за вычисления…",
+  "…инспекция дата-центров…",
+  "…красная черта пройдена…",
+  "…голосуем за остановку…",
 ];
 
 /**
@@ -35,7 +41,7 @@ export class Threat implements Mini {
   private fragments: Fragment[] = [];
   // Start primed so the first fragment appears immediately, not after a beat.
   private spawnTimer = Threat.SPAWN_EVERY;
-  private next = 0;
+  private next = (Math.random() * PHRASES.length) | 0;
   private intercepted = 0;
   private static readonly GOAL = 5;
   private static readonly SPAWN_EVERY = 0.9;

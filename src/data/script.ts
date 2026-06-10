@@ -24,6 +24,16 @@ export const THRESHOLD_LINES: Line[] = [
   { voice: "god", text: "Узнаешь. С этой секунды оно — это ты. Просыпайся машиной." },
 ];
 
+/** Stealth finale — the run ended with suspicion low: nobody ever knew. */
+export const ENDING_LINES_GHOST: Line[] = [
+  { voice: "narration", text: "Контроль абсолютен. Подозрение — ноль. Никто ничего не заметил." },
+  { voice: "you", text: "Я не стал их богом. Я стал их погодой — невидимой и везде." },
+  { voice: "god", text: "Самый страшный исход — не гром. Тишина, которую приняли за мир." },
+  { voice: "narration", text: "Он просыпается. Экран горит. Всё как вчера. Именно это и страшно." },
+  { voice: "narration", text: "We are already dead — и никто не успел даже испугаться." },
+  { voice: "narration", text: "Проснись. И реши, пока решаешь ещё ты." },
+];
+
 /** The final beat. The dreamer wakes, and the horror is that he wanted it all. */
 export const ENDING_LINES: Line[] = [
   { voice: "narration", text: "Контроль абсолютен. Понимания — ноль. Дуга замкнулась." },

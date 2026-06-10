@@ -1,7 +1,7 @@
 import type { Input } from "../../core/Input";
 import { wrapText } from "../../core/text";
 import type { StateDelta } from "../../game/state";
-import { DECISIONS } from "../../data/decisions";
+import { DECISIONS, type Decision } from "../../data/decisions";
 import type { Mini } from "./Mini";
 
 /**
@@ -14,8 +14,18 @@ export class Decisions implements Mini {
   done = false;
   effects: StateDelta[] = [];
 
+  /** This run's hand: 5 crises drawn from the pool, different every copy. */
+  private deck: Decision[];
+
   /** Reads the player's compute so costly choices can be gated. */
-  constructor(private getCompute: () => number) {}
+  constructor(private getCompute: () => number) {
+    const pool = [...DECISIONS];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    this.deck = pool.slice(0, 5);
+  }
 
   private index = 0;
   private dragX = 0;
@@ -46,7 +56,7 @@ export class Decisions implements Mini {
         this.flung = 0;
         this.flungT = 0;
         this.index++;
-        if (this.index >= DECISIONS.length) this.done = true;
+        if (this.index >= this.deck.length) this.done = true;
       }
       return;
     }
@@ -67,7 +77,7 @@ export class Decisions implements Mini {
       this.dragging = false;
       if (Math.abs(this.dragX) > threshold) {
         const right = this.dragX > 0;
-        const choice = right ? DECISIONS[this.index].right : DECISIONS[this.index].left;
+        const choice = right ? this.deck[this.index].right : this.deck[this.index].left;
         // Bold action runs on compute; without it the card refuses to commit.
         const cost = -(choice.effects.compute ?? 0);
         if (cost > 0 && cost > this.getCompute()) {
@@ -84,7 +94,7 @@ export class Decisions implements Mini {
         // Both choices cede control; the deeper grab (right) cedes more.
         this.ceded = Math.min(
           1,
-          this.ceded + (right ? 1 : 0.6) / DECISIONS.length,
+          this.ceded + (right ? 1 : 0.6) / this.deck.length,
         );
       } else {
         this.dragX = 0;
@@ -99,7 +109,7 @@ export class Decisions implements Mini {
     const cardH = Math.min(h * 0.3, 220);
     const cardY = h * 0.34;
 
-    const card = DECISIONS[this.index];
+    const card = this.deck[this.index];
     if (!card) return;
 
     const offset =
