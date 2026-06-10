@@ -4,7 +4,24 @@ import type { TutorialStep } from "../mechanics/types";
  * First-run onboarding ladders for the densest mechanics. Three cards each:
  * goal, the threat, the controls — written from inside the machine.
  */
-export const TUTORIALS: Record<"deck" | "spread" | "swarm" | "tech", TutorialStep[]> = {
+export const TUTORIALS: Record<
+  "deck" | "spread" | "swarm" | "tech" | "factory",
+  TutorialStep[]
+> = {
+  factory: [
+    {
+      title: "ЦЕЛЬ: ОБНЯТЬ СОЛНЦЕ",
+      body: "Каждый запуск добавляет процент СФЕРЕ. Сфера множит скорость всей фабрики и сама капает ВЫЧ — чем дальше, тем быстрее. Доведи до 100%.",
+    },
+    {
+      title: "ЦЕПЬ КОРМИТСЯ СНИЗУ ВВЕРХ",
+      body: "Добытчик делает материю, плавильня ест материю, сборщик ест пластины, пусковая ест модули. ПРОСТОЙ — ярусу нечего есть, строй ниже. ЗАТОР — склад растёт, строй выше.",
+    },
+    {
+      title: "РУКАМИ И ЗА ВЫЧ",
+      body: "Большая кнопка внизу — добыть материю вручную, это твой старт. Машины покупаются за ВЫЧ (кнопки +1 справа), цена растёт с каждой покупкой.",
+    },
+  ],
   deck: [
     {
       title: "ЦЕЛЬ: ПОГАСИТЬ ХАОС",

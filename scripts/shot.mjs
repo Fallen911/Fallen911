@@ -37,7 +37,7 @@ const TARGETS = [
   // Swarm: box-select around the hub, then command the left vein.
   { name: "lab-swarm", lab: "swarm", tut: 3, pre: 2000, drag: [120, 600, 280, 720], taps: [[70, 420]] },
   // Factory: manual mining taps, then buy a miner and a smelter.
-  { name: "lab-factory", lab: "factory", taps: [[195, 760], [195, 760], [195, 760], [330, 280], [330, 360]] },
+  { name: "lab-factory", lab: "factory", tut: 3, taps: [[195, 760], [195, 760], [195, 760], [330, 280], [330, 360]] },
   // Survive: let the waves build, drag the core mid-fight.
   { name: "lab-survive", lab: "survive", pre: 9000, drag: [195, 460, 240, 520] },
   // Tech: pour everything into energy for a while, then capture.

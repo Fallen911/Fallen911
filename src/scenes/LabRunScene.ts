@@ -54,6 +54,7 @@ export class LabRunScene extends BaseScene {
           getSuspicion: () => this.suspicion,
           runs: 0,
           topY: this.game.insets.top + 64,
+          extended: true,
         })
       : null;
   }

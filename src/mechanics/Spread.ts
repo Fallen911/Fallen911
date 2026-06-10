@@ -541,6 +541,10 @@ export class Spread implements Mini {
       ctx.fillStyle = "rgba(255,150,80,0.5)";
       ctx.fillRect(mx + bw * (th / 100) - 0.5, topY + 25, 1, 8);
     }
+    // The race, spelled out.
+    ctx.font = mono(9);
+    ctx.fillStyle = "rgba(139,149,168,0.8)";
+    ctx.fillText("гонка: 88% МИРА раньше, чем 100% ЗАМЕТНОСТИ · засечки — их ответы", mx, topY + 44);
 
     // Event ticker above the ability bar.
     const logY = h - 116;

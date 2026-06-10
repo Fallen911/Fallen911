@@ -814,7 +814,14 @@ export class Swarm implements Mini {
     ctx.fillStyle = alive > 5 ? C.dim : C.danger;
     ctx.fillText(`ДРОНОВ ${alive}/${SWARM_CONFIG.drones}`, mx, h - 76);
 
-    drawHint(ctx, "растяни рамку — выделить · тап — приказ", w / 2, h - 40, t);
+    // Context-sensitive coaching: what to do right now.
+    const anySelected = this.drones.some((d) => d.selected && d.hp > 0);
+    let coach: string;
+    if (!anySelected) coach = "растяни рамку вокруг дронов у хаба (или кнопка ВСЕ)";
+    else if (stage.id === "mine") coach = "выделено — тапни ЖИЛУ: начнут возить металл на хаб";
+    else if (stage.id === "capture") coach = "выделено — тапни РЕТРАНСЛЯТОР; охрану можно сначала отстрелить";
+    else coach = "рейд идёт на хаб — держи рой рядом, он стреляет сам";
+    drawHint(ctx, coach, w / 2, h - 40, t);
 
     if (this.stageIntro > 0 && this.outcome === "playing") {
       ctx.fillStyle = "rgba(3,4,8,0.7)";

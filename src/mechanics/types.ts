@@ -27,6 +27,8 @@ export interface MechEnv {
   readonly runs: number;
   /** Top of the playfield in px — content must stay below the host HUD. */
   readonly topY: number;
+  /** Lab sandbox runs an extended cut (more boards/levels) than a phase. */
+  readonly extended?: boolean;
 }
 
 export type MechFactory = (env: MechEnv) => Mini;

@@ -236,11 +236,14 @@ export class Tech implements Mini {
   private columnRects(w: number, h: number): Array<{ x: number; y: number; w: number; h: number }> {
     const n = TECH_BRANCHES.length;
     const gap = 10;
-    const mx = Math.max(14, w * 0.035);
-    const cw = (w - mx * 2 - gap * (n - 1)) / n;
+    // Phone-shaped block even on wide desktops: otherwise the columns
+    // stretch into empty towers and the nodes sink out of view.
+    const blockW = Math.min(w - 28, 480);
+    const x0 = w / 2 - blockW / 2;
+    const cw = (blockW - gap * (n - 1)) / n;
     const y0 = this.env.topY + 92;
-    const ch = h - y0 - 150;
-    return TECH_BRANCHES.map((_, i) => ({ x: mx + i * (cw + gap), y: y0, w: cw, h: ch }));
+    const ch = Math.min(h - y0 - 150, 520);
+    return TECH_BRANCHES.map((_, i) => ({ x: x0 + i * (cw + gap), y: y0, w: cw, h: ch }));
   }
 
   // ---- render --------------------------------------------------------------
@@ -315,9 +318,19 @@ export class Tech implements Mini {
       grad.addColorStop(1, `${hexA(br.color, 0.05)}`);
       ctx.fillStyle = grad;
       ctx.fillRect(r.x, r.y + r.h - fillH, r.w, fillH);
-      // Weight handle line.
+      // Weight handle: a line with chevrons that begs to be dragged.
+      const hy = r.y + r.h - fillH;
       ctx.fillStyle = hexA(br.color, 0.8);
-      ctx.fillRect(r.x, r.y + r.h - fillH - 1, r.w, 2);
+      ctx.fillRect(r.x, hy - 1, r.w, 2);
+      ctx.strokeStyle = hexA(br.color, 0.9);
+      ctx.lineWidth = 1.5;
+      for (const dir of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(r.x + r.w / 2 - 5, hy + dir * 7);
+        ctx.lineTo(r.x + r.w / 2, hy + dir * 11);
+        ctx.lineTo(r.x + r.w / 2 + 5, hy + dir * 7);
+        ctx.stroke();
+      }
       ctx.restore();
 
       // Branch header.
@@ -331,6 +344,12 @@ export class Tech implements Mini {
       ctx.font = mono(10);
       ctx.fillStyle = frozen ? C.warn : br.color;
       ctx.fillText(frozen ? `❄ ${Math.ceil(b.frozenT)}с` : `${Math.round(sh[i] * 100)}%`, r.x + r.w / 2, r.y + 52);
+      if (!frozen) {
+        // The share made concrete: research per second flowing in.
+        ctx.font = mono(8);
+        ctx.fillStyle = C.dim;
+        ctx.fillText(`+${(this.rate() * sh[i]).toFixed(1)}/с`, r.x + r.w / 2, r.y + 65);
+      }
 
       // Nodes (bottom-up tiers).
       const nodeH = 52;

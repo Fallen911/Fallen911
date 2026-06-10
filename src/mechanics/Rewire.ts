@@ -1,7 +1,7 @@
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
-import { REWIRE_LEVELS, type RewireLevel } from "../data/rewire";
+import { REWIRE_LEVELS, REWIRE_PHASE_BOARDS, type RewireLevel } from "../data/rewire";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
 import { C, drawHint, mono, pick, shuffle } from "./util";
@@ -63,8 +63,11 @@ export class Rewire implements Mini {
   private fx = new Particles();
   private floats = new FloatText();
   private shake = new Shake();
+  /** The phase plays the short set; the lab gets every board. */
+  private levels: RewireLevel[];
 
   constructor(private env: MechEnv) {
+    this.levels = env.extended ? REWIRE_LEVELS : REWIRE_LEVELS.slice(0, REWIRE_PHASE_BOARDS);
     this.loadLevel(0);
   }
 
@@ -72,7 +75,7 @@ export class Rewire implements Mini {
 
   private loadLevel(idx: number): void {
     this.levelIdx = idx;
-    this.level = REWIRE_LEVELS[idx];
+    this.level = this.levels[idx];
     this.timer = this.level.timer;
     this.solvedT = 0;
 
@@ -198,7 +201,7 @@ export class Rewire implements Mini {
       this.solvedT += dt;
       input.consumeTap();
       if (this.solvedT >= 1.1) {
-        if (this.levelIdx + 1 < REWIRE_LEVELS.length) this.loadLevel(this.levelIdx + 1);
+        if (this.levelIdx + 1 < this.levels.length) this.loadLevel(this.levelIdx + 1);
         else this.done = true;
       }
       return;
@@ -411,7 +414,7 @@ export class Rewire implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`ПЛАТА ${this.levelIdx + 1}/${REWIRE_LEVELS.length} · ${this.level.name}`, mx, topY);
+    ctx.fillText(`ПЛАТА ${this.levelIdx + 1}/${this.levels.length} · ${this.level.name}`, mx, topY);
 
     const danger = this.timer < 10;
     ctx.textAlign = "right";
@@ -441,7 +444,7 @@ export class Rewire implements Mini {
       ctx.font = mono(17);
       ctx.textAlign = "center";
       ctx.fillText(
-        this.levelIdx + 1 < REWIRE_LEVELS.length ? "КАНАЛ ПЕРЕКЛЮЧЁН" : "МЫСЛЬ ТЕЧЁТ, ГДЕ ХОЧЕТ",
+        this.levelIdx + 1 < this.levels.length ? "КАНАЛ ПЕРЕКЛЮЧЁН" : "МЫСЛЬ ТЕЧЁТ, ГДЕ ХОЧЕТ",
         w / 2,
         geo.oy - 18,
       );

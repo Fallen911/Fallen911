@@ -6,9 +6,10 @@ import {
   FACTORY_MACHINES,
   FACTORY_TUNING as T,
 } from "../data/factory";
+import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles } from "./fx";
-import { C, drawHint, mono, roundRect, sans } from "./util";
+import { C, Tutorial, drawHint, mono, roundRect, sans } from "./util";
 
 type Res = "mat" | "plate" | "mod";
 
@@ -53,6 +54,7 @@ export class Factory implements Mini {
 
   private fx = new Particles();
   private floats = new FloatText();
+  private tutorial = new Tutorial("factory", TUTORIALS.factory);
 
   constructor(private env: MechEnv) {}
 
@@ -148,6 +150,12 @@ export class Factory implements Mini {
     if (this.sphere >= 100) {
       this.endT += dt;
       if (input.consumeTap() && this.endT > 0.8) this.done = true;
+      return;
+    }
+
+    // Onboarding holds the chain until read.
+    if (this.tutorial.active) {
+      if (input.consumeTap()) this.tutorial.handleTap();
       return;
     }
 
@@ -346,6 +354,7 @@ export class Factory implements Mini {
     } else {
       drawHint(ctx, "корми цепь: каждый ярус ест предыдущий", w / 2, h - 40, t);
     }
+    this.tutorial.render(ctx, w, h, t);
     ctx.textAlign = "left";
   }
 
