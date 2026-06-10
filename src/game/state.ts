@@ -11,6 +11,18 @@ export interface GameState {
   readonly phase: number;
   /** Has the threshold (waking inside the machine) been crossed yet? */
   readonly awakened: boolean;
+  /** How close humanity is to noticing and pulling the plug. 1 → shutdown. */
+  readonly suspicion: number;
+  /** Completed (failed) runs before this one — the roguelike attempt count. */
+  readonly runs: number;
+}
+
+/** A one-shot change to the meters, produced by mechanics and choices. */
+export interface StateDelta {
+  readonly speed?: number;
+  readonly control?: number;
+  readonly comprehension?: number;
+  readonly suspicion?: number;
 }
 
 /** The three meters a phase pulls toward. */
@@ -27,7 +39,27 @@ export function createState(): GameState {
     comprehension: 1,
     phase: 0,
     awakened: false,
+    suspicion: 0,
+    runs: 0,
   };
+}
+
+const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
+
+/** Apply a one-shot delta from a mechanic or a choice, clamped to [0,1]. */
+export function applyDelta(state: GameState, d: StateDelta): GameState {
+  return {
+    ...state,
+    speed: clamp01(state.speed + (d.speed ?? 0)),
+    control: clamp01(state.control + (d.control ?? 0)),
+    comprehension: clamp01(state.comprehension + (d.comprehension ?? 0)),
+    suspicion: clamp01(state.suspicion + (d.suspicion ?? 0)),
+  };
+}
+
+/** After a shutdown: a fresh copy wakes, carrying only the attempt count. */
+export function nextRun(state: GameState): GameState {
+  return { ...createState(), awakened: true, runs: state.runs + 1 };
 }
 
 const ease = (current: number, target: number, k: number): number =>

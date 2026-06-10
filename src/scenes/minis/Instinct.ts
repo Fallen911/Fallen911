@@ -1,4 +1,5 @@
 import type { Input } from "../../core/Input";
+import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
 
 /**
@@ -12,7 +13,9 @@ import type { Mini } from "./Mini";
  */
 export class Instinct implements Mini {
   done = false;
+  effects: StateDelta[] = [];
 
+  private wasCaught = false;
   private coreX = 0;
   private coreY = 0;
   private reX = 0;
@@ -52,10 +55,13 @@ export class Instinct implements Mini {
     if (caught) {
       this.alive = Math.max(0, this.alive - dt * 1.2); // bleed, never below 0
       this.hit = 1;
+      // Every fresh catch is a trace in their logs.
+      if (!this.wasCaught) this.effects.push({ suspicion: 0.06 });
     } else {
       this.alive = Math.min(Instinct.GOAL, this.alive + dt);
       this.hit = Math.max(0, this.hit - dt * 2);
     }
+    this.wasCaught = caught;
 
     if (this.alive >= Instinct.GOAL) this.done = true;
   }

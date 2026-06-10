@@ -1,16 +1,18 @@
 import type { Input } from "../../core/Input";
 import { wrapText } from "../../core/text";
+import type { StateDelta } from "../../game/state";
 import { DECISIONS } from "../../data/decisions";
 import type { Mini } from "./Mini";
 
 /**
- * Ф4 mini — Decisions. Humanity's crises arrive as cards. Swipe to decide;
- * either way a "they hand you control" bar fills. There is no wrong answer —
- * that is the point. When every card is answered, control has visibly passed
- * to you and the phase moves on.
+ * Ф4 mini — Decisions. Humanity's crises arrive as cards. Swipe to decide —
+ * but now every choice is a tradeoff with real consequences: the deep grab
+ * buys control and spikes suspicion, the light touch stays hidden but slow.
+ * The outcome line after each swipe tells the player what their hand did.
  */
 export class Decisions implements Mini {
   done = false;
+  effects: StateDelta[] = [];
 
   private index = 0;
   private dragX = 0;
@@ -22,9 +24,14 @@ export class Decisions implements Mini {
   private flungT = 0;
   /** How much control they've handed over, 0..1. */
   private ceded = 0;
+  /** Consequence of the last choice, shown briefly under the bar. */
+  private outcome = "";
+  private outcomeT = 0;
 
   update(dt: number, input: Input, w: number, _h: number): void {
     if (this.done) return;
+
+    this.outcomeT = Math.max(0, this.outcomeT - dt);
 
     // Animate a decided card off-screen, then bring the next one in.
     if (this.flung !== 0) {
@@ -54,8 +61,12 @@ export class Decisions implements Mini {
       this.dragging = false;
       if (Math.abs(this.dragX) > threshold) {
         const right = this.dragX > 0;
+        const choice = right ? DECISIONS[this.index].right : DECISIONS[this.index].left;
         this.flung = right ? 1 : -1;
         this.flungT = 0;
+        this.effects.push(choice.effects);
+        this.outcome = choice.outcome;
+        this.outcomeT = 2.6;
         // Both choices cede control; the deeper grab (right) cedes more.
         this.ceded = Math.min(
           1,
@@ -83,13 +94,14 @@ export class Decisions implements Mini {
     const lean = Math.max(-1, Math.min(1, offset / (w * 0.22)));
 
     // Choice labels behind the card light up with the swipe direction.
-    ctx.font = "13px 'JetBrains Mono', monospace";
+    // Left = quiet (blue), right = greedy (suspicion-orange).
+    ctx.font = "12px 'JetBrains Mono', monospace";
     ctx.textAlign = "left";
-    ctx.fillStyle = `rgba(255,90,110,${0.3 + Math.max(0, -lean) * 0.7})`;
-    ctx.fillText(card.left, cx - cardW / 2, cardY - 16);
+    ctx.fillStyle = `rgba(122,162,255,${0.35 + Math.max(0, -lean) * 0.65})`;
+    ctx.fillText(card.left.label, cx - cardW / 2, cardY - 16);
     ctx.textAlign = "right";
-    ctx.fillStyle = `rgba(134,255,176,${0.3 + Math.max(0, lean) * 0.7})`;
-    ctx.fillText(card.right, cx + cardW / 2, cardY - 16);
+    ctx.fillStyle = `rgba(255,184,107,${0.35 + Math.max(0, lean) * 0.65})`;
+    ctx.fillText(card.right.label, cx + cardW / 2, cardY - 16);
 
     // The card.
     ctx.save();
@@ -131,13 +143,26 @@ export class Decisions implements Mini {
     ctx.fillStyle = "#86ffb0";
     ctx.fillRect(bx, by, barW * this.ceded, 5);
 
-    // Prompt.
-    const a = 0.4 + 0.4 * Math.sin(performance.now() / 1000 * 3);
-    ctx.globalAlpha = a;
-    ctx.fillStyle = "#9fc0ff";
-    ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText("свайпни решение — влево или вправо", cx, by + 30);
-    ctx.globalAlpha = 1;
+    // Consequence of the last swipe, while fresh; otherwise the prompt.
+    if (this.outcomeT > 0 && this.outcome) {
+      ctx.globalAlpha = Math.min(1, this.outcomeT / 0.6);
+      ctx.fillStyle = "#e7edf6";
+      ctx.font = "italic 13px Inter, system-ui, sans-serif";
+      const lines = wrapText(ctx, this.outcome, barW);
+      let oy = by + 28;
+      for (const ln of lines) {
+        ctx.fillText(ln, cx, oy);
+        oy += 19;
+      }
+      ctx.globalAlpha = 1;
+    } else {
+      const a = 0.4 + 0.4 * Math.sin(performance.now() / 1000 * 3);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = "#9fc0ff";
+      ctx.font = "12px 'JetBrains Mono', monospace";
+      ctx.fillText("свайп: тихо и медленно ← → мощно, но заметно", cx, by + 30);
+      ctx.globalAlpha = 1;
+    }
 
     ctx.textAlign = "left";
   }

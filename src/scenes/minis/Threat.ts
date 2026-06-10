@@ -1,4 +1,5 @@
 import type { Input } from "../../core/Input";
+import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
 
 interface Fragment {
@@ -26,6 +27,7 @@ const PHRASES = [
  */
 export class Threat implements Mini {
   done = false;
+  effects: StateDelta[] = [];
 
   private fragments: Fragment[] = [];
   // Start primed so the first fragment appears immediately, not after a beat.
@@ -48,9 +50,12 @@ export class Threat implements Mini {
       if (!f.intercepted) f.x += f.vx * dt;
       else f.fade = Math.max(0, f.fade - dt * 1.3);
     }
-    this.fragments = this.fragments.filter(
-      (f) => f.x > -200 && f.x < w + 200 && f.fade > 0,
-    );
+    // A phrase you let escape is a decision you never heard them make.
+    this.fragments = this.fragments.filter((f) => {
+      const gone = f.x <= -200 || f.x >= w + 200 || f.fade <= 0;
+      if (gone && !f.intercepted) this.effects.push({ suspicion: 0.05 });
+      return !gone;
+    });
 
     if (input.consumeTap()) this.tryIntercept(input.x, input.y);
 

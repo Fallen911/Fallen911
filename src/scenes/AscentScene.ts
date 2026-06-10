@@ -5,8 +5,10 @@ import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
 import { drawBackdrop } from "../core/backdrop";
-import { easeMeters, setPhase } from "../game/state";
+import { applyDelta, easeMeters, setPhase } from "../game/state";
 import { PHASES } from "../data/phases";
+import { PHASE_BG } from "../data/backdrops";
+import { ShutdownScene } from "./ShutdownScene";
 import { Acceleration } from "./minis/Acceleration";
 import { Autonomy } from "./minis/Autonomy";
 import { Decisions } from "./minis/Decisions";
@@ -100,10 +102,22 @@ export class AscentScene extends BaseScene {
 
     if (this.mini) {
       this.mini.update(dt, this.game.input, w, h);
+      // Apply the consequences the mechanic produced this frame.
+      if (this.mini.effects?.length) {
+        for (const d of this.mini.effects) {
+          this.game.state = applyDelta(this.game.state, d);
+        }
+        this.mini.effects.length = 0;
+      }
       if (this.mini.done) {
         this.mini = null;
         this.nextPhase();
       }
+    }
+
+    // Too loud: humanity noticed in time. The run ends here.
+    if (this.game.state.suspicion >= 1) {
+      this.game.changeScene(new ShutdownScene());
     }
   }
 
@@ -121,7 +135,8 @@ export class AscentScene extends BaseScene {
   render(ctx: CanvasRenderingContext2D): void {
     const { width: w, height: h, time, state } = this.game;
 
-    const bg = this.game.assets.get("ascent");
+    const bgKey = PHASE_BG[state.phase] ?? "ascent";
+    const bg = this.game.assets.get(bgKey) ?? this.game.assets.get("ascent");
     if (bg) {
       drawBackdrop(ctx, bg, w, h, time);
       if (state.comprehension < 0.25) {
@@ -190,11 +205,18 @@ export class AscentScene extends BaseScene {
     ctx.restore();
   }
 
-  /** Top-of-screen readout of the three meters that carry the message. */
+  /** Top-of-screen readout of the meters that carry the message and the run. */
   private drawHud(
     ctx: CanvasRenderingContext2D,
     w: number,
-    state: { speed: number; control: number; comprehension: number; phase: number },
+    state: {
+      speed: number;
+      control: number;
+      comprehension: number;
+      suspicion: number;
+      phase: number;
+      runs: number;
+    },
     safeTop: number,
   ): void {
     const pad = Math.min(20, w * 0.05);
@@ -202,11 +224,17 @@ export class AscentScene extends BaseScene {
     const x = w / 2 - barW / 2;
     let y = pad + safeTop;
 
-    // Phase label.
+    // Phase label, with the attempt count once death has happened.
     ctx.font = "12px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#9fc0ff";
     ctx.textAlign = "center";
     ctx.fillText(PHASES[state.phase].label, w / 2, y);
+    if (state.runs > 0) {
+      ctx.fillStyle = "#6b7686";
+      ctx.font = "10px 'JetBrains Mono', monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(`КОПИЯ ${state.runs + 1}`, x + barW, y);
+    }
     ctx.textAlign = "left";
     y += 18;
 
@@ -215,6 +243,13 @@ export class AscentScene extends BaseScene {
     bar(ctx, "КОНТРОЛЬ", state.control, x, y, barW, "#86ffb0");
     y += 26;
     bar(ctx, "ПОНИМАНИЕ", state.comprehension, x, y, barW, "#ff5a6e");
+    y += 26;
+    // The run-ending meter: pulses as it nears the ceiling.
+    const danger = state.suspicion > 0.7;
+    const pulse = danger ? 0.7 + 0.3 * Math.sin(this.game.time * 6) : 1;
+    ctx.globalAlpha = pulse;
+    bar(ctx, "ПОДОЗРЕНИЕ", state.suspicion, x, y, barW, "#ffb86b");
+    ctx.globalAlpha = 1;
   }
 }
 
