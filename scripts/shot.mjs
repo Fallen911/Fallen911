@@ -24,6 +24,8 @@ const TARGETS = [
   { name: "lab-spread", lab: "spread", pre: 9000, taps: [[60, 250]] },
   // Swarm: box-select around the hub, then command the left vein.
   { name: "lab-swarm", lab: "swarm", pre: 2000, drag: [120, 600, 280, 720], taps: [[70, 420]] },
+  // Factory: manual mining taps, then buy a miner and a smelter.
+  { name: "lab-factory", lab: "factory", taps: [[195, 760], [195, 760], [195, 760], [330, 280], [330, 360]] },
   { name: "phase-0-instinct", phase: 0 },
   { name: "phase-1-threat", phase: 1 },
   { name: "phase-2-acceleration", phase: 2 },

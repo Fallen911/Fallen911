@@ -1,5 +1,6 @@
 import type { MechFactory, MechId } from "./types";
 import { Deck } from "./Deck";
+import { Factory } from "./Factory";
 import { Parry } from "./Parry";
 import { Persuade } from "./Persuade";
 import { Rewire } from "./Rewire";
@@ -20,7 +21,7 @@ const FACTORIES: Record<MechId, MechFactory | null> = {
   rewire: (env) => new Rewire(env),
   spread: (env) => new Spread(env),
   swarm: (env) => new Swarm(env),
-  factory: null,
+  factory: (env) => new Factory(env),
   survive: null,
   tech: null,
 };
