@@ -22,7 +22,7 @@ const TARGETS = [
     name: "lab-persuade-end",
     lab: "persuade",
     pre: 600,
-    taps: Array.from({ length: 30 }, () => [195, 610]),
+    taps: Array.from({ length: 80 }, () => [195, 610]),
   },
   // Persuade: skip typing, capture the choice screen with tell visible.
   { name: "lab-persuade", lab: "persuade", pre: 600, taps: [[195, 300]] },
