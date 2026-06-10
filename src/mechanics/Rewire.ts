@@ -67,7 +67,14 @@ export class Rewire implements Mini {
   private levels: RewireLevel[];
 
   constructor(private env: MechEnv) {
-    this.levels = env.extended ? REWIRE_LEVELS : REWIRE_LEVELS.slice(0, REWIRE_PHASE_BOARDS);
+    if (env.extended) {
+      this.levels = REWIRE_LEVELS;
+    } else if ((env.variant ?? 0) >= 4) {
+      // Second story appearance (Ф4): the harder "crisis" boards.
+      this.levels = REWIRE_LEVELS.slice(REWIRE_PHASE_BOARDS);
+    } else {
+      this.levels = REWIRE_LEVELS.slice(0, REWIRE_PHASE_BOARDS);
+    }
     this.loadLevel(0);
   }
 

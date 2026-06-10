@@ -29,6 +29,8 @@ export interface MechEnv {
   readonly topY: number;
   /** Lab sandbox runs an extended cut (more boards/levels) than a phase. */
   readonly extended?: boolean;
+  /** Which slice/flavour of the mechanic the host wants (e.g. board set). */
+  readonly variant?: number;
 }
 
 export type MechFactory = (env: MechEnv) => Mini;

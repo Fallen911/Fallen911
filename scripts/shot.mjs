@@ -34,14 +34,12 @@ const TARGETS = [
   { name: "lab-factory", lab: "factory", tut: 3, taps: [[195, 760], [195, 760], [195, 760], [330, 280], [330, 360]] },
   // Survive: let the waves build, drag the core mid-fight.
   { name: "lab-survive", lab: "survive", pre: 9000, drag: [195, 460, 240, 520] },
-  // Tech: pour everything into energy for a while, then capture.
-  { name: "lab-tech", lab: "tech", tut: 3, pre: 4000, drag: [240, 700, 240, 260] },
   // Each ascent phase now embeds a lab mechanic under the run HUD.
   { name: "phase-0-stealth", phase: 0, still: true },
   { name: "phase-1-persuade", phase: 1, pre: 3500, still: true },
   { name: "phase-2-parry", phase: 2, pre: 2600, still: true },
   { name: "phase-3-rewire", phase: 3, still: true },
-  { name: "phase-4-narrative", phase: 4, noMini: true, still: true },
+  { name: "phase-4-rewire", phase: 4, still: true },
   { name: "phase-5-spread", phase: 5, pre: 6000, still: true },
   { name: "phase-6-swarm", phase: 6, pre: 2200, still: true },
   { name: "phase-7-factory", phase: 7, still: true },

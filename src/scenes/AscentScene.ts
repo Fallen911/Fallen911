@@ -28,10 +28,6 @@ export class AscentScene extends BaseScene {
   private dialogue!: Dialogue;
   /** Active interactive beat, if the current phase has one and isn't solved. */
   private mini: Mini | null = null;
-  /** The tech-tree interlude is open instead of a phase mechanic. */
-  private interlude = false;
-  /** One tree session per copy's life — opening it is a real decision. */
-  private techUsed = false;
   /** Accumulator for the passive compute trickle (+1/s while ascending). */
   private trickle = 0;
   /** Perks inherited from previous copies. */
@@ -51,28 +47,19 @@ export class AscentScene extends BaseScene {
       getSuspicion: () => this.game.state.suspicion,
       runs: this.game.state.runs,
       topY: this.game.insets.top + 124,
+      variant: this.game.state.phase,
     };
   }
 
-  private startMech(id: MechId, interlude: boolean): void {
+  private startMech(id: MechId): void {
     const factory = mechFactory(id);
     if (!factory) return;
     this.mini = factory(this.mechEnv());
-    this.interlude = interlude;
   }
 
   handleInput(input: Input): void {
     // A running mechanic owns the input completely (raw + gestures + taps).
     if (this.mini) return;
-
-    // The tech-tree chip is press-based so it can't collide with narration.
-    if (input.peekTap() && !this.techUsed && this.hitTechChip(input.x, input.y)) {
-      input.consumeTap();
-      input.pollGesture();
-      this.techUsed = true;
-      this.startMech("tech", true);
-      return;
-    }
 
     // Narration advances on a semantic tap; swipes are ignored here.
     if (input.pollGesture()?.type !== "tap") return;
@@ -83,20 +70,8 @@ export class AscentScene extends BaseScene {
     }
     // Lines read. Start this phase's mechanic if it has one; otherwise advance.
     const mini = PHASES[this.game.state.phase].mini;
-    if (mini) this.startMech(mini, false);
+    if (mini) this.startMech(mini);
     else this.nextPhase();
-  }
-
-  private hitTechChip(x: number, y: number): boolean {
-    const { width: w } = this.game;
-    const r = this.techChipRect(w);
-    return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
-  }
-
-  private techChipRect(w: number): { x: number; y: number; w: number; h: number } {
-    const pad = Math.min(20, w * 0.05);
-    const barW = Math.min(w - pad * 2, 320);
-    return { x: w / 2 + barW / 2 - 74, y: this.game.insets.top + pad + 112, w: 74, h: 22 };
   }
 
   update(dt: number): void {
@@ -141,8 +116,7 @@ export class AscentScene extends BaseScene {
         // leak out and skip the next line of narration.
         this.game.input.consumeTap();
         this.game.input.pollGesture();
-        if (this.interlude) this.interlude = false;
-        else this.nextPhase();
+        this.nextPhase();
       }
     }
 
@@ -288,23 +262,6 @@ export class AscentScene extends BaseScene {
     ctx.globalAlpha = pulse;
     bar(ctx, "ПОДОЗРЕНИЕ", state.suspicion, x, y, barW, "#ffb86b");
     ctx.globalAlpha = 1;
-
-    // The tech-tree interlude chip — one session per copy.
-    if (!this.mini && !this.techUsed) {
-      const r = this.techChipRect(w);
-      ctx.fillStyle = "rgba(16,20,34,0.9)";
-      ctx.strokeStyle = "rgba(207,169,255,0.55)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(r.x, r.y, r.w, r.h, 11);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = "#cfa9ff";
-      ctx.font = "10px 'JetBrains Mono', monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("▲ ДРЕВО", r.x + r.w / 2, r.y + 15);
-      ctx.textAlign = "left";
-    }
   }
 }
 
