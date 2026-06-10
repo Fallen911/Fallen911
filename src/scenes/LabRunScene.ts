@@ -122,7 +122,9 @@ export class LabRunScene extends BaseScene {
     const { width: w, height: h, time } = this.game;
     drawVoid(ctx, w, h);
 
-    if (this.mini) this.mini.render(ctx, w, h);
+    // Once the verdict is up the report owns the screen — a finished
+    // mechanic's own end card would bleed through the translucent overlay.
+    if (this.mini && this.verdict === "playing") this.mini.render(ctx, w, h);
 
     this.renderChrome(ctx, w);
     if (this.verdict !== "playing") this.renderEnd(ctx, w, h, time);

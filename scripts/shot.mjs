@@ -18,6 +18,16 @@ const TARGETS = [
   { name: "lab-rewire", lab: "rewire", taps: [[140, 380], [195, 380], [195, 440], [250, 440], [140, 440]] },
   // Deck: wait out the intro, play two cards from the hand.
   { name: "lab-deck", lab: "deck", pre: 1600, taps: [[80, 740], [195, 740]] },
+  // Deck turn cycle: play a card, end the turn, capture the enemy answer.
+  { name: "lab-deck-turn", lab: "deck", pre: 1600, taps: [[80, 740], [195, 612]] },
+  // Persuade, driven to its end: spam-read the whole dialogue, then the
+  // sandbox report card must appear.
+  {
+    name: "lab-persuade-end",
+    lab: "persuade",
+    pre: 600,
+    taps: Array.from({ length: 30 }, () => [195, 610]),
+  },
   // Persuade: skip typing, capture the choice screen with tell visible.
   { name: "lab-persuade", lab: "persuade", pre: 600, taps: [[195, 300]] },
   // Spread: let influence creep, focus the start region mid-shot.
