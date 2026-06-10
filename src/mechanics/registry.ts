@@ -5,6 +5,7 @@ import { Persuade } from "./Persuade";
 import { Rewire } from "./Rewire";
 import { Spread } from "./Spread";
 import { Stealth } from "./Stealth";
+import { Swarm } from "./Swarm";
 
 /**
  * id → constructor for every playable mechanic. Entries flip from null to a
@@ -18,7 +19,7 @@ const FACTORIES: Record<MechId, MechFactory | null> = {
   persuade: (env) => new Persuade(env),
   rewire: (env) => new Rewire(env),
   spread: (env) => new Spread(env),
-  swarm: null,
+  swarm: (env) => new Swarm(env),
   factory: null,
   survive: null,
   tech: null,

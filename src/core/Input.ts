@@ -97,6 +97,15 @@ export class Input {
     return false;
   }
 
+  /**
+   * True while an unconsumed press is pending, without consuming it. Lets a
+   * host scene hit-test its chrome and take the tap only when it owns it,
+   * leaving everything else for the embedded mechanic.
+   */
+  peekTap(): boolean {
+    return this.tapPending;
+  }
+
   /** Semantic gesture resolved on release, consumed once. Null if none/pending. */
   pollGesture(): Gesture | null {
     const g = this.gesture;

@@ -37,6 +37,10 @@ export class LabRunScene extends BaseScene {
   }
 
   private restart(): void {
+    // Drop anything latched from a previous scene/run so the fresh mechanic
+    // doesn't see a stale tap or gesture on its first frame.
+    this.game.input.consumeTap();
+    this.game.input.pollGesture();
     const factory = mechFactory(this.entry.id);
     this.compute = SANDBOX_COMPUTE;
     this.suspicion = 0;
@@ -55,12 +59,12 @@ export class LabRunScene extends BaseScene {
   }
 
   handleInput(input: Input): void {
-    const tap = input.pollGesture()?.type === "tap";
-    if (!tap) return;
     const { width: w, height: h } = this.game;
 
     if (this.verdict !== "playing") {
-      // End overlay: left button restarts, right button exits.
+      // Mini is paused: the overlay owns all input.
+      input.pollGesture();
+      if (!input.consumeTap()) return;
       const by = h * 0.62;
       const bw = Math.min(w * 0.38, 170);
       const gap = 14;
@@ -74,8 +78,14 @@ export class LabRunScene extends BaseScene {
       return;
     }
 
-    // Back chip in the top-left corner while playing.
-    if (input.y <= this.game.insets.top + 44 && input.x <= w * 0.28) {
+    // While playing, take only presses on the back chip; the mechanic reads
+    // everything else itself (consumeTap and/or gestures).
+    if (
+      input.peekTap() &&
+      input.y <= this.game.insets.top + 44 &&
+      input.x <= w * 0.28
+    ) {
+      input.consumeTap();
       this.game.changeScene(new LabScene());
     }
   }

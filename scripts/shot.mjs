@@ -22,6 +22,8 @@ const TARGETS = [
   { name: "lab-persuade", lab: "persuade", pre: 600, taps: [[195, 300]] },
   // Spread: let influence creep, focus the start region mid-shot.
   { name: "lab-spread", lab: "spread", pre: 9000, taps: [[60, 250]] },
+  // Swarm: box-select around the hub, then command the left vein.
+  { name: "lab-swarm", lab: "swarm", pre: 2000, drag: [120, 600, 280, 720], taps: [[70, 420]] },
   { name: "phase-0-instinct", phase: 0 },
   { name: "phase-1-threat", phase: 1 },
   { name: "phase-2-acceleration", phase: 2 },
@@ -105,13 +107,20 @@ async function main() {
         }
         if (t.pre) await page.waitForTimeout(t.pre);
         if (t.drag) {
-          // Arbitrary pointer drag: [x1, y1, x2, y2].
+          // Arbitrary pointer drag: [x1, y1, x2, y2]; taps may follow.
           const [x1, y1, x2, y2] = t.drag;
           await page.mouse.move(x1, y1);
           await page.mouse.down();
           await page.mouse.move(x2, y2, { steps: 14 });
           await page.mouse.up();
           await page.waitForTimeout(500);
+          if (t.taps) {
+            for (const [tx, ty] of t.taps) {
+              await page.mouse.click(tx, ty);
+              await page.waitForTimeout(150);
+            }
+            await page.waitForTimeout(700);
+          }
         } else if (t.dragY != null) {
           // Drag a slider part-way to show the mechanic mid-motion.
           await page.mouse.move(60, t.dragY);
