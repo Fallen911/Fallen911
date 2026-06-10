@@ -15,7 +15,9 @@ import { LAB_ENTRIES } from "./data/lab";
 import type { MechId } from "./mechanics/types";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
-const ctx = canvas.getContext("2d")!;
+// Opaque, desynchronized backing store: skips alpha compositing with the
+// page and lets the browser present frames off the main rAF path.
+const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true })!;
 const uiRoot = document.getElementById("ui") as HTMLElement;
 
 let current: Scene;
@@ -137,7 +139,11 @@ function setPaused(next: boolean): void {
   }
 }
 
-document.addEventListener("visibilitychange", () => setPaused(document.hidden));
+document.addEventListener("visibilitychange", () => {
+  setPaused(document.hidden);
+  // Returning from the iOS app switcher suspends WebAudio; wake it.
+  if (!document.hidden) audio.unlock();
+});
 window.addEventListener("blur", () => setPaused(true));
 window.addEventListener("focus", () => setPaused(false));
 
