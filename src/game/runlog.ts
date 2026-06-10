@@ -41,7 +41,9 @@ export interface RunStats {
   readonly computeEarned: number;
 }
 
-let runT0 = -1;
+// null (not a numeric sentinel): the harness seeds runs with negative
+// timestamps, so any "is unset" comparison against a number would re-anchor.
+let runT0: number | null = null;
 let insightCount = 0;
 let peakSuspicion = 0;
 let computeEarned = 0;
@@ -60,7 +62,7 @@ export function sampleRun(
   state: Pick<GameState, "suspicion" | "compute">,
   time: number,
 ): void {
-  if (runT0 < 0) runT0 = time;
+  if (runT0 === null) runT0 = time;
   if (state.suspicion > peakSuspicion) peakSuspicion = state.suspicion;
   if (lastCompute >= 0 && state.compute > lastCompute) {
     computeEarned += state.compute - lastCompute;
@@ -70,7 +72,7 @@ export function sampleRun(
 
 export function getRunStats(now: number): RunStats {
   return {
-    seconds: runT0 < 0 ? 0 : Math.max(0, now - runT0),
+    seconds: runT0 === null ? 0 : Math.max(0, now - runT0),
     insights: insightCount,
     peakSuspicion,
     computeEarned,
@@ -79,7 +81,7 @@ export function getRunStats(now: number): RunStats {
 
 export function resetRunLog(): void {
   hits = [];
-  runT0 = -1;
+  runT0 = null;
   insightCount = 0;
   peakSuspicion = 0;
   computeEarned = 0;
