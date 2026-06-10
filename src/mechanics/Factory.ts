@@ -60,11 +60,13 @@ export class Factory implements Mini {
   private insight = new InsightCard();
   /** Last completed sphere decade (0..10) — each decade is a level. */
   private decade = 0;
+  /** Lab prestige: remelting a finished sphere compounds the next run. */
+  private prestige = 0;
 
   constructor(private env: MechEnv) {}
 
   private mult(): number {
-    return 1 + this.sphere * T.sphereBoost;
+    return (1 + this.sphere * T.sphereBoost) * (1 + this.prestige * 0.5);
   }
 
   private machineCost(id: string): number {
@@ -155,7 +157,30 @@ export class Factory implements Mini {
 
     if (this.sphere >= 100) {
       this.endT += dt;
-      if (input.consumeTap() && this.endT > 0.8) this.done = true;
+      if (input.consumeTap() && this.endT > 0.8) {
+        // The remelt: lab runs may fold the sphere back into a faster start.
+        const bw = Math.min(w * 0.38, 170);
+        const by = h * 0.58;
+        const lx = w / 2 - bw - 7;
+        if (
+          this.env.extended &&
+          input.x >= lx && input.x <= lx + bw && input.y >= by && input.y <= by + 46
+        ) {
+          this.prestige++;
+          this.sphere = 0;
+          this.launches = 0;
+          this.launchCarry = 0;
+          this.decade = 0;
+          this.milestoneIdx = 0;
+          this.stocks = { mat: 0, plate: 0, mod: 0 };
+          this.counts = { miner: 0, smelter: 0, asm: 0, launcher: 0 };
+          this.bought = { miner: 0, smelter: 0, asm: 0, launcher: 0 };
+          this.endT = 0;
+          audio.play("launch");
+          return;
+        }
+        this.done = true;
+      }
       return;
     }
 
@@ -372,7 +397,27 @@ export class Factory implements Mini {
       ctx.font = mono(11);
       ctx.fillStyle = C.dim;
       ctx.fillText(`${this.launches} запусков · энергии хватит на любую мысль`, w / 2, h * 0.42 + 26);
-      drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
+      if (this.env.extended) {
+        // Remelt button (left) / finish (anywhere else).
+        const bw = Math.min(w * 0.38, 170);
+        const by = h * 0.58;
+        ctx.fillStyle = "rgba(16,20,34,0.95)";
+        ctx.strokeStyle = "rgba(255,217,138,0.7)";
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, w / 2 - bw - 7, by, bw, 46, 12);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#ffd98a";
+        ctx.font = mono(11);
+        ctx.fillText(`ПЕРЕПЛАВИТЬ ×${(1 + (this.prestige + 1) * 0.5).toFixed(1)}`, w / 2 - bw / 2 - 7, by + 28);
+        ctx.strokeStyle = "rgba(110,120,140,0.5)";
+        roundRect(ctx, w / 2 + 7, by, bw, 46, 12);
+        ctx.stroke();
+        ctx.fillStyle = C.dim;
+        ctx.fillText("ЗАВЕРШИТЬ", w / 2 + 7 + bw / 2, by + 28);
+      } else {
+        drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
+      }
     } else {
       drawHint(ctx, "корми цепь: каждый ярус ест предыдущий", w / 2, h - 40, t);
     }
@@ -425,7 +470,11 @@ export class Factory implements Mini {
     ctx.fillText(`УРОВЕНЬ ${Math.min(10, Math.floor(this.sphere / 10) + 1)}/10`, cx, cy + r * 1.9 - 28);
     ctx.font = mono(10);
     ctx.fillStyle = C.accentSoft;
-    ctx.fillText(`мощность ×${this.mult().toFixed(2)} · +${(this.sphere * T.computePerSphere).toFixed(1)} ВЫЧ/с`, cx, cy + r * 1.9 + 16);
+    ctx.fillText(
+      `мощность ×${this.mult().toFixed(2)}${this.prestige > 0 ? ` · переплавка ${this.prestige}` : ""} · +${(this.sphere * T.computePerSphere).toFixed(1)} ВЫЧ/с`,
+      cx,
+      cy + r * 1.9 + 16,
+    );
     ctx.textAlign = "left";
   }
 }

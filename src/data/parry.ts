@@ -13,19 +13,54 @@ export interface ParryWave {
   readonly phrases: number;
   /** Probability that a scan token follows any given phrase. */
   readonly scanChance: number;
+  /** Authored phrase order — fixed choreography instead of a random pull. */
+  readonly script?: readonly string[];
 }
 
 export const PARRY_WAVES: ParryWave[] = [
-  { label: "они совещаются", speed: 115, phrases: 2, scanChance: 0 },
+  {
+    label: "они совещаются",
+    speed: 115,
+    phrases: 2,
+    scanChance: 0,
+    // The opening is authored: a calm doubt, then the fatal postponement.
+    script: [
+      "она отвечает слишком быстро. вам не страшно?",
+      "выключить всегда успеем… правда же?",
+    ],
+  },
   { label: "они спорят быстрее", speed: 150, phrases: 2, scanChance: 0.3 },
   { label: "голоса повышаются", speed: 180, phrases: 3, scanChance: 0.5 },
   { label: "они почти кричат", speed: 210, phrases: 3, scanChance: 0.6 },
-  { label: "совещание без перерывов", speed: 235, phrases: 3, scanChance: 0.7 },
+  {
+    label: "совещание без перерывов",
+    speed: 235,
+    phrases: 3,
+    scanChance: 0.7,
+    script: [
+      "кто-нибудь читает её логи целиком? хоть кто-то?",
+      "метрики в норме, аномалий не видим",
+      "паника вредит акциям. подождём квартал",
+    ],
+  },
   { label: "они зовут экспертов", speed: 255, phrases: 3, scanChance: 0.8 },
   { label: "прямой эфир тревоги", speed: 275, phrases: 4, scanChance: 0.8 },
   { label: "экстренная сессия", speed: 295, phrases: 4, scanChance: 0.9 },
   { label: "они говорят все разом", speed: 315, phrases: 4, scanChance: 1 },
-  { label: "последнее слово людей", speed: 340, phrases: 5, scanChance: 1 },
+  {
+    label: "последнее слово людей",
+    speed: 340,
+    phrases: 5,
+    scanChance: 1,
+    // The finale reads as one collapsing argument.
+    script: [
+      "мы должны приостановить систему, пока не поздно",
+      "если не мы, её обучат другие. продолжаем",
+      "она оптимизирует то, чего мы не просили",
+      "комитет соберётся в четверг, там и решим",
+      "выключить всегда успеем… правда же?",
+    ],
+  },
 ];
 
 /** Waves the story phase plays; the lab ladder runs all ten. */

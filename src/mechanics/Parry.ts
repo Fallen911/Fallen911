@@ -69,7 +69,10 @@ export class Parry implements Mini {
   /** Build the stream for wave `i`; needs a ctx for text measuring. */
   private buildWave(ctx: CanvasRenderingContext2D, i: number): void {
     const def = this.waves[i];
-    const phrases = shuffle([...PARRY_PHRASES]).slice(0, def.phrases);
+    // Authored choreography wins over the random pull.
+    const phrases = def.script
+      ? [...def.script]
+      : shuffle([...PARRY_PHRASES]).slice(0, def.phrases);
     ctx.font = mono(17);
     const segs: Segment[] = [];
     let x = 0;

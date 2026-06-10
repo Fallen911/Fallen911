@@ -257,6 +257,11 @@ export class Swarm implements Mini {
             d.job = d.carrying > 0 ? "return" : "idle";
             break;
           }
+          // Unarmed haulers run home when something hostile closes in.
+          if (this.nearestEnemy(d.x, d.y, 80) >= 0) {
+            d.job = "return";
+            break;
+          }
           destX = v.x;
           destY = v.y;
           arriveAction = () => {
@@ -623,6 +628,18 @@ export class Swarm implements Mini {
         for (const d of this.drones) d.selected = d.hp > 0;
         return;
       }
+      // "Stop" chip: selected drones drop their job and hold position.
+      const sx2 = w - 84 - 78;
+      if (input.x >= sx2 && input.x <= sx2 + 70 && input.y >= by && input.y <= by + 32) {
+        for (const d of this.drones) {
+          if (!d.selected || d.hp <= 0) continue;
+          d.job = "idle";
+          d.tx = d.x;
+          d.ty = d.y;
+        }
+        audio.play("step");
+        return;
+      }
       this.commandSelected(input.x, input.y);
       return;
     }
@@ -856,6 +873,14 @@ export class Swarm implements Mini {
     ctx.textAlign = "center";
     ctx.fillStyle = C.good;
     ctx.fillText("ВСЕ", bx + 35, by + 20);
+    // Stop chip.
+    ctx.fillStyle = "rgba(16,20,34,0.9)";
+    ctx.strokeStyle = "rgba(255,184,107,0.5)";
+    roundRect(ctx, bx - 78, by, 70, 32, 16);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = C.warn;
+    ctx.fillText("СТОП", bx - 78 + 35, by + 20);
 
     const alive = this.drones.filter((d) => d.hp > 0).length;
     ctx.textAlign = "left";

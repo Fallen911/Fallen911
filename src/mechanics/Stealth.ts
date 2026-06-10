@@ -4,7 +4,7 @@ import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
 import { INSIGHTS } from "../data/insights";
 import { STEALTH_LEVELS, STEALTH_RECIPES, type StealthLevel } from "../data/stealth";
-import { bestMove, buildAdjacency, generateStealthLevel, patrolVision } from "./stealthGen";
+import { bestMove, buildAdjacency, generateStealthLevel, patrolVision, solveStealth } from "./stealthGen";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
 import { C, InsightCard, dist, drawHint, mono, roundRect } from "./util";
@@ -59,6 +59,8 @@ export class Stealth implements Mini {
   /** Paid-hint state: node to flash and remaining seconds. */
   private hintNode = -1;
   private hintT = 0;
+  /** The solver's optimum for this board — beat it for the golden bonus. */
+  private parMoves = 0;
 
   /** Handcrafted openers plus solver-validated generated boards. */
   private levelSet: StealthLevel[];
@@ -74,6 +76,7 @@ export class Stealth implements Mini {
     this.levelIdx = idx;
     this.level = this.levelSet[idx];
     this.adj = buildAdjacency(this.level);
+    this.parMoves = Math.max(1, solveStealth(this.level));
     this.player = this.level.start;
     this.turn = 0;
     this.collected.clear();
@@ -182,7 +185,15 @@ export class Stealth implements Mini {
       return;
     }
     if (this.pendingClear) {
-      this.effects.push({ control: CLEAR_CONTROL, compute: CLEAR_COMPUTE });
+      const golden = this.turn <= this.parMoves;
+      this.effects.push({
+        control: CLEAR_CONTROL,
+        compute: golden ? CLEAR_COMPUTE * 2 + 4 : CLEAR_COMPUTE,
+      });
+      if (golden) {
+        this.floats.spawn(this.nx[this.player], this.ny[this.player] - 36, "ЗОЛОТОЙ ПУТЬ ×2", "#ffd98a", 1.6);
+        audio.play("pickup");
+      }
       audio.play("good");
       this.fx.burst(this.nx[this.player], this.ny[this.player], { color: "134,255,176", count: 26, speed: 180, glow: true });
       this.phase = "clear";
@@ -563,7 +574,10 @@ export class Stealth implements Mini {
     ctx.fillStyle = C.dim;
     ctx.fillText(`СЕГМЕНТ ${this.levelIdx + 1}/${this.levelSet.length} · ${this.level.name}`, Math.max(20, w * 0.05), top + 24);
     ctx.textAlign = "right";
-    ctx.fillText(`ХОД ${this.turn}`, w - Math.max(20, w * 0.05), top + 24);
+    const onPace = this.turn <= this.parMoves;
+    ctx.fillStyle = onPace ? "#ffd98a" : C.dim;
+    ctx.fillText(`ХОД ${this.turn} / ЗОЛОТО ${this.parMoves}`, w - Math.max(20, w * 0.05), top + 24);
+    ctx.fillStyle = C.dim;
     // Paid hint chip.
     if (this.phase === "idle") {
       const hx = w - Math.max(20, w * 0.05) - 86;

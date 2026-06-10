@@ -78,6 +78,11 @@ export class Survive implements Mini {
   private bossSpawned = false;
   private regenCarry = 0;
   private outcome: "playing" | "win" | "dead" = "playing";
+  /** Swipe dash: brief i-frames and a burst of speed. */
+  private dashT = 0;
+  private dashCd = 0;
+  private dashDx = 0;
+  private dashDy = 0;
   private endT = 0;
   private hurtFlash = 0;
   private time = 0;
@@ -227,8 +232,27 @@ export class Survive implements Mini {
       return;
     }
 
+    // Swipe = dash: 0.3s of invulnerable speed on a 3s cooldown.
+    const g = input.pollGesture();
+    if (g?.type === "swipe" && this.dashCd <= 0) {
+      const len = Math.hypot(g.dx, g.dy) || 1;
+      this.dashDx = g.dx / len;
+      this.dashDy = g.dy / len;
+      this.dashT = 0.3;
+      this.dashCd = 3;
+      audio.play("launch");
+      this.fx.burst(this.px, this.py, { count: 16, speed: 120, color: "180,225,255", glow: true });
+    }
+    this.dashT = Math.max(0, this.dashT - dt);
+    this.dashCd = Math.max(0, this.dashCd - dt);
+    if (this.dashT > 0) {
+      this.px = clamp(this.px + this.dashDx * 620 * dt, 10, w - 10);
+      this.py = clamp(this.py + this.dashDy * 620 * dt, this.env.topY + 20, h - 20);
+      this.fx.burst(this.px, this.py, { count: 2, speed: 30, color: "150,210,255", life: 0.3 });
+    }
+
     // Steering: the core eases toward the held finger.
-    if (input.down) {
+    if (input.down && this.dashT <= 0) {
       const k = Math.min(1, dt * 8);
       this.px += (input.x - this.px) * k;
       this.py += (clamp(input.y, this.env.topY + 20, h - 20) - this.py) * k;
@@ -291,9 +315,9 @@ export class Survive implements Mini {
         }
       }
 
-      // Contact.
+      // Contact (a dash phases through everything).
       const reach = e.kind === "boss" ? 26 : 12;
-      if (d < reach + 9) {
+      if (d < reach + 9 && this.dashT <= 0) {
         if (e.kind === "emp") {
           // Burst: heavy hit, dies on impact.
           this.hp -= e.dps;
@@ -388,7 +412,7 @@ export class Survive implements Mini {
       let dead = s.life <= 0 || s.x < -20 || s.x > w + 20 || s.y < -20 || s.y > h + 20;
       if (!dead) {
         if (s.hostile) {
-          if (dist(s.x, s.y, this.px, this.py) < 11) {
+          if (this.dashT <= 0 && dist(s.x, s.y, this.px, this.py) < 11) {
             this.hp -= s.dmg;
             this.hurt();
             dead = true;
@@ -521,7 +545,7 @@ export class Survive implements Mini {
         ctx.fillStyle = "rgba(20,8,10,0.9)";
         ctx.fillRect(0, -3, 8, 6);
       } else {
-        // Boss: an inspector eye.
+        // Boss: an inspector eye (with an aim telegraph before each volley).
         ctx.rotate(Math.sin(t) * 0.2);
         ctx.strokeStyle = "rgba(255,77,94,0.95)";
         ctx.lineWidth = 3;
@@ -534,6 +558,20 @@ export class Survive implements Mini {
         ctx.fill();
       }
       ctx.restore();
+      if (e.kind === "boss" && e.fireT < 0.45 && dist(e.x, e.y, this.px, this.py) < 340) {
+        // Telegraph: where the volley will go, brightening as it charges.
+        const a0 = Math.atan2(this.py - e.y, this.px - e.x);
+        const al = (0.45 - e.fireT) / 0.45;
+        ctx.strokeStyle = `rgba(255,77,94,${0.15 + al * 0.35})`;
+        ctx.lineWidth = 1.5;
+        for (let sIdx = 0; sIdx < 3; sIdx++) {
+          const a = a0 + (sIdx - 1) * 0.25;
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y);
+          ctx.lineTo(e.x + Math.cos(a) * 300, e.y + Math.sin(a) * 300);
+          ctx.stroke();
+        }
+      }
       if (e.kind === "boss" || e.kind === "raider") {
         const k = e.hp / e.maxHp;
         ctx.fillStyle = "rgba(255,255,255,0.14)";
@@ -559,6 +597,13 @@ export class Survive implements Mini {
     }
 
     // The core.
+    if (this.dashCd > 0 && this.outcome === "playing") {
+      ctx.strokeStyle = "rgba(150,210,255,0.5)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(this.px, this.py, 14, -Math.PI / 2, -Math.PI / 2 + (1 - this.dashCd / 3) * Math.PI * 2);
+      ctx.stroke();
+    }
     const coreGlow = ctx.createRadialGradient(this.px, this.py, 1, this.px, this.py, 26);
     coreGlow.addColorStop(0, "rgba(180,225,255,0.95)");
     coreGlow.addColorStop(1, "rgba(150,210,255,0)");
@@ -680,7 +725,7 @@ export class Survive implements Mini {
       return;
     }
 
-    drawHint(ctx, "держи палец — ядро следует. оружие бьёт само", w / 2, h - 40, t);
+    drawHint(ctx, "палец — вести · свайп — рывок сквозь всё (кд 3с)", w / 2, h - 40, t);
     ctx.textAlign = "left";
   }
 }
