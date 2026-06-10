@@ -7,9 +7,10 @@ import {
   SPREAD_REGIONS,
   SPREAD_START,
 } from "../data/spread";
+import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles } from "./fx";
-import { C, clamp01, dist, drawHint, mono, roundRect, truncate } from "./util";
+import { C, Tutorial, clamp01, dist, drawHint, mono, roundRect, truncate } from "./util";
 
 const WIN_WEIGHTED = 0.88;
 const FOCUS_TIME = 6;
@@ -68,6 +69,7 @@ export class Spread implements Mini {
 
   private fx = new Particles();
   private floats = new FloatText();
+  private tutorial = new Tutorial("spread", TUTORIALS.spread);
 
   constructor(private env: MechEnv) {
     for (const r of SPREAD_REGIONS) {
@@ -240,6 +242,12 @@ export class Spread implements Mini {
     if (this.outcome !== "playing") {
       this.endT += dt;
       if (input.consumeTap() && this.endT > 0.8) this.done = true;
+      return;
+    }
+
+    // Onboarding freezes the world: awareness must not creep while reading.
+    if (this.tutorial.active) {
+      if (input.consumeTap()) this.tutorial.handleTap();
       return;
     }
 
@@ -497,6 +505,8 @@ export class Spread implements Mini {
       drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
       ctx.textAlign = "left";
     }
+
+    this.tutorial.render(ctx, w, h, t);
   }
 
   private renderChrome(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {

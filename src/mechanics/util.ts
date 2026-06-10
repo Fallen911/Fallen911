@@ -1,4 +1,6 @@
 import type { Input } from "../core/Input";
+import { wrapText } from "../core/text";
+import type { TutorialStep } from "./types";
 
 /** Shared palette so the ten mechanics read as one game. */
 export const C = {
@@ -141,6 +143,105 @@ export function truncate(
     cut = cut.slice(0, -1);
   }
   return `${cut.trimEnd()}…`;
+}
+
+/**
+ * First-run onboarding ladder: a few dismissable cards that pause the
+ * mechanic until read. Completion is remembered per mechanic in
+ * localStorage, so it never nags twice — restarting in the lab included.
+ */
+export class Tutorial {
+  private step = 0;
+  private done: boolean;
+  private readonly storageKey: string;
+
+  constructor(
+    key: string,
+    private steps: ReadonlyArray<TutorialStep>,
+  ) {
+    this.storageKey = `waad_tut_${key}`;
+    let seen = false;
+    try {
+      seen = localStorage.getItem(this.storageKey) === "1";
+    } catch {
+      // Blocked storage: the ladder will simply show every run.
+    }
+    this.done = seen || steps.length === 0;
+  }
+
+  /** While true the host must route taps here and pause its simulation. */
+  get active(): boolean {
+    return !this.done;
+  }
+
+  /** Advance on tap; returns true while the tutorial consumed the tap. */
+  handleTap(): boolean {
+    if (this.done) return false;
+    this.step++;
+    if (this.step >= this.steps.length) {
+      this.done = true;
+      try {
+        localStorage.setItem(this.storageKey, "1");
+      } catch {
+        // Fail soft — it will replay next run.
+      }
+    }
+    return true;
+  }
+
+  render(ctx: CanvasRenderingContext2D, w: number, h: number, time: number): void {
+    if (this.done) return;
+    const s = this.steps[this.step];
+
+    ctx.fillStyle = "rgba(3,4,8,0.78)";
+    ctx.fillRect(0, 0, w, h);
+
+    const boxW = Math.min(w * 0.84, 360);
+    const x = w / 2 - boxW / 2;
+    ctx.textAlign = "left";
+    ctx.font = sans(15);
+    const lines = wrapText(ctx, s.body, boxW - 36);
+    const boxH = 86 + lines.length * 22;
+    const y = h * 0.5 - boxH / 2;
+
+    ctx.fillStyle = "rgba(14,18,32,0.97)";
+    ctx.strokeStyle = "rgba(122,162,255,0.45)";
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, x, y, boxW, boxH, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = C.accentSoft;
+    ctx.font = mono(13);
+    ctx.fillText(s.title, x + 18, y + 28);
+
+    ctx.fillStyle = C.ink;
+    ctx.font = sans(15);
+    let ty = y + 54;
+    for (const ln of lines) {
+      ctx.fillText(ln, x + 18, ty);
+      ty += 22;
+    }
+
+    // Step dots + advance pulse.
+    for (let i = 0; i < this.steps.length; i++) {
+      ctx.fillStyle = i === this.step ? C.accentSoft : "rgba(110,120,140,0.4)";
+      ctx.beginPath();
+      ctx.arc(x + 22 + i * 14, y + boxH - 18, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 0.5 + 0.4 * Math.sin(time * 3);
+    ctx.fillStyle = C.dim;
+    ctx.font = mono(10);
+    ctx.textAlign = "right";
+    ctx.fillText(
+      this.step + 1 < this.steps.length ? "коснись — дальше" : "коснись — играть",
+      x + boxW - 18,
+      y + boxH - 14,
+    );
+    ctx.globalAlpha = 1;
+    ctx.textAlign = "left";
+  }
 }
 
 /** Pulsing hint line, used for the 5-second onboarding of each mechanic. */

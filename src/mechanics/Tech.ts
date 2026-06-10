@@ -7,9 +7,10 @@ import {
   TECH_TUNING as T,
   TECH_WIN_COUNT,
 } from "../data/tech";
+import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles } from "./fx";
-import { C, clamp01, drawHint, lerp, mono, pick, roundRect, sans, truncate } from "./util";
+import { C, Tutorial, clamp01, drawHint, lerp, mono, pick, roundRect, sans, truncate } from "./util";
 
 interface BranchState {
   /** Raw allocation weight 0..1 (player-set); shares are normalized. */
@@ -61,6 +62,7 @@ export class Tech implements Mini {
 
   private fx = new Particles();
   private floats = new FloatText();
+  private tutorial = new Tutorial("tech", TUTORIALS.tech);
 
   constructor(private env: MechEnv) {}
 
@@ -156,6 +158,12 @@ export class Tech implements Mini {
     if (this.outcome !== "playing") {
       this.endT += dt;
       if (input.consumeTap() && this.endT > 0.8) this.done = true;
+      return;
+    }
+
+    // Onboarding freezes research and directives until read.
+    if (this.tutorial.active) {
+      if (input.consumeTap()) this.tutorial.handleTap();
       return;
     }
     input.consumeTap();
@@ -410,6 +418,7 @@ export class Tech implements Mini {
     } else {
       drawHint(ctx, "тяни столбец вверх/вниз — делить поток", w / 2, h - 92, t);
     }
+    this.tutorial.render(ctx, w, h, t);
     ctx.textAlign = "left";
   }
 }

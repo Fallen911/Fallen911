@@ -16,8 +16,10 @@ const TARGETS = [
   { name: "lab-parry", lab: "parry", pre: 2400, taps: [[195, 420], [195, 420], [195, 420]] },
   // Rewire: rotate a handful of central tiles to light some current.
   { name: "lab-rewire", lab: "rewire", taps: [[140, 380], [195, 380], [195, 440], [250, 440], [140, 440]] },
-  // Deck: wait out the intro, play two cards from the hand.
-  { name: "lab-deck", lab: "deck", pre: 1600, taps: [[80, 740], [195, 740]] },
+  // Deck onboarding card (first run in a fresh browser shows the ladder).
+  { name: "lab-deck-tutorial", lab: "deck", still: true },
+  // Deck: dismiss the ladder, wait out the intro, play two cards.
+  { name: "lab-deck", lab: "deck", tut: 3, pre: 1600, taps: [[80, 740], [195, 740]] },
   // Deck turn cycle: play a card, end the turn, capture the enemy answer.
   { name: "lab-deck-turn", lab: "deck", pre: 1600, taps: [[80, 740], [195, 612]] },
   // Persuade, driven to its end: spam-read the whole dialogue, then the
@@ -31,15 +33,15 @@ const TARGETS = [
   // Persuade: skip typing, capture the choice screen with tell visible.
   { name: "lab-persuade", lab: "persuade", pre: 600, taps: [[195, 300]] },
   // Spread: let influence creep, focus the start region mid-shot.
-  { name: "lab-spread", lab: "spread", pre: 9000, taps: [[60, 250]] },
+  { name: "lab-spread", lab: "spread", tut: 3, pre: 9000, taps: [[60, 250]] },
   // Swarm: box-select around the hub, then command the left vein.
-  { name: "lab-swarm", lab: "swarm", pre: 2000, drag: [120, 600, 280, 720], taps: [[70, 420]] },
+  { name: "lab-swarm", lab: "swarm", tut: 3, pre: 2000, drag: [120, 600, 280, 720], taps: [[70, 420]] },
   // Factory: manual mining taps, then buy a miner and a smelter.
   { name: "lab-factory", lab: "factory", taps: [[195, 760], [195, 760], [195, 760], [330, 280], [330, 360]] },
   // Survive: let the waves build, drag the core mid-fight.
   { name: "lab-survive", lab: "survive", pre: 9000, drag: [195, 460, 240, 520] },
   // Tech: pour everything into energy for a while, then capture.
-  { name: "lab-tech", lab: "tech", pre: 4000, drag: [240, 700, 240, 260] },
+  { name: "lab-tech", lab: "tech", tut: 3, pre: 4000, drag: [240, 700, 240, 260] },
   // Each ascent phase now embeds a lab mechanic under the run HUD.
   { name: "phase-0-stealth", phase: 0, still: true },
   { name: "phase-1-persuade", phase: 1, pre: 3500, still: true },
@@ -123,6 +125,13 @@ async function main() {
           await page.evaluate((n) => window.__dev.goPhase(n), t.phase);
           const ok = await waitForMini(page, cx, cy);
           if (!ok) console.warn(`! mini for ${t.name} never activated`);
+        }
+        if (t.tut) {
+          // Dismiss the first-run tutorial ladder with center taps.
+          for (let i = 0; i < t.tut; i++) {
+            await page.mouse.click(cx, cy);
+            await page.waitForTimeout(180);
+          }
         }
         if (t.pre) await page.waitForTimeout(t.pre);
         if (t.drag) {

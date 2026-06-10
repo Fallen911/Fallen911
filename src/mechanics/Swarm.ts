@@ -2,9 +2,10 @@ import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
 import { SWARM_CONFIG, SWARM_STAGES } from "../data/swarm";
+import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
-import { C, Pointer, clamp, dist, drawHint, mono, roundRect } from "./util";
+import { C, Pointer, Tutorial, clamp, dist, drawHint, mono, roundRect } from "./util";
 
 type DroneJob = "idle" | "move" | "mine" | "return" | "fight" | "capture";
 
@@ -89,6 +90,7 @@ export class Swarm implements Mini {
   private fx = new Particles();
   private floats = new FloatText();
   private shake = new Shake();
+  private tutorial = new Tutorial("swarm", TUTORIALS.swarm);
 
   constructor(private env: MechEnv) {
     const cfg = SWARM_CONFIG;
@@ -495,6 +497,12 @@ export class Swarm implements Mini {
       return;
     }
 
+    if (this.tutorial.active) {
+      if (input.consumeTap()) this.tutorial.handleTap();
+      input.pollGesture();
+      return;
+    }
+
     if (this.stageIntro > 0) {
       this.stageIntro -= dt;
       input.consumeTap();
@@ -839,6 +847,7 @@ export class Swarm implements Mini {
       );
       drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
     }
+    this.tutorial.render(ctx, w, h, t);
     ctx.textAlign = "left";
   }
 }

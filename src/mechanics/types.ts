@@ -30,3 +30,9 @@ export interface MechEnv {
 }
 
 export type MechFactory = (env: MechEnv) => Mini;
+
+/** One card of a first-run onboarding ladder (see util.Tutorial). */
+export interface TutorialStep {
+  readonly title: string;
+  readonly body: string;
+}
