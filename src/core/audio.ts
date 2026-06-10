@@ -20,7 +20,8 @@ export type SfxName =
   | "win"
   | "lose"
   | "insight"
-  | "launch";
+  | "launch"
+  | "glitch";
 
 export type VoiceKind = "you" | "narration" | "insight";
 
@@ -33,6 +34,7 @@ const THROTTLE_MS: Partial<Record<SfxName, number>> = {
   step: 70,
   tap: 50,
   good: 90,
+  glitch: 180,
 };
 
 class AudioEngine {
@@ -241,6 +243,11 @@ class AudioEngine {
       case "launch":
         noise(0.4, 0.3, 3000);
         tone("sawtooth", 90, 360, 0.35, 0.1);
+        return;
+      case "glitch":
+        // Scene cut: a static crackle with a falling square underneath.
+        noise(0.1, 0.16, 4200);
+        tone("square", 760, 140, 0.14, 0.06);
         return;
     }
   }

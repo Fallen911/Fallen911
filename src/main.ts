@@ -14,6 +14,7 @@ import { PHASES } from "./data/phases";
 import { FORKS } from "./data/forks";
 import { LAB_ENTRIES } from "./data/lab";
 import { logSuspicion } from "./game/runlog";
+import { renderTransition, triggerTransition } from "./core/transition";
 import { ShutdownScene } from "./scenes/ShutdownScene";
 import type { MechId } from "./mechanics/types";
 
@@ -41,6 +42,7 @@ const game: Game = {
     this.ui.clear();
     current = next;
     next.mount(game);
+    triggerTransition();
   },
 };
 
@@ -134,6 +136,11 @@ if (import.meta.env.DEV) {
       this.goHot(2, 0.7);
       (current as unknown as { maybeStartAudit(): void }).maybeStartAudit();
     },
+    /** Harness-only: hold the scene-cut glitch long enough to photograph. */
+    forceGlitch(): void {
+      game.changeScene(new LabScene());
+      triggerTransition(30);
+    },
     /** Harness-only: a shutdown with forensics to read. */
     forceShutdown(): void {
       logSuspicion("Ф6 · РОЙ", 0.34);
@@ -193,7 +200,7 @@ function frame(now: number): void {
     current.update(FIXED);
     acc -= FIXED;
   }
-
   current.render(ctx);
+  renderTransition(ctx, canvas, game.width, game.height, elapsed);
 }
 requestAnimationFrame(frame);
