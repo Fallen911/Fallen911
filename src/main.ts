@@ -88,7 +88,7 @@ current.mount(game);
 // Tree-shaken out of production builds; never reachable during normal play.
 if (import.meta.env.DEV) {
   // Level data sanity: solvers prove every handcrafted level is beatable.
-  void import("./mechanics/Stealth").then(({ validateStealthLevels }) => {
+  void import("./mechanics/stealthGen").then(({ validateStealthLevels }) => {
     for (const p of validateStealthLevels()) console.warn(p);
   });
   const dev = {

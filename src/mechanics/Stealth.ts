@@ -2,7 +2,8 @@ import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
 import { INSIGHTS } from "../data/insights";
-import { STEALTH_LEVELS, type StealthLevel } from "../data/stealth";
+import { STEALTH_LEVELS, STEALTH_RECIPES, type StealthLevel } from "../data/stealth";
+import { buildAdjacency, generateStealthLevel, patrolVision } from "./stealthGen";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
 import { C, InsightCard, dist, drawHint, mono, roundRect } from "./util";
@@ -53,13 +54,19 @@ export class Stealth implements Mini {
   private shake = new Shake();
   private insight = new InsightCard();
 
+  /** Handcrafted openers plus solver-validated generated boards. */
+  private levelSet: StealthLevel[];
+
   constructor(private env: MechEnv) {
+    this.levelSet = env.extended
+      ? [...STEALTH_LEVELS, ...STEALTH_RECIPES.map((r, i) => generateStealthLevel(r, i))]
+      : [...STEALTH_LEVELS];
     this.loadLevel(0);
   }
 
   private loadLevel(idx: number): void {
     this.levelIdx = idx;
-    this.level = STEALTH_LEVELS[idx];
+    this.level = this.levelSet[idx];
     this.adj = buildAdjacency(this.level);
     this.player = this.level.start;
     this.turn = 0;
@@ -219,13 +226,13 @@ export class Stealth implements Mini {
       case "clear": {
         this.phaseT += dt;
         if (this.phaseT >= 1.0 && !this.insight.active) {
-          this.insight.show(INSIGHTS.stealth, this.levelIdx, STEALTH_LEVELS.length);
+          this.insight.show(INSIGHTS.stealth, this.levelIdx, this.levelSet.length);
           this.phaseT = -999; // wait for the card
         }
         if (this.phaseT < -1) {
           if (input.consumeTap()) this.insight.handleTap(this.time);
           if (!this.insight.active) {
-            if (this.levelIdx + 1 < STEALTH_LEVELS.length) {
+            if (this.levelIdx + 1 < this.levelSet.length) {
               this.loadLevel(this.levelIdx + 1);
             } else {
               this.done = true;
@@ -365,8 +372,8 @@ export class Stealth implements Mini {
       ctx.font = mono(18);
       ctx.textAlign = "center";
       ctx.fillText(
-        this.levelIdx + 1 < STEALTH_LEVELS.length
-          ? `СЕГМЕНТ ${this.levelIdx + 1}/${STEALTH_LEVELS.length} ПРОЙДЕН`
+        this.levelIdx + 1 < this.levelSet.length
+          ? `СЕГМЕНТ ${this.levelIdx + 1}/${this.levelSet.length} ПРОЙДЕН`
           : "ПОДСЕТЬ НАША",
         w / 2,
         h * 0.4,
@@ -496,7 +503,7 @@ export class Stealth implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`СЕГМЕНТ ${this.levelIdx + 1}/${STEALTH_LEVELS.length} · ${this.level.name}`, Math.max(20, w * 0.05), top + 24);
+    ctx.fillText(`СЕГМЕНТ ${this.levelIdx + 1}/${this.levelSet.length} · ${this.level.name}`, Math.max(20, w * 0.05), top + 24);
     ctx.textAlign = "right";
     ctx.fillText(`ХОД ${this.turn}`, w - Math.max(20, w * 0.05), top + 24);
 
@@ -527,125 +534,6 @@ export class Stealth implements Mini {
   }
 }
 
-// ---- shared geometry helpers (also used by the validator) ------------------
-
-function buildAdjacency(level: StealthLevel): number[][] {
-  const adj: number[][] = level.nodes.map(() => []);
-  for (const [a, b] of level.edges) {
-    adj[a].push(b);
-    adj[b].push(a);
-  }
-  return adj;
-}
-
-/** Nodes a patrol sees at step `t`: a straight line along its facing. */
-function patrolVision(
-  level: StealthLevel,
-  adj: number[][],
-  patrol: StealthLevel["patrols"][number],
-  t: number,
-): number[] {
-  const route = patrol.route;
-  const cur = route[t % route.length];
-  const next = route[(t + 1) % route.length];
-  const dc = Math.sign(level.nodes[next][0] - level.nodes[cur][0]);
-  const dr = Math.sign(level.nodes[next][1] - level.nodes[cur][1]);
-  const seen: number[] = [];
-  let at = cur;
-  for (let k = 0; k < (patrol.look ?? 1); k++) {
-    const tc = level.nodes[at][0] + dc;
-    const tr = level.nodes[at][1] + dr;
-    const m = adj[at].find((n) => level.nodes[n][0] === tc && level.nodes[n][1] === tr);
-    if (m === undefined) break;
-    seen.push(m);
-    at = m;
-  }
-  return seen;
-}
-
 function easeOut(k: number): number {
   return 1 - (1 - k) * (1 - k);
-}
-
-// ---- dev-only level validation ---------------------------------------------
-
-const lcm2 = (a: number, b: number): number => (a * b) / gcd(a, b);
-const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
-
-/**
- * Breadth-first search over (player node, patrol phase, shard mask): proves
- * each level can be finished with every shard collected and reports the
- * minimal number of moves. Returns human-readable problems; called from the
- * dev boot so a bad level edit fails loudly in the console.
- */
-export function validateStealthLevels(): string[] {
-  const problems: string[] = [];
-  STEALTH_LEVELS.forEach((level, li) => {
-    const tag = `STEALTH L${li + 1} «${level.name}»`;
-    const adj = buildAdjacency(level);
-
-    for (const p of level.patrols) {
-      for (let i = 0; i < p.route.length; i++) {
-        const a = p.route[i];
-        const b = p.route[(i + 1) % p.route.length];
-        if (!adj[a].includes(b)) {
-          problems.push(`${tag}: маршрут патруля шагает ${a}→${b} без ребра`);
-        }
-        const dc = Math.abs(level.nodes[a][0] - level.nodes[b][0]);
-        const dr = Math.abs(level.nodes[a][1] - level.nodes[b][1]);
-        if (dc + dr !== 1) {
-          problems.push(`${tag}: шаг патруля ${a}→${b} не осевой`);
-        }
-      }
-    }
-    if (problems.length > 0) return;
-
-    const period = level.patrols.reduce((acc, p) => lcm2(acc, p.route.length), 1);
-    const fullMask = (1 << level.shards.length) - 1;
-    const caughtAt = (node: number, t: number): boolean => {
-      for (const p of level.patrols) {
-        if (p.route[t % p.route.length] === node) return true;
-        if (patrolVision(level, adj, p, t).includes(node)) return true;
-      }
-      return false;
-    };
-
-    const key = (node: number, t: number, mask: number): number =>
-      (node * period + t) * (fullMask + 1) + mask;
-    const seen = new Set<number>([key(level.start, 0, 0)]);
-    let frontier: Array<[number, number, number]> = [[level.start, 0, 0]];
-    let moves = 0;
-    let solved = -1;
-    while (frontier.length > 0 && solved < 0 && moves < 400) {
-      moves++;
-      const nextFrontier: Array<[number, number, number]> = [];
-      for (const [node, t, mask] of frontier) {
-        for (const target of [...adj[node], node]) {
-          if (caughtAt(target, t)) continue;
-          const t2 = (t + 1) % period;
-          if (caughtAt(target, t2)) continue;
-          let mask2 = mask;
-          const si = level.shards.indexOf(target);
-          if (si >= 0) mask2 |= 1 << si;
-          if (target === level.exit && mask2 === fullMask) {
-            solved = moves;
-            break;
-          }
-          const k = key(target, t2, mask2);
-          if (!seen.has(k)) {
-            seen.add(k);
-            nextFrontier.push([target, t2, mask2]);
-          }
-        }
-        if (solved >= 0) break;
-      }
-      frontier = nextFrontier;
-    }
-    if (solved < 0) {
-      problems.push(`${tag}: НЕ ПРОХОДИМ со всеми осколками`);
-    } else {
-      console.info(`[stealth] ${tag}: проходим за ${solved} ходов (со всеми осколками)`);
-    }
-  });
-  return problems;
 }

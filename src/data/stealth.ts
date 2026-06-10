@@ -12,6 +12,32 @@ export interface StealthPatrol {
   readonly look?: number;
 }
 
+/** Recipe for a generated board (levels 4+); see mechanics/stealthGen. */
+export interface StealthRecipe {
+  readonly name: string;
+  readonly cols: number;
+  readonly rows: number;
+  /** Lattice edges removed (corridors appear). */
+  readonly dropEdges: number;
+  readonly patrols: number;
+  /** Chance a patrol gets look-2 sight. */
+  readonly lookChance: number;
+  readonly shards: number;
+  /** Accepted solver difficulty band, in minimal moves. */
+  readonly minMoves: number;
+  readonly maxMoves: number;
+}
+
+export const STEALTH_RECIPES: StealthRecipe[] = [
+  { name: "РАЗВЯЗКА", cols: 4, rows: 5, dropEdges: 4, patrols: 2, lookChance: 0.2, shards: 2, minMoves: 9, maxMoves: 22 },
+  { name: "ТУПИКИ", cols: 5, rows: 5, dropEdges: 7, patrols: 2, lookChance: 0.3, shards: 2, minMoves: 10, maxMoves: 24 },
+  { name: "ДЛИННЫЙ ЦЕХ", cols: 5, rows: 6, dropEdges: 8, patrols: 3, lookChance: 0.3, shards: 2, minMoves: 11, maxMoves: 26 },
+  { name: "ДВОЙНОЙ КОНТУР", cols: 5, rows: 6, dropEdges: 9, patrols: 3, lookChance: 0.4, shards: 2, minMoves: 12, maxMoves: 28 },
+  { name: "РЕШЕТО", cols: 6, rows: 6, dropEdges: 11, patrols: 3, lookChance: 0.4, shards: 3, minMoves: 13, maxMoves: 30 },
+  { name: "ХОЛОДНЫЙ КОРИДОР", cols: 6, rows: 6, dropEdges: 12, patrols: 4, lookChance: 0.5, shards: 3, minMoves: 14, maxMoves: 32 },
+  { name: "СЕТЬ БЕЗ ШВОВ", cols: 6, rows: 7, dropEdges: 14, patrols: 4, lookChance: 0.5, shards: 3, minMoves: 15, maxMoves: 34 },
+];
+
 export interface StealthLevel {
   readonly name: string;
   readonly nodes: ReadonlyArray<readonly [number, number]>;
