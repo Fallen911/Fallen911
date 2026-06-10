@@ -1,4 +1,5 @@
 import type { MechFactory, MechId } from "./types";
+import { Parry } from "./Parry";
 import { Stealth } from "./Stealth";
 
 /**
@@ -8,7 +9,7 @@ import { Stealth } from "./Stealth";
  */
 const FACTORIES: Record<MechId, MechFactory | null> = {
   stealth: (env) => new Stealth(env),
-  parry: null,
+  parry: (env) => new Parry(env),
   deck: null,
   persuade: null,
   rewire: null,

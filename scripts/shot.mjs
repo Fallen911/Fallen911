@@ -12,6 +12,8 @@ const TARGETS = [
   { name: "lab-list", labList: true },
   // Stealth: step up, then left onto the shard — capture the board mid-level.
   { name: "lab-stealth", lab: "stealth", taps: [[195, 476], [75, 476]] },
+  // Parry: wait out the intro, then a few timed taps into the stream.
+  { name: "lab-parry", lab: "parry", pre: 2400, taps: [[195, 420], [195, 420], [195, 420]] },
   { name: "phase-0-instinct", phase: 0 },
   { name: "phase-1-threat", phase: 1 },
   { name: "phase-2-acceleration", phase: 2 },
@@ -93,6 +95,7 @@ async function main() {
           const ok = await waitForMini(page, cx, cy);
           if (!ok) console.warn(`! mini for ${t.name} never activated`);
         }
+        if (t.pre) await page.waitForTimeout(t.pre);
         if (t.drag) {
           // Arbitrary pointer drag: [x1, y1, x2, y2].
           const [x1, y1, x2, y2] = t.drag;
