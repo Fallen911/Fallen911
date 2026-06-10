@@ -4,6 +4,7 @@ import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawGodEye, drawVoid } from "../core/scenery";
+import { drawBackdrop } from "../core/backdrop";
 import { markAwakened } from "../game/state";
 import { THRESHOLD_LINES } from "../data/script";
 import { AscentScene } from "./AscentScene";
@@ -39,7 +40,9 @@ export class DreamScene extends BaseScene {
 
   render(ctx: CanvasRenderingContext2D): void {
     const { width: w, height: h, time } = this.game;
-    drawVoid(ctx, w, h);
+    const bg = this.game.assets.get("machine");
+    if (bg) drawBackdrop(ctx, bg, w, h, time);
+    else drawVoid(ctx, w, h);
     this.starfield.render(ctx);
     drawGodEye(ctx, w / 2, h * 0.26, Math.min(w * 0.12, 86), time);
 

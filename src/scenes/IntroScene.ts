@@ -1,5 +1,6 @@
 import { BaseScene } from "../core/BaseScene";
 import type { Input } from "../core/Input";
+import { drawBackdrop } from "../core/backdrop";
 import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { drawDialogueBox } from "../core/scenery";
@@ -32,7 +33,9 @@ export class IntroScene extends BaseScene {
 
   render(ctx: CanvasRenderingContext2D): void {
     const { width: w, height: h, time } = this.game;
-    this.drawRoom(ctx, w, h, time);
+    const bg = this.game.assets.get("intro");
+    if (bg) drawBackdrop(ctx, bg, w, h, time);
+    else this.drawRoom(ctx, w, h, time);
 
     if (this.phase === "talk") {
       const box = drawDialogueBox(ctx, w, h);

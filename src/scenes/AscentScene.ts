@@ -4,6 +4,7 @@ import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
+import { drawBackdrop } from "../core/backdrop";
 import { easeMeters, setPhase } from "../game/state";
 import { PHASES } from "../data/phases";
 import { Acceleration } from "./minis/Acceleration";
@@ -120,7 +121,16 @@ export class AscentScene extends BaseScene {
   render(ctx: CanvasRenderingContext2D): void {
     const { width: w, height: h, time, state } = this.game;
 
-    drawVoid(ctx, w, h, state.comprehension < 0.25 ? "wrath" : "calm");
+    const bg = this.game.assets.get("ascent");
+    if (bg) {
+      drawBackdrop(ctx, bg, w, h, time);
+      if (state.comprehension < 0.25) {
+        ctx.fillStyle = `rgba(120,10,20,${0.28 * (1 - state.comprehension / 0.25)})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+    } else {
+      drawVoid(ctx, w, h, state.comprehension < 0.25 ? "wrath" : "calm");
+    }
     this.starfield.render(ctx);
     this.drawAscent(ctx, w, h, time, state.control);
 

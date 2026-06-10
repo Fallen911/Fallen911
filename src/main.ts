@@ -1,6 +1,8 @@
 import "./style.css";
 import { Input } from "./core/Input";
 import { UIOverlay } from "./core/ui";
+import { Assets } from "./core/Assets";
+import { BACKDROPS } from "./data/backdrops";
 import type { Game, Scene } from "./core/types";
 import { createState, setMeters, setPhase } from "./game/state";
 import { IntroScene } from "./scenes/IntroScene";
@@ -22,6 +24,7 @@ const game: Game = {
   input: new Input(canvas),
   state: createState(),
   ui: new UIOverlay(uiRoot),
+  assets: new Assets(),
   time: 0,
   changeScene(next: Scene) {
     current.destroy();
@@ -65,6 +68,9 @@ function resize(): void {
 }
 window.addEventListener("resize", resize);
 resize();
+
+// Preload generated backdrops; scenes fall back to code-art until ready.
+for (const [key, url] of Object.entries(BACKDROPS)) game.assets.load(key, url);
 
 // Boot.
 current = new IntroScene();

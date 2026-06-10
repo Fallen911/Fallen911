@@ -1,5 +1,6 @@
 import type { Input } from "./Input";
 import type { UIOverlay } from "./ui";
+import type { Assets } from "./Assets";
 import type { GameState } from "../game/state";
 
 /**
@@ -17,6 +18,7 @@ export interface Game {
   input: Input;
   state: GameState;
   ui: UIOverlay;
+  assets: Assets;
   /** Elapsed seconds since boot — handy for ambient animation. */
   time: number;
   changeScene(next: Scene): void;
