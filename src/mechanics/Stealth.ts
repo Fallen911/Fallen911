@@ -117,6 +117,15 @@ export class Stealth implements Mini {
     return this.occupiedAt(t).has(node) || this.visionAt(t).has(node);
   }
 
+  /**
+   * Full caught-check for a hypothetical move this turn: the spot must be
+   * clear both now and after the patrols answer. Used by the move preview so
+   * the player never has to simulate facings in their head.
+   */
+  private wouldBeCaught(target: number): boolean {
+    return this.isCaught(target, this.turn) || this.isCaught(target, this.turn + 1);
+  }
+
   /** Commit a move (or a wait when target === player). */
   private tryMove(target: number): void {
     if (this.phase !== "idle") return;
@@ -306,15 +315,25 @@ export class Stealth implements Mini {
       ctx.restore();
     }
 
-    // Movement affordances: rings on reachable nodes while idle.
+    // Movement affordances: every legal step is previewed — white rings are
+    // safe this turn, red-crossed rings end in their sights.
     if (this.phase === "idle") {
-      const a = 0.25 + 0.18 * Math.sin(t * 4);
-      ctx.strokeStyle = `rgba(231,237,246,${a})`;
-      ctx.lineWidth = 1;
+      const a = 0.3 + 0.2 * Math.sin(t * 4);
       for (const n of this.adj[this.player]) {
+        const deadly = this.wouldBeCaught(n);
+        ctx.strokeStyle = deadly ? `rgba(255,77,94,${a + 0.15})` : `rgba(134,255,176,${a})`;
+        ctx.lineWidth = deadly ? 1.5 : 1;
         ctx.beginPath();
         ctx.arc(this.nx[n], this.ny[n], 14, 0, Math.PI * 2);
         ctx.stroke();
+        if (deadly) {
+          ctx.beginPath();
+          ctx.moveTo(this.nx[n] - 4, this.ny[n] - 4);
+          ctx.lineTo(this.nx[n] + 4, this.ny[n] + 4);
+          ctx.moveTo(this.nx[n] + 4, this.ny[n] - 4);
+          ctx.lineTo(this.nx[n] - 4, this.ny[n] + 4);
+          ctx.stroke();
+        }
       }
     }
 
@@ -472,25 +491,26 @@ export class Stealth implements Mini {
     ctx.textAlign = "right";
     ctx.fillText(`ХОД ${this.turn}`, w - Math.max(20, w * 0.05), top + 24);
 
-    // Wait chip.
+    // Wait chip — warns when standing still is itself fatal.
     const bw = 132;
     const bx = w / 2 - bw / 2;
     const by = h - 96;
+    const waitDeadly = this.phase === "idle" && this.wouldBeCaught(this.player);
     ctx.fillStyle = "rgba(16,20,34,0.9)";
-    ctx.strokeStyle = "rgba(159,192,255,0.5)";
+    ctx.strokeStyle = waitDeadly ? "rgba(255,77,94,0.8)" : "rgba(159,192,255,0.5)";
     ctx.lineWidth = 1.5;
     roundRect(ctx, bx, by, bw, 36, 18);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = C.accentSoft;
+    ctx.fillStyle = waitDeadly ? C.danger : C.accentSoft;
     ctx.font = mono(12);
     ctx.textAlign = "center";
-    ctx.fillText("ЖДАТЬ ХОД", w / 2, by + 23);
+    ctx.fillText(waitDeadly ? "ЖДАТЬ = ЗАСЕКУТ" : "ЖДАТЬ ХОД", w / 2, by + 23);
 
     const hints = [
-      "шаг на соседний узел — аудит ответит шагом",
-      "красный луч — их взгляд. иди за спиной",
-      "ромб — вычисления. зелёное — выход",
+      "зелёное кольцо — безопасный шаг. красный ✕ — увидят",
+      "ловит не текущий луч, а их ОТВЕТНЫЙ шаг",
+      "иди за спиной патруля. ромб — вычисления",
     ];
     drawHint(ctx, hints[Math.floor(t / 4) % hints.length], w / 2, h - 40, t);
     ctx.textAlign = "left";
