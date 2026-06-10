@@ -32,13 +32,6 @@ export const LAB_ENTRIES: LabEntry[] = [
     stage: "Ф2",
   },
   {
-    id: "deck",
-    name: "КОЛОДА",
-    ref: "Slay the Spire",
-    desc: "Кризисы людей — бои. Карты влияний, вычисления как мана.",
-    stage: "Ф4",
-  },
-  {
     id: "persuade",
     name: "УБЕЖДЕНИЕ",
     ref: "L.A. Noire",

@@ -1,7 +1,7 @@
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
-import { SWARM_CONFIG, SWARM_STAGES } from "../data/swarm";
+import { SWARM_CONFIG, SWARM_MISSIONS, SWARM_STAGES, type SwarmMission } from "../data/swarm";
 import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
@@ -67,7 +67,11 @@ export class Swarm implements Mini {
   private enemies: Enemy[] = [];
   private veins: Vein[] = [];
   private relays: Relay[] = [];
-  private hubHp = SWARM_CONFIG.hubHp;
+  private hubHp: number = SWARM_CONFIG.hubHp;
+  /** The story phase plays mission 0; the lab runs the whole ladder. */
+  private missions: SwarmMission[];
+  private missionIdx = 0;
+  private mission: SwarmMission;
   private metal = 0;
   private metalMilestone = 10;
   private stage = 0;
@@ -93,15 +97,34 @@ export class Swarm implements Mini {
   private tutorial = new Tutorial("swarm", TUTORIALS.swarm);
 
   constructor(private env: MechEnv) {
+    this.missions = env.extended ? SWARM_MISSIONS : SWARM_MISSIONS.slice(0, 1);
+    this.mission = this.missions[0];
+    this.loadMission(0);
+  }
+
+  private loadMission(idx: number): void {
     const cfg = SWARM_CONFIG;
-    for (let i = 0; i < cfg.drones; i++) {
+    const m = this.missions[idx];
+    this.missionIdx = idx;
+    this.mission = m;
+    this.stage = 0;
+    this.stageT = 0;
+    this.stageIntro = 1.8;
+    this.metal = 0;
+    this.metalMilestone = 10;
+    this.hubHp = cfg.hubHp;
+    this.raidWave = 0;
+    this.raidT = 0;
+    this.drones = [];
+    this.enemies = [];
+    for (let i = 0; i < m.drones; i++) {
       this.drones.push({
-        x: 0.5,
-        y: 0.8,
+        x: m.hub.x + Math.cos((i / m.drones) * Math.PI * 2) * 0.07,
+        y: m.hub.y + Math.sin((i / m.drones) * Math.PI * 2) * 0.035,
         hp: cfg.droneHp,
         job: "idle",
-        tx: 0.5,
-        ty: 0.8,
+        tx: m.hub.x,
+        ty: m.hub.y,
         target: -1,
         carrying: 0,
         mineT: 0,
@@ -109,13 +132,12 @@ export class Swarm implements Mini {
         fireT: 0,
       });
     }
-    this.veins = cfg.veins.map((v) => ({ x: v.x, y: v.y, left: cfg.veinCapacity }));
-    this.relays = cfg.relays.map((r) => ({ x: r.x, y: r.y, capture: 0, owned: false }));
-    // Relay guards.
-    this.relays.forEach((r, i) => {
-      for (let g = 0; g < 2; g++) {
+    this.veins = m.veins.map((v) => ({ x: v.x, y: v.y, left: m.veinCapacity }));
+    this.relays = m.relays.map((r) => ({ x: r.x, y: r.y, capture: 0, owned: false }));
+    m.relays.forEach((r, i) => {
+      for (let g = 0; g < r.guards; g++) {
         this.enemies.push({
-          x: r.x + (g === 0 ? -0.07 : 0.07),
+          x: r.x + (g - (r.guards - 1) / 2) * 0.07,
           y: r.y + 0.04,
           hp: cfg.guardHp,
           maxHp: cfg.guardHp,
@@ -126,13 +148,6 @@ export class Swarm implements Mini {
           fireT: 0,
         });
       }
-    });
-    // Scatter idle drones around the hub.
-    this.drones.forEach((d, i) => {
-      d.x = 0.5 + Math.cos((i / cfg.drones) * Math.PI * 2) * 0.07;
-      d.y = 0.8 + Math.sin((i / cfg.drones) * Math.PI * 2) * 0.035;
-      d.tx = d.x;
-      d.ty = d.y;
     });
   }
 
@@ -222,7 +237,7 @@ export class Swarm implements Mini {
 
   private simDrones(dt: number): void {
     const cfg = SWARM_CONFIG;
-    const hub = cfg.hub;
+    const hub = this.mission.hub;
     for (const d of this.drones) {
       if (d.hp <= 0) continue;
       d.fireT = Math.max(0, d.fireT - dt);
@@ -363,7 +378,6 @@ export class Swarm implements Mini {
   }
 
   private simEnemies(dt: number): void {
-    const cfg = SWARM_CONFIG;
     for (const e of this.enemies) {
       if (e.hp <= 0) continue;
       // Pick a target: nearest living drone in aggro range, else drift to anchor/hub.
@@ -397,10 +411,10 @@ export class Swarm implements Mini {
         destX = r.x + Math.cos(this.time * 0.6 + e.anchor) * 0.08;
         destY = r.y + 0.05 + Math.sin(this.time * 0.8) * 0.03;
       } else {
-        destX = cfg.hub.x;
-        destY = cfg.hub.y;
+        destX = this.mission.hub.x;
+        destY = this.mission.hub.y;
         // Raider at the hub: chew it.
-        if (dist(this.sx(e.x), this.sy(e.y), this.sx(cfg.hub.x), this.sy(cfg.hub.y)) < 40) {
+        if (dist(this.sx(e.x), this.sy(e.y), this.sx(this.mission.hub.x), this.sy(this.mission.hub.y)) < 40) {
           this.hubHp -= e.dps * dt;
           destX = e.x;
           destY = e.y;
@@ -446,20 +460,34 @@ export class Swarm implements Mini {
   }
 
   private stageDone(): boolean {
-    const cfg = SWARM_CONFIG;
     switch (SWARM_STAGES[this.stage].id) {
       case "mine":
-        return this.metal >= cfg.metalGoal;
+        return this.metal >= this.mission.metalGoal;
       case "capture":
         return this.relays.every((r) => r.owned);
       case "defend":
-        return this.raidWave >= cfg.raidSize.length && this.enemies.every((e) => e.hp <= 0 || e.anchor >= 0);
+        return (
+          this.raidWave >= this.mission.raidWaves.length &&
+          this.enemies.every((e) => e.hp <= 0 || e.anchor >= 0)
+        );
+    }
+  }
+
+  /** The player-facing goal line for the current stage. */
+  private stageGoal(): string {
+    switch (SWARM_STAGES[this.stage].id) {
+      case "mine":
+        return `собери ${this.mission.metalGoal} металла`;
+      case "capture":
+        return `возьми все ретрансляторы (${this.relays.length})`;
+      case "defend":
+        return "отбей рейд на хаб";
     }
   }
 
   private spawnRaid(): void {
     const cfg = SWARM_CONFIG;
-    const count = cfg.raidSize[this.raidWave];
+    const count = this.mission.raidWaves[this.raidWave];
     for (let i = 0; i < count; i++) {
       this.enemies.push({
         x: 0.2 + (i / Math.max(1, count - 1)) * 0.6,
@@ -518,7 +546,7 @@ export class Swarm implements Mini {
     // Raid scheduling during defend stage.
     if (SWARM_STAGES[this.stage].id === "defend") {
       this.raidT -= dt;
-      if (this.raidWave < SWARM_CONFIG.raidSize.length && this.raidT <= 0) {
+      if (this.raidWave < this.mission.raidWaves.length && this.raidT <= 0) {
         this.spawnRaid();
         this.raidT = 22;
       }
@@ -538,6 +566,8 @@ export class Swarm implements Mini {
         this.stageT = 0;
         this.stageIntro = 1.6;
         if (SWARM_STAGES[this.stage].id === "defend") this.raidT = 2;
+      } else if (this.missionIdx + 1 < this.missions.length) {
+        this.loadMission(this.missionIdx + 1);
       } else {
         this.outcome = "win";
         this.effects.push({ control: 0.03 });
@@ -546,7 +576,7 @@ export class Swarm implements Mini {
     }
 
     // Stage time pressure: blow the budget and the operation gets noticed.
-    if (this.stageT > SWARM_STAGES[this.stage].timeLimit) {
+    if (this.stageT > this.mission.timeLimits[this.stage]) {
       this.stageT = 0;
       this.effects.push({ suspicion: 0.1 });
       this.floats.spawn(this.sx(0.5), this.fieldY + 46, "СЛИШКОМ ДОЛГО — ИХ СПУТНИКИ СМОТРЯТ", C.warn, 1.6);
@@ -625,8 +655,8 @@ export class Swarm implements Mini {
 
     // Hub.
     {
-      const hx = this.sx(cfg.hub.x);
-      const hy = this.sy(cfg.hub.y);
+      const hx = this.sx(this.mission.hub.x);
+      const hy = this.sy(this.mission.hub.y);
       const hpK = clamp(this.hubHp / cfg.hubHp, 0, 1);
       ctx.save();
       ctx.translate(hx, hy);
@@ -658,7 +688,7 @@ export class Swarm implements Mini {
       if (v.left <= 0) continue;
       const x = this.sx(v.x);
       const y = this.sy(v.y);
-      const k = v.left / cfg.veinCapacity;
+      const k = v.left / this.mission.veinCapacity;
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(Math.PI / 6);
@@ -781,15 +811,16 @@ export class Swarm implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`ЭТАП ${this.stage + 1}/${SWARM_STAGES.length} · ${stage.title}`, mx, topY);
+    const mtag = this.missions.length > 1 ? `М${this.missionIdx + 1}/${this.missions.length} · ` : "";
+    ctx.fillText(`${mtag}ЭТАП ${this.stage + 1}/${SWARM_STAGES.length} · ${stage.title}`, mx, topY);
     ctx.textAlign = "right";
-    const left = Math.max(0, stage.timeLimit - this.stageT);
+    const left = Math.max(0, this.mission.timeLimits[this.stage] - this.stageT);
     ctx.fillStyle = left < 15 ? C.danger : C.dim;
     ctx.fillText(`${Math.ceil(left)}с`, w - mx, topY);
     ctx.textAlign = "left";
     ctx.font = mono(10);
     ctx.fillStyle = C.accentSoft;
-    ctx.fillText(stage.goal, mx, topY + 16);
+    ctx.fillText(this.stageGoal(), mx, topY + 16);
     ctx.textAlign = "right";
     ctx.fillStyle = "#ffd98a";
     ctx.fillText(`МЕТАЛЛ ${this.metal}`, w - mx, topY + 16);
@@ -812,7 +843,7 @@ export class Swarm implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(10);
     ctx.fillStyle = alive > 5 ? C.dim : C.danger;
-    ctx.fillText(`ДРОНОВ ${alive}/${SWARM_CONFIG.drones}`, mx, h - 76);
+    ctx.fillText(`ДРОНОВ ${alive}/${this.mission.drones}`, mx, h - 76);
 
     // Context-sensitive coaching: what to do right now.
     const anySelected = this.drones.some((d) => d.selected && d.hp > 0);
@@ -830,10 +861,10 @@ export class Swarm implements Mini {
       ctx.textAlign = "center";
       ctx.font = mono(20);
       ctx.fillStyle = C.ink;
-      ctx.fillText(stage.title, w / 2, h * 0.42);
+      ctx.fillText(this.stage === 0 ? `${this.mission.name} · ${stage.title}` : stage.title, w / 2, h * 0.42);
       ctx.font = mono(12);
       ctx.fillStyle = C.dim;
-      ctx.fillText(stage.goal, w / 2, h * 0.42 + 26);
+      ctx.fillText(this.stageGoal(), w / 2, h * 0.42 + 26);
       ctx.globalAlpha = 1;
     }
 

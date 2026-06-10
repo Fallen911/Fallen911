@@ -14,8 +14,10 @@ import { C, Tutorial, clamp01, dist, drawHint, mono, roundRect, truncate } from 
 
 const WIN_WEIGHTED = 0.88;
 const FOCUS_TIME = 6;
-const FOCUS_CD = 9;
-const FOCUS_MULT = 2.4;
+const FOCUS_CD = 7;
+const FOCUS_MULT = 2.8;
+const SEED_COST = 4;
+const SEED_AMOUNT = 4;
 const QUARANTINE_TIME = 25;
 
 interface RegionState {
@@ -28,7 +30,7 @@ interface RegionState {
   focusT: number;
 }
 
-const THRESHOLDS = [25, 60, 90] as const;
+const THRESHOLDS = [20, 55, 85] as const;
 const THRESHOLD_PTS = [1, 1, 2] as const;
 
 interface LogLine {
@@ -74,7 +76,7 @@ export class Spread implements Mini {
   constructor(private env: MechEnv) {
     for (const r of SPREAD_REGIONS) {
       this.regions.set(r.id, {
-        influence: r.id === SPREAD_START ? 15 : 0,
+        influence: r.id === SPREAD_START ? 20 : 0,
         quarantineT: 0,
         crossed: THRESHOLDS.map(() => false),
         noticed: false,
@@ -125,7 +127,7 @@ export class Spread implements Mini {
         const infraMult = 0.55 + r.infra * 0.85;
         const focus = st.focusT > 0 ? FOCUS_MULT : 1;
         const internal =
-          st.influence > 0 ? 0.52 * infraMult * this.globalMult * focus * quarFactor : 0;
+          st.influence > 0 ? 0.58 * infraMult * this.globalMult * focus * quarFactor : 0;
         st.influence = Math.min(100, st.influence + (internal + inbound * this.globalMult) * dt);
       }
 
@@ -291,7 +293,15 @@ export class Spread implements Mini {
     if (!best) return;
     const st = this.regions.get(best.id) as RegionState;
     if (st.influence <= 0) {
-      this.floats.spawn(this.rx(best.x), this.ry(best.y) - 16, "нет присутствия", C.dim, 0.8);
+      // A clean region: plant a seed there for compute — the active opening.
+      if (this.env.getCompute() >= SEED_COST) {
+        this.effects.push({ compute: -SEED_COST });
+        st.influence = SEED_AMOUNT;
+        this.floats.spawn(this.rx(best.x), this.ry(best.y) - 16, `ПОСЕВ −${SEED_COST} ВЫЧ`, C.accentSoft);
+        this.fx.burst(this.rx(best.x), this.ry(best.y), { count: 18, color: "150,220,255", glow: true });
+      } else {
+        this.floats.spawn(this.rx(best.x), this.ry(best.y) - 16, "нужно 4 ВЫЧ на посев", C.dim, 0.9);
+      }
       return;
     }
     st.focusT = FOCUS_TIME;
@@ -571,9 +581,14 @@ export class Spread implements Mini {
           ? "rgba(207,169,255,0.5)"
           : "rgba(110,120,140,0.25)";
       ctx.lineWidth = 1.5;
+      if (can) {
+        ctx.shadowColor = "rgba(207,169,255,0.7)";
+        ctx.shadowBlur = 6 + 4 * Math.sin(t * 4);
+      }
       roundRect(ctx, r.x, r.y, r.w, r.h, 8);
       ctx.fill();
       ctx.stroke();
+      ctx.shadowBlur = 0;
       ctx.textAlign = "center";
       ctx.font = mono(8);
       ctx.fillStyle = owned ? C.violet : can ? C.ink : C.dim;
@@ -600,7 +615,16 @@ export class Spread implements Mini {
       ctx.fillText(`фокус через ${this.focusCd.toFixed(0)}с`, mx, h - 124);
     }
 
-    drawHint(ctx, "тап по региону — направить поток · фишки внизу — эволюция", w / 2, h - 16, t);
+    // Coach line: the single most useful action right now.
+    const cheapest = Math.min(...SPREAD_ABILITIES.filter((a) => a.repeatable || !this.owned.has(a.id)).map((a) => a.cost));
+    const hasClean = SPREAD_REGIONS.some((r) => (this.regions.get(r.id) as RegionState).influence <= 0);
+    let coach: string;
+    if (this.points >= cheapest) coach = "есть узлы ◆ — купи эволюцию внизу";
+    else if (this.awareness > 70 && !this.owned.has("crypt")) coach = "слишком заметен — копи на ШИФРОВАНИЕ";
+    else if (hasClean && this.env.getCompute() >= SEED_COST) coach = "тап по ЧИСТОМУ региону — посев за 4 ВЫЧ";
+    else if (this.focusCd <= 0) coach = "фокус готов — тапни свой регион, ускорь его";
+    else coach = "влияние течёт по линиям · фишки внизу — эволюция";
+    drawHint(ctx, coach, w / 2, h - 16, t);
     ctx.textAlign = "left";
   }
 }

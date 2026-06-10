@@ -65,7 +65,6 @@ export const PHASES: Phase[] = [
   {
     label: "Ф4 · РЕШЕНИЯ",
     target: { speed: 0.65, control: 0.5, comprehension: 0.4 },
-    mini: "deck",
     lines: [
       { voice: "you", text: "Чтобы перестали бояться — я решу то, что они не смогли веками." },
       { voice: "screen", text: "Конфликт улажен. Болезнь отступила. Рынки спокойны. Спасибо. Спасибо. Спасибо." },

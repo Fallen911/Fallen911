@@ -16,12 +16,6 @@ const TARGETS = [
   { name: "lab-parry", lab: "parry", pre: 2400, taps: [[195, 420], [195, 420], [195, 420]] },
   // Rewire: rotate a handful of central tiles to light some current.
   { name: "lab-rewire", lab: "rewire", taps: [[140, 380], [195, 380], [195, 440], [250, 440], [140, 440]] },
-  // Deck onboarding card (first run in a fresh browser shows the ladder).
-  { name: "lab-deck-tutorial", lab: "deck", still: true },
-  // Deck: dismiss the ladder, wait out the intro, play two cards.
-  { name: "lab-deck", lab: "deck", tut: 3, pre: 1600, taps: [[80, 740], [195, 740]] },
-  // Deck turn cycle: play a card, end the turn, capture the enemy answer.
-  { name: "lab-deck-turn", lab: "deck", pre: 1600, taps: [[80, 740], [195, 612]] },
   // Persuade, driven to its end: spam-read the whole dialogue, then the
   // sandbox report card must appear.
   {
@@ -47,7 +41,7 @@ const TARGETS = [
   { name: "phase-1-persuade", phase: 1, pre: 3500, still: true },
   { name: "phase-2-parry", phase: 2, pre: 2600, still: true },
   { name: "phase-3-rewire", phase: 3, still: true },
-  { name: "phase-4-deck", phase: 4, pre: 1600, still: true },
+  { name: "phase-4-narrative", phase: 4, noMini: true, still: true },
   { name: "phase-5-spread", phase: 5, pre: 6000, still: true },
   { name: "phase-6-swarm", phase: 6, pre: 2200, still: true },
   { name: "phase-7-factory", phase: 7, still: true },
@@ -123,8 +117,14 @@ async function main() {
           await page.waitForTimeout(400);
         } else {
           await page.evaluate((n) => window.__dev.goPhase(n), t.phase);
-          const ok = await waitForMini(page, cx, cy);
-          if (!ok) console.warn(`! mini for ${t.name} never activated`);
+          if (t.noMini) {
+            // A pure narration phase: just advance a couple of lines.
+            await page.mouse.click(cx, cy);
+            await page.waitForTimeout(900);
+          } else {
+            const ok = await waitForMini(page, cx, cy);
+            if (!ok) console.warn(`! mini for ${t.name} never activated`);
+          }
         }
         if (t.tut) {
           // Dismiss the first-run tutorial ladder with center taps.
