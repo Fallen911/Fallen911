@@ -18,6 +18,8 @@ const TARGETS = [
   { name: "lab-rewire", lab: "rewire", taps: [[140, 380], [195, 380], [195, 440], [250, 440], [140, 440]] },
   // Deck: wait out the intro, play two cards from the hand.
   { name: "lab-deck", lab: "deck", pre: 1600, taps: [[80, 740], [195, 740]] },
+  // Persuade: skip typing, capture the choice screen with tell visible.
+  { name: "lab-persuade", lab: "persuade", pre: 600, taps: [[195, 300]] },
   { name: "phase-0-instinct", phase: 0 },
   { name: "phase-1-threat", phase: 1 },
   { name: "phase-2-acceleration", phase: 2 },
