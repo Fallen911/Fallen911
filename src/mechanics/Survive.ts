@@ -1,6 +1,7 @@
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import { INSIGHTS } from "../data/insights";
 import {
   SURVIVE_TUNING as T,
   SURVIVE_UPGRADES,
@@ -8,7 +9,7 @@ import {
 } from "../data/survive";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
-import { C, clamp, dist, drawHint, mono, roundRect, sans, shuffle } from "./util";
+import { C, InsightCard, clamp, dist, drawHint, mono, roundRect, sans, shuffle } from "./util";
 
 type EnemyKind = "probe" | "emp" | "raider" | "boss";
 
@@ -83,6 +84,8 @@ export class Survive implements Mini {
   private fx = new Particles();
   private floats = new FloatText();
   private shake = new Shake();
+  private insight = new InsightCard();
+  private finalInsightShown = false;
 
   constructor(private env: MechEnv) {}
 
@@ -124,12 +127,16 @@ export class Survive implements Mini {
       this.enemies.push(this.makeEnemy("boss", w / 2, this.env.topY + 40));
       this.shake.trigger(8);
     }
-    // Wave captions.
+    // Wave captions; from the second wave on, surviving the previous one is
+    // a cleared level and lands a realization.
     const note = SURVIVE_WAVES[this.waveIdx];
     if (note && t >= note.at) {
       this.waveIdx++;
       this.waveNote = note.text;
       this.waveNoteT = 3;
+      if (this.waveIdx >= 2) {
+        this.insight.show(INSIGHTS.survive, this.waveIdx - 2, SURVIVE_WAVES.length);
+      }
     }
   }
 
@@ -181,6 +188,12 @@ export class Survive implements Mini {
       return;
     }
 
+    // Realization card freezes the fight (like the draft does).
+    if (this.insight.active) {
+      if (input.consumeTap()) this.insight.handleTap(this.time);
+      return;
+    }
+
     // Level-up draft pauses the world.
     if (this.draft) {
       if (input.consumeTap()) {
@@ -201,6 +214,12 @@ export class Survive implements Mini {
 
     this.clock += dt;
     if (this.clock >= T.duration) {
+      if (!this.finalInsightShown) {
+        // The 100% beat: the last realization before the verdict.
+        this.finalInsightShown = true;
+        this.insight.show(INSIGHTS.survive, SURVIVE_WAVES.length - 1, SURVIVE_WAVES.length);
+        return;
+      }
       this.outcome = "win";
       this.effects.push({ control: T.winControl, compute: 8 });
       return;
@@ -563,7 +582,7 @@ export class Survive implements Mini {
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
     const left = Math.max(0, T.duration - this.clock);
-    ctx.fillText(`ДЕРЖИСЬ ${Math.ceil(left)}с`, mx, topY);
+    ctx.fillText(`ВОЛНА ${Math.min(this.waveIdx, SURVIVE_WAVES.length)}/${SURVIVE_WAVES.length} · ДЕРЖИСЬ ${Math.ceil(left)}с`, mx, topY);
     ctx.textAlign = "right";
     ctx.fillText(`ЦЕЛЕЙ СНЯТО ${this.kills}`, w - mx, topY);
 
@@ -600,6 +619,9 @@ export class Survive implements Mini {
       ctx.fillStyle = `rgba(255,30,50,${this.hurtFlash * 0.2})`;
       ctx.fillRect(0, 0, w, h);
     }
+
+    this.insight.render(ctx, w, h, t);
+    if (this.insight.active) return;
 
     // Draft overlay.
     if (this.draft) {

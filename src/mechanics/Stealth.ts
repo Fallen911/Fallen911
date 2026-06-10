@@ -1,10 +1,11 @@
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import { INSIGHTS } from "../data/insights";
 import { STEALTH_LEVELS, type StealthLevel } from "../data/stealth";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
-import { C, dist, drawHint, mono, roundRect } from "./util";
+import { C, InsightCard, dist, drawHint, mono, roundRect } from "./util";
 
 const CAUGHT_SUSPICION = 0.08;
 const SHARD_COMPUTE = 3;
@@ -50,6 +51,7 @@ export class Stealth implements Mini {
   private fx = new Particles();
   private floats = new FloatText();
   private shake = new Shake();
+  private insight = new InsightCard();
 
   constructor(private env: MechEnv) {
     this.loadLevel(0);
@@ -216,11 +218,18 @@ export class Stealth implements Mini {
       }
       case "clear": {
         this.phaseT += dt;
-        if (this.phaseT >= 1.1) {
-          if (this.levelIdx + 1 < STEALTH_LEVELS.length) {
-            this.loadLevel(this.levelIdx + 1);
-          } else {
-            this.done = true;
+        if (this.phaseT >= 1.0 && !this.insight.active) {
+          this.insight.show(INSIGHTS.stealth, this.levelIdx, STEALTH_LEVELS.length);
+          this.phaseT = -999; // wait for the card
+        }
+        if (this.phaseT < -1) {
+          if (input.consumeTap()) this.insight.handleTap(this.time);
+          if (!this.insight.active) {
+            if (this.levelIdx + 1 < STEALTH_LEVELS.length) {
+              this.loadLevel(this.levelIdx + 1);
+            } else {
+              this.done = true;
+            }
           }
         }
         return;
@@ -513,6 +522,7 @@ export class Stealth implements Mini {
       "иди за спиной патруля. ромб — вычисления",
     ];
     drawHint(ctx, hints[Math.floor(t / 4) % hints.length], w / 2, h - 40, t);
+    this.insight.render(ctx, w, h, this.time);
     ctx.textAlign = "left";
   }
 }

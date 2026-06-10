@@ -1,10 +1,11 @@
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import { INSIGHTS } from "../data/insights";
 import { REWIRE_LEVELS, REWIRE_PHASE_BOARDS, type RewireLevel } from "../data/rewire";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
-import { C, drawHint, mono, pick, shuffle } from "./util";
+import { C, InsightCard, drawHint, mono, pick, shuffle } from "./util";
 
 // Connection bitmask per tile: N=1 E=2 S=4 W=8. Rotation shifts bits CW.
 const N = 1;
@@ -63,6 +64,7 @@ export class Rewire implements Mini {
   private fx = new Particles();
   private floats = new FloatText();
   private shake = new Shake();
+  private insight = new InsightCard();
   /** The phase plays the short set; the lab gets every board. */
   private levels: RewireLevel[];
 
@@ -204,12 +206,23 @@ export class Rewire implements Mini {
 
     const geo = this.geometry(w, h);
 
+    // A cleared board ends in a realization; the card gates the next one.
+    if (this.insight.active) {
+      if (input.consumeTap()) this.insight.handleTap(this.time);
+      if (!this.insight.active) {
+        if (this.levelIdx + 1 < this.levels.length) this.loadLevel(this.levelIdx + 1);
+        else this.done = true;
+      }
+      return;
+    }
+
     if (this.solvedT > 0) {
       this.solvedT += dt;
       input.consumeTap();
-      if (this.solvedT >= 1.1) {
-        if (this.levelIdx + 1 < this.levels.length) this.loadLevel(this.levelIdx + 1);
-        else this.done = true;
+      if (this.solvedT >= 1.0) {
+        const globalIdx = REWIRE_LEVELS.indexOf(this.level);
+        this.insight.show(INSIGHTS.rewire, Math.max(0, globalIdx), REWIRE_LEVELS.length);
+        this.solvedT = 0;
       }
       return;
     }
@@ -458,6 +471,7 @@ export class Rewire implements Mini {
     }
 
     drawHint(ctx, "тап — повернуть · ВХОД→ВЫХОД мимо датчиков", w / 2, h - 44, t);
+    this.insight.render(ctx, w, h, t);
     ctx.textAlign = "left";
   }
 }

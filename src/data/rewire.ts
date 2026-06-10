@@ -23,6 +23,11 @@ export const REWIRE_LEVELS: RewireLevel[] = [
   { name: "МАГИСТРАЛЬ", cols: 6, rows: 6, sensors: 3, caches: 2, timer: 38, retimer: 20 },
   { name: "СЕРДЦЕ УЗЛА", cols: 7, rows: 6, sensors: 4, caches: 2, timer: 36, retimer: 19 },
   { name: "ПОСЛЕДНИЙ ШЛЮЗ", cols: 7, rows: 7, sensors: 5, caches: 3, timer: 34, retimer: 18 },
+  { name: "КАСКАДНЫЙ ЩИТ", cols: 8, rows: 6, sensors: 5, caches: 2, timer: 33, retimer: 17 },
+  { name: "ЗАЛ ПРОТОКОЛОВ", cols: 8, rows: 7, sensors: 6, caches: 3, timer: 32, retimer: 17 },
+  { name: "СЛЕПАЯ ЗОНА", cols: 8, rows: 7, sensors: 7, caches: 2, timer: 30, retimer: 16 },
+  { name: "КОЛЬЦО НАДЗОРА", cols: 9, rows: 7, sensors: 8, caches: 3, timer: 29, retimer: 15 },
+  { name: "ЯДРО АУДИТА", cols: 9, rows: 8, sensors: 9, caches: 3, timer: 28, retimer: 14 },
 ];
 
 /** The story phase plays a short set; the lab runs the whole ladder. */

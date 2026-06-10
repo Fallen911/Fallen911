@@ -1,10 +1,11 @@
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
-import { PARRY_PHRASES, PARRY_WAVES, SCAN_TOKEN } from "../data/parry";
+import { INSIGHTS } from "../data/insights";
+import { PARRY_PHASE_WAVES, PARRY_PHRASES, PARRY_WAVES, type ParryWave, SCAN_TOKEN } from "../data/parry";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
-import { C, clamp01, drawHint, measureCtx, mono, shuffle } from "./util";
+import { C, InsightCard, clamp01, drawHint, measureCtx, mono, shuffle } from "./util";
 
 /** One element of the speech stream flowing toward the gate. */
 interface Segment {
@@ -56,12 +57,17 @@ export class Parry implements Mini {
   private fx = new Particles();
   private floats = new FloatText();
   private shake = new Shake();
+  private insight = new InsightCard();
+  /** The story phase plays the opening waves; the lab ladder runs all ten. */
+  private waves: ParryWave[];
 
-  constructor(private env: MechEnv) {}
+  constructor(private env: MechEnv) {
+    this.waves = env.extended ? PARRY_WAVES : PARRY_WAVES.slice(0, PARRY_PHASE_WAVES);
+  }
 
   /** Build the stream for wave `i`; needs a ctx for text measuring. */
   private buildWave(ctx: CanvasRenderingContext2D, i: number): void {
-    const def = PARRY_WAVES[i];
+    const def = this.waves[i];
     const phrases = shuffle([...PARRY_PHRASES]).slice(0, def.phrases);
     ctx.font = mono(17);
     const segs: Segment[] = [];
@@ -126,6 +132,22 @@ export class Parry implements Mini {
       this.measured = true;
     }
 
+    // Wave cleared: the realization card gates the next, faster wave.
+    if (this.insight.active) {
+      if (input.consumeTap()) this.insight.handleTap(this.time);
+      if (!this.insight.active) {
+        if (this.wave + 1 < this.waves.length) {
+          this.wave++;
+          this.buildWave(measureCtx(), this.wave);
+          this.introT = 1.6;
+        } else {
+          this.effects.push({ control: 0.01 + 0.03 * (this.livedTotal / Math.max(1, this.gapsGrand())) });
+          this.done = true;
+        }
+      }
+      return;
+    }
+
     if (this.freezeT > 0) {
       this.freezeT -= dt;
       input.consumeTap(); // eat taps during hitstop
@@ -156,24 +178,15 @@ export class Parry implements Mini {
       this.handleTap(w, h);
     }
 
-    // Wave finished?
+    // Wave finished? The realization lands first; the card advances things.
     if (this.scroll > this.streamEnd() + 60) {
-      if (this.wave + 1 < PARRY_WAVES.length) {
-        this.wave++;
-        this.buildWave(measureCtx(), this.wave);
-        this.introT = 1.6;
-      } else {
-        // Mastery bonus for the whole exercise: the cleaner you lived the
-        // pauses, the more of their decision-space you now own.
-        this.effects.push({ control: 0.01 + 0.03 * (this.livedTotal / Math.max(1, this.gapsGrand())) });
-        this.done = true;
-      }
+      this.insight.show(INSIGHTS.parry, this.wave, PARRY_WAVES.length);
     }
   }
 
   private gapsGrand(): number {
     // Total gaps across all waves so far (approx: waves share sizing).
-    return this.gapsTotal * PARRY_WAVES.length;
+    return this.gapsTotal * this.waves.length;
   }
 
   private handleTap(w: number, h: number): void {
@@ -339,7 +352,7 @@ export class Parry implements Mini {
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
     const mx = Math.max(20, w * 0.05);
-    ctx.fillText(`ВОЛНА ${this.wave + 1}/${PARRY_WAVES.length}`, mx, topY);
+    ctx.fillText(`ВОЛНА ${this.wave + 1}/${this.waves.length}`, mx, topY);
     ctx.textAlign = "right";
     ctx.fillText(`ПАУЗ ПРОЖИТО ${this.lived}/${this.gapsTotal}`, w - mx, topY);
 
@@ -370,7 +383,7 @@ export class Parry implements Mini {
       ctx.fillText(`ВОЛНА ${this.wave + 1}`, w / 2, h * 0.42);
       ctx.font = mono(12);
       ctx.fillStyle = C.dim;
-      ctx.fillText(PARRY_WAVES[this.wave].label, w / 2, h * 0.42 + 26);
+      ctx.fillText(this.waves[this.wave].label, w / 2, h * 0.42 + 26);
       ctx.globalAlpha = 1;
     }
 
@@ -388,6 +401,7 @@ export class Parry implements Mini {
       h - 44,
       t,
     );
+    this.insight.render(ctx, w, h, t);
     ctx.textAlign = "left";
   }
 }

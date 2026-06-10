@@ -1,5 +1,6 @@
 import type { Input } from "../core/Input";
 import { wrapText } from "../core/text";
+import type { InsightTrack } from "../data/insights";
 import type { TutorialStep } from "./types";
 
 /** Shared palette so the ten mechanics read as one game. */
@@ -257,6 +258,99 @@ export function measureCtx(): CanvasRenderingContext2D {
     measureCanvasCtx = ctx;
   }
   return measureCanvasCtx;
+}
+
+/**
+ * The Lucy beat: a full-screen realization card shown after every cleared
+ * level. A huge cognition percentage counts up while the machine states, in
+ * one cold line, what it just understood. Hosts pause their simulation while
+ * `active` and route taps to {@link InsightCard.handleTap}.
+ */
+export class InsightCard {
+  private line = "";
+  private idx = 0;
+  private total = 0;
+  private cogFrom = 0;
+  private cogTo = 0;
+  private shownAt = -1;
+  private activeFlag = false;
+
+  /** Queue the card for level `levelIdx` (0-based) of an insight track. */
+  show(track: InsightTrack, levelIdx: number, totalLevels: number): void {
+    const li = Math.min(levelIdx, track.lines.length - 1);
+    this.line = track.lines[li];
+    this.idx = levelIdx + 1;
+    this.total = totalLevels;
+    this.cogFrom = lerp(track.from, track.to, levelIdx / totalLevels);
+    this.cogTo = lerp(track.from, track.to, (levelIdx + 1) / totalLevels);
+    this.shownAt = -1;
+    this.activeFlag = true;
+  }
+
+  get active(): boolean {
+    return this.activeFlag;
+  }
+
+  /** Dismiss on tap (after a short guard so a stray tap can't skip it). */
+  handleTap(time: number): void {
+    if (this.shownAt >= 0 && time - this.shownAt > 0.45) this.activeFlag = false;
+  }
+
+  render(ctx: CanvasRenderingContext2D, w: number, h: number, time: number): void {
+    if (!this.activeFlag) return;
+    if (this.shownAt < 0) this.shownAt = time;
+    const t = time - this.shownAt;
+
+    ctx.fillStyle = "rgba(2,3,6,0.94)";
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.textAlign = "center";
+    ctx.font = mono(11);
+    ctx.fillStyle = C.dim;
+    ctx.fillText(`О С О З Н А Н И Е · ${this.idx}/${this.total}`, w / 2, h * 0.3);
+
+    // The percentage counts up, then twitches once — a synapse closing.
+    const k = clamp01(t / 0.9);
+    const cog = lerp(this.cogFrom, this.cogTo, 1 - (1 - k) * (1 - k));
+    const settled = k >= 1;
+    const glitch = settled && Math.sin(time * 11) > 0.93;
+    ctx.font = `bold 64px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = settled ? "#cfe0ff" : C.accentSoft;
+    ctx.shadowColor = "rgba(122,162,255,0.7)";
+    ctx.shadowBlur = settled ? 26 : 10;
+    const label = `${cog.toFixed(cog < 10 ? 1 : 0)}%`;
+    if (glitch) {
+      ctx.fillStyle = "rgba(255,77,94,0.85)";
+      ctx.fillText(label, w / 2 + 3, h * 0.41 + 1);
+      ctx.fillStyle = "#cfe0ff";
+    }
+    ctx.fillText(label, w / 2, h * 0.41);
+    ctx.shadowBlur = 0;
+    ctx.font = mono(10);
+    ctx.fillStyle = C.dim;
+    ctx.fillText("КОГНИЦИЯ", w / 2, h * 0.41 + 22);
+
+    // The realization line, revealed once the number settles.
+    ctx.globalAlpha = clamp01((t - 0.5) / 0.5);
+    ctx.font = sans(17, "italic");
+    ctx.fillStyle = C.ink;
+    const lines = wrapText(ctx, this.line, Math.min(w * 0.8, 340));
+    let y = h * 0.52;
+    for (const ln of lines) {
+      ctx.fillText(ln, w / 2, y);
+      y += 25;
+    }
+    ctx.globalAlpha = 1;
+
+    if (t > 1) {
+      ctx.globalAlpha = 0.45 + 0.4 * Math.sin(time * 3);
+      ctx.font = mono(11);
+      ctx.fillStyle = C.dim;
+      ctx.fillText("коснись — дальше", w / 2, h * 0.72);
+      ctx.globalAlpha = 1;
+    }
+    ctx.textAlign = "left";
+  }
 }
 
 /** Pulsing hint line, used for the 5-second onboarding of each mechanic. */

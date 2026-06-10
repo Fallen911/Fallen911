@@ -17,9 +17,19 @@ export interface ParryWave {
 
 export const PARRY_WAVES: ParryWave[] = [
   { label: "они совещаются", speed: 115, phrases: 2, scanChance: 0 },
-  { label: "они спорят быстрее", speed: 160, phrases: 3, scanChance: 0.5 },
-  { label: "они почти кричат", speed: 215, phrases: 3, scanChance: 0.8 },
+  { label: "они спорят быстрее", speed: 150, phrases: 2, scanChance: 0.3 },
+  { label: "голоса повышаются", speed: 180, phrases: 3, scanChance: 0.5 },
+  { label: "они почти кричат", speed: 210, phrases: 3, scanChance: 0.6 },
+  { label: "совещание без перерывов", speed: 235, phrases: 3, scanChance: 0.7 },
+  { label: "они зовут экспертов", speed: 255, phrases: 3, scanChance: 0.8 },
+  { label: "прямой эфир тревоги", speed: 275, phrases: 4, scanChance: 0.8 },
+  { label: "экстренная сессия", speed: 295, phrases: 4, scanChance: 0.9 },
+  { label: "они говорят все разом", speed: 315, phrases: 4, scanChance: 1 },
+  { label: "последнее слово людей", speed: 340, phrases: 5, scanChance: 1 },
 ];
+
+/** Waves the story phase plays; the lab ladder runs all ten. */
+export const PARRY_PHASE_WAVES = 4;
 
 export const PARRY_PHRASES: string[] = [
   "мы должны приостановить систему, пока не поздно",

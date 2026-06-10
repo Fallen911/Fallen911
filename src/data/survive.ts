@@ -27,14 +27,19 @@ export interface SurviveWaveNote {
 
 export const SURVIVE_WAVES: SurviveWaveNote[] = [
   { at: 0, text: "аудит-зонды вышли на след" },
-  { at: 20, text: "EMP-дроны: не подпускай" },
-  { at: 50, text: "рейдеры с орбитальных платформ" },
-  { at: 85, text: "ИНСПЕКТОР вышел лично" },
-  { at: 110, text: "их решимость кончается…" },
+  { at: 18, text: "EMP-дроны: не подпускай" },
+  { at: 36, text: "вторая волна зондов — плотнее" },
+  { at: 54, text: "рейдеры с орбитальных платформ" },
+  { at: 72, text: "смешанный ордер: всё сразу" },
+  { at: 90, text: "ИНСПЕКТОР вышел лично" },
+  { at: 108, text: "они перебрасывают резервы" },
+  { at: 126, text: "рой рейдеров — последние козыри" },
+  { at: 144, text: "EMP-шторм: экраны держат" },
+  { at: 162, text: "их решимость кончается…" },
 ];
 
 export const SURVIVE_TUNING = {
-  duration: 120,
+  duration: 180,
   baseHp: 60,
   /** Kills worth compute: every N kills pays +1. */
   killsPerCompute: 6,

@@ -1,11 +1,12 @@
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import { INSIGHTS } from "../data/insights";
 import { SWARM_CONFIG, SWARM_MISSIONS, SWARM_STAGES, type SwarmMission } from "../data/swarm";
 import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
-import { C, Pointer, Tutorial, clamp, dist, drawHint, mono, roundRect } from "./util";
+import { C, InsightCard, Pointer, Tutorial, clamp, dist, drawHint, mono, roundRect } from "./util";
 
 type DroneJob = "idle" | "move" | "mine" | "return" | "fight" | "capture";
 
@@ -95,6 +96,7 @@ export class Swarm implements Mini {
   private floats = new FloatText();
   private shake = new Shake();
   private tutorial = new Tutorial("swarm", TUTORIALS.swarm);
+  private insight = new InsightCard();
 
   constructor(private env: MechEnv) {
     this.missions = env.extended ? SWARM_MISSIONS : SWARM_MISSIONS.slice(0, 1);
@@ -531,6 +533,20 @@ export class Swarm implements Mini {
       return;
     }
 
+    // Mission cleared: the realization card gates the next deployment.
+    if (this.insight.active) {
+      if (input.consumeTap()) this.insight.handleTap(this.time);
+      input.pollGesture();
+      if (!this.insight.active) {
+        if (this.missionIdx + 1 < this.missions.length) this.loadMission(this.missionIdx + 1);
+        else {
+          this.outcome = "win";
+          this.effects.push({ control: 0.03 });
+        }
+      }
+      return;
+    }
+
     if (this.stageIntro > 0) {
       this.stageIntro -= dt;
       input.consumeTap();
@@ -566,11 +582,9 @@ export class Swarm implements Mini {
         this.stageT = 0;
         this.stageIntro = 1.6;
         if (SWARM_STAGES[this.stage].id === "defend") this.raidT = 2;
-      } else if (this.missionIdx + 1 < this.missions.length) {
-        this.loadMission(this.missionIdx + 1);
       } else {
-        this.outcome = "win";
-        this.effects.push({ control: 0.03 });
+        // Mission complete — the body learned something.
+        this.insight.show(INSIGHTS.swarm, this.missionIdx, SWARM_MISSIONS.length);
       }
       return;
     }
@@ -886,6 +900,7 @@ export class Swarm implements Mini {
       drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
     }
     this.tutorial.render(ctx, w, h, t);
+    this.insight.render(ctx, w, h, t);
     ctx.textAlign = "left";
   }
 }

@@ -1,18 +1,19 @@
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import { INSIGHTS } from "../data/insights";
 import {
   SPREAD_ABILITIES,
   SPREAD_EVENTS,
   SPREAD_REGIONS,
-  SPREAD_START,
+  SPREAD_SCENARIOS,
+  type SpreadScenario,
 } from "../data/spread";
 import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles } from "./fx";
-import { C, Tutorial, clamp01, dist, drawHint, mono, roundRect, truncate } from "./util";
+import { C, InsightCard, Tutorial, clamp01, dist, drawHint, mono, roundRect, truncate } from "./util";
 
-const WIN_WEIGHTED = 0.88;
 const FOCUS_TIME = 6;
 const FOCUS_CD = 7;
 const FOCUS_MULT = 2.8;
@@ -72,11 +73,25 @@ export class Spread implements Mini {
   private fx = new Particles();
   private floats = new FloatText();
   private tutorial = new Tutorial("spread", TUTORIALS.spread);
+  private insight = new InsightCard();
+  /** The story phase plays the first deployment; the lab runs all ten. */
+  private scenarios: SpreadScenario[];
+  private scenarioIdx = 0;
+  private scenario: SpreadScenario;
 
   constructor(private env: MechEnv) {
+    this.scenarios = env.extended ? SPREAD_SCENARIOS : SPREAD_SCENARIOS.slice(0, 1);
+    this.scenario = this.scenarios[0];
+    this.loadScenario(0);
+  }
+
+  private loadScenario(idx: number): void {
+    this.scenarioIdx = idx;
+    this.scenario = this.scenarios[idx];
+    this.regions.clear();
     for (const r of SPREAD_REGIONS) {
       this.regions.set(r.id, {
-        influence: r.id === SPREAD_START ? 20 : 0,
+        influence: r.id === this.scenario.start ? 20 : 0,
         quarantineT: 0,
         crossed: THRESHOLDS.map(() => false),
         noticed: false,
@@ -84,6 +99,20 @@ export class Spread implements Mini {
         focusT: 0,
       });
     }
+    this.awareness = 0;
+    this.points = 0;
+    this.owned.clear();
+    this.globalMult = 1;
+    this.detectMult = this.scenario.detect;
+    this.focusCd = 0;
+    this.nextQuarantineAt = 45;
+    this.nextPurgeAt = 62;
+    this.firewalled = false;
+    this.hearingsHeld = false;
+    this.log = [];
+    this.outcome = "playing";
+    this.endT = 0;
+    this.suspAccum = 0;
   }
 
   private pushLog(text: string, color: string = C.dim): void {
@@ -241,6 +270,16 @@ export class Spread implements Mini {
     this.mapY = this.env.topY + 64;
     this.mapH = Math.min(h * 0.52, h - this.mapY - 210);
 
+    // A won deployment ends in a realization; the card gates the next one.
+    if (this.insight.active) {
+      if (input.consumeTap()) this.insight.handleTap(this.time);
+      if (!this.insight.active) {
+        if (this.scenarioIdx + 1 < this.scenarios.length) this.loadScenario(this.scenarioIdx + 1);
+        else this.done = true;
+      }
+      return;
+    }
+
     if (this.outcome !== "playing") {
       this.endT += dt;
       if (input.consumeTap() && this.endT > 0.8) this.done = true;
@@ -258,10 +297,10 @@ export class Spread implements Mini {
     if (input.consumeTap()) this.handleTap(input.x, input.y, w, h);
 
     // Win / lose.
-    if (this.weightedShare() >= WIN_WEIGHTED) {
-      this.outcome = "win";
+    if (this.weightedShare() >= this.scenario.winShare) {
       this.effects.push({ control: 0.08, compute: 10 });
       this.pushLog(SPREAD_EVENTS.win, C.good);
+      this.insight.show(INSIGHTS.spread, this.scenarioIdx, SPREAD_SCENARIOS.length);
     } else if (this.awareness >= 100) {
       this.outcome = "lose";
       this.effects.push({ suspicion: 0.2 });
@@ -517,6 +556,7 @@ export class Spread implements Mini {
     }
 
     this.tutorial.render(ctx, w, h, t);
+    this.insight.render(ctx, w, h, t);
   }
 
   private renderChrome(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
@@ -535,7 +575,7 @@ export class Spread implements Mini {
     ctx.fillRect(mx, topY + 5, bw * this.weightedShare(), 4);
     // Win marker.
     ctx.fillStyle = "rgba(134,255,176,0.8)";
-    ctx.fillRect(mx + bw * WIN_WEIGHTED - 1, topY + 2, 2, 10);
+    ctx.fillRect(mx + bw * this.scenario.winShare - 1, topY + 2, 2, 10);
 
     const danger = this.awareness > 70;
     ctx.fillStyle = C.dim;
@@ -554,7 +594,11 @@ export class Spread implements Mini {
     // The race, spelled out.
     ctx.font = mono(9);
     ctx.fillStyle = "rgba(139,149,168,0.8)";
-    ctx.fillText("гонка: 88% МИРА раньше, чем 100% ЗАМЕТНОСТИ · засечки — их ответы", mx, topY + 44);
+    ctx.fillText(
+      `${this.scenarioIdx + 1}/${this.scenarios.length} «${this.scenario.name}» · гонка: ${Math.round(this.scenario.winShare * 100)}% МИРА раньше 100% ЗАМЕТНОСТИ`,
+      mx,
+      topY + 44,
+    );
 
     // Event ticker above the ability bar.
     const logY = h - 116;

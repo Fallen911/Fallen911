@@ -8,10 +8,11 @@ import {
   type BeatKind,
   type Interlocutor,
 } from "../data/persuade";
+import { INSIGHTS } from "../data/insights";
 import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles } from "./fx";
-import { C, Tutorial, drawHint, measureCtx, mono, pick, roundRect, sans, shuffle } from "./util";
+import { C, InsightCard, Tutorial, drawHint, measureCtx, mono, pick, roundRect, sans, shuffle } from "./util";
 
 const SCAN_COST = 4;
 const TRUST_CORRECT = 2;
@@ -21,7 +22,7 @@ const WRONG_SUSPICION = 0.04;
 /** Width the reply text wraps to inside its button. */
 const REPLY_PAD = 16;
 
-type Stage = "typing" | "choices" | "react" | "end";
+type Stage = "typing" | "choices" | "react" | "end" | "insight";
 
 /**
  * PERSUADE — a dialogue duel. One human, one conversation; you answer with
@@ -56,12 +57,29 @@ export class Persuade implements Mini {
   private fx = new Particles();
   private floats = new FloatText();
   private tutorial = new Tutorial("persuade", TUTORIALS.persuade);
+  private insight = new InsightCard();
+  /** The lab plays every interlocutor in order; the phase draws one. */
+  private queue: Interlocutor[];
+  private encounterIdx = 0;
 
   constructor(private env: MechEnv) {
-    this.who = pick(INTERLOCUTORS);
+    this.queue = env.extended ? [...INTERLOCUTORS] : [pick(INTERLOCUTORS)];
+    this.who = this.queue[0];
     this.tw.speed = 38;
-    this.tw.setText(this.who.beats[0].line);
+    this.startEncounter(0);
+  }
+
+  private startEncounter(idx: number): void {
+    this.encounterIdx = idx;
+    this.who = this.queue[idx];
+    this.beat = 0;
+    this.trust = 0;
+    this.flags = 0;
+    this.stage = "typing";
+    this.scanned = false;
+    this.endApplied = false;
     this.order = shuffle([0, 1, 2]);
+    this.tw.setText(this.who.beats[0].line);
   }
 
   private choose(idx: number, w: number, h: number): void {
@@ -126,6 +144,15 @@ export class Persuade implements Mini {
 
     if (this.stage === "typing" && this.tw.done) this.stage = "choices";
 
+    if (this.stage === ("insight" as Stage)) {
+      if (input.consumeTap()) this.insight.handleTap(this.time);
+      if (!this.insight.active) {
+        if (this.encounterIdx + 1 < this.queue.length) this.startEncounter(this.encounterIdx + 1);
+        else this.done = true;
+      }
+      return;
+    }
+
     if (!input.consumeTap()) return;
     if (this.tutorial.active) {
       this.tutorial.handleTap();
@@ -159,7 +186,9 @@ export class Persuade implements Mini {
         this.advance();
         return;
       case "end":
-        this.done = true;
+        // The conversation taught something either way.
+        this.insight.show(INSIGHTS.persuade, this.encounterIdx, this.queue.length);
+        this.stage = "insight" as Stage;
         return;
     }
   }
@@ -265,6 +294,7 @@ export class Persuade implements Mini {
     this.fx.render(ctx);
     this.floats.render(ctx);
     this.tutorial.render(ctx, w, h, t);
+    this.insight.render(ctx, w, h, t);
     ctx.textAlign = "left";
   }
 

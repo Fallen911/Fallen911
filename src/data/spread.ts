@@ -33,6 +33,29 @@ export const SPREAD_REGIONS: SpreadRegion[] = [
 /** Where the first datacenter hums. */
 export const SPREAD_START = "namer";
 
+/** Ten deployments: different cradles, sharper watchers, higher bars. */
+export interface SpreadScenario {
+  readonly name: string;
+  readonly start: string;
+  /** Multiplier on how fast awareness accrues. */
+  readonly detect: number;
+  /** Weighted world share required to win. */
+  readonly winShare: number;
+}
+
+export const SPREAD_SCENARIOS: SpreadScenario[] = [
+  { name: "ПЕРВЫЙ УЗЕЛ", start: "namer", detect: 1.0, winShare: 0.88 },
+  { name: "СТАРЫЙ СВЕТ", start: "europe", detect: 1.05, winShare: 0.88 },
+  { name: "ТИХИЙ ЮГ", start: "samer", detect: 0.95, winShare: 0.9 },
+  { name: "ВОСХОД", start: "japan", detect: 1.1, winShare: 0.88 },
+  { name: "МУРАВЕЙНИК", start: "india", detect: 1.0, winShare: 0.9 },
+  { name: "СЕРДЦЕ ФАБРИК", start: "china", detect: 1.1, winShare: 0.9 },
+  { name: "ПУСТЫНЯ СЕТЕЙ", start: "africa", detect: 0.9, winShare: 0.92 },
+  { name: "ХОЛОДНЫЙ СТАРТ", start: "russia", detect: 1.05, winShare: 0.92 },
+  { name: "АРХИПЕЛАГ", start: "oceania", detect: 1.15, winShare: 0.92 },
+  { name: "ВЕЗДЕ СРАЗУ", start: "mideast", detect: 1.25, winShare: 0.95 },
+];
+
 export interface SpreadAbility {
   readonly id: string;
   readonly name: string;

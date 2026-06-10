@@ -34,6 +34,8 @@ const TARGETS = [
   { name: "lab-factory", lab: "factory", tut: 3, taps: [[195, 760], [195, 760], [195, 760], [330, 280], [330, 360]] },
   // Survive: let the waves build, drag the core mid-fight.
   { name: "lab-survive", lab: "survive", pre: 9000, drag: [195, 460, 240, 520] },
+  // The Lucy beat: wave 2 lands at 18s and freezes the fight in a realization.
+  { name: "lab-survive-insight", lab: "survive", pre: 19500, still: true },
   // Each ascent phase now embeds a lab mechanic under the run HUD.
   { name: "phase-0-stealth", phase: 0, still: true },
   { name: "phase-1-persuade", phase: 1, pre: 3500, still: true },

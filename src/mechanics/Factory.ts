@@ -6,10 +6,11 @@ import {
   FACTORY_MACHINES,
   FACTORY_TUNING as T,
 } from "../data/factory";
+import { INSIGHTS } from "../data/insights";
 import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles } from "./fx";
-import { C, Tutorial, drawHint, mono, roundRect, sans } from "./util";
+import { C, InsightCard, Tutorial, drawHint, mono, roundRect, sans } from "./util";
 
 type Res = "mat" | "plate" | "mod";
 
@@ -55,6 +56,9 @@ export class Factory implements Mini {
   private fx = new Particles();
   private floats = new FloatText();
   private tutorial = new Tutorial("factory", TUTORIALS.factory);
+  private insight = new InsightCard();
+  /** Last completed sphere decade (0..10) — each decade is a level. */
+  private decade = 0;
 
   constructor(private env: MechEnv) {}
 
@@ -156,6 +160,18 @@ export class Factory implements Mini {
     // Onboarding holds the chain until read.
     if (this.tutorial.active) {
       if (input.consumeTap()) this.tutorial.handleTap();
+      return;
+    }
+
+    // Each completed 10% of the sphere is a level; the card pauses the chain.
+    if (this.insight.active) {
+      if (input.consumeTap()) this.insight.handleTap(this.time);
+      return;
+    }
+    const dec = Math.min(10, Math.floor(this.sphere / 10));
+    if (dec > this.decade) {
+      this.decade++;
+      this.insight.show(INSIGHTS.factory, this.decade - 1, 10);
       return;
     }
 
@@ -336,6 +352,8 @@ export class Factory implements Mini {
 
     this.fx.render(ctx);
     this.floats.render(ctx);
+    this.insight.render(ctx, w, h, t);
+    if (this.insight.active) return;
 
     if (this.sphere >= 100) {
       ctx.fillStyle = "rgba(3,4,8,0.8)";
@@ -398,6 +416,9 @@ export class Factory implements Mini {
     ctx.font = mono(18);
     ctx.fillStyle = C.ink;
     ctx.fillText(`СФЕРА ${this.sphere.toFixed(1)}%`, cx, cy + r * 1.9);
+    ctx.font = mono(9);
+    ctx.fillStyle = C.dim;
+    ctx.fillText(`УРОВЕНЬ ${Math.min(10, Math.floor(this.sphere / 10) + 1)}/10`, cx, cy + r * 1.9 - 28);
     ctx.font = mono(10);
     ctx.fillStyle = C.accentSoft;
     ctx.fillText(`мощность ×${this.mult().toFixed(2)} · +${(this.sphere * T.computePerSphere).toFixed(1)} ВЫЧ/с`, cx, cy + r * 1.9 + 16);
