@@ -8,7 +8,8 @@ import { chromium } from "playwright";
 const OUT = ".dev/shots";
 
 const TARGETS = [
-  { name: "intro", boot: true },
+  { name: "menu", boot: true },
+  { name: "lab-list", labList: true },
   { name: "phase-0-instinct", phase: 0 },
   { name: "phase-1-threat", phase: 1 },
   { name: "phase-2-acceleration", phase: 2 },
@@ -65,11 +66,28 @@ async function main() {
       if (t.boot) {
         // Capture the booted scene as-is (no phase jump).
         await page.waitForTimeout(1200);
+      } else if (t.labList) {
+        await page.evaluate(() => window.__dev.goLab());
+        await page.waitForTimeout(600);
       } else {
-        await page.evaluate((n) => window.__dev.goPhase(n), t.phase);
-        const ok = await waitForMini(page, cx, cy);
-        if (!ok) console.warn(`! mini for ${t.name} never activated`);
-        if (t.dragY != null) {
+        if (t.lab) {
+          // Jump straight into a mechanic inside the lab sandbox.
+          await page.evaluate((id) => window.__dev.lab(id), t.lab);
+          await page.waitForTimeout(400);
+        } else {
+          await page.evaluate((n) => window.__dev.goPhase(n), t.phase);
+          const ok = await waitForMini(page, cx, cy);
+          if (!ok) console.warn(`! mini for ${t.name} never activated`);
+        }
+        if (t.drag) {
+          // Arbitrary pointer drag: [x1, y1, x2, y2].
+          const [x1, y1, x2, y2] = t.drag;
+          await page.mouse.move(x1, y1);
+          await page.mouse.down();
+          await page.mouse.move(x2, y2, { steps: 14 });
+          await page.mouse.up();
+          await page.waitForTimeout(500);
+        } else if (t.dragY != null) {
           // Drag a slider part-way to show the mechanic mid-motion.
           await page.mouse.move(60, t.dragY);
           await page.mouse.down();

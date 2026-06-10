@@ -5,9 +5,13 @@ import { Assets } from "./core/Assets";
 import { BACKDROPS } from "./data/backdrops";
 import type { Game, Scene } from "./core/types";
 import { createState, setMeters, setPhase } from "./game/state";
-import { IntroScene } from "./scenes/IntroScene";
+import { MenuScene } from "./scenes/MenuScene";
 import { AscentScene } from "./scenes/AscentScene";
+import { LabRunScene } from "./scenes/LabRunScene";
+import { LabScene } from "./scenes/LabScene";
 import { PHASES } from "./data/phases";
+import { LAB_ENTRIES } from "./data/lab";
+import type { MechId } from "./mechanics/types";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -77,7 +81,7 @@ for (const [key, set] of Object.entries(BACKDROPS)) {
 }
 
 // Boot.
-current = new IntroScene();
+current = new MenuScene();
 current.mount(game);
 
 // Dev-only navigation hook for the screenshot harness (scripts/shot.mjs).
@@ -91,6 +95,14 @@ if (import.meta.env.DEV) {
     goPhase(n: number): void {
       game.state = setMeters(setPhase(game.state, n), PHASES[n].target);
       game.changeScene(new AscentScene());
+    },
+    lab(id: MechId): void {
+      const entry = LAB_ENTRIES.find((e) => e.id === id);
+      if (!entry) throw new Error(`unknown mechanic: ${id}`);
+      game.changeScene(new LabRunScene(entry));
+    },
+    goLab(): void {
+      game.changeScene(new LabScene());
     },
   };
   (window as unknown as { __dev: typeof dev }).__dev = dev;
