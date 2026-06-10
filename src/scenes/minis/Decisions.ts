@@ -14,6 +14,9 @@ export class Decisions implements Mini {
   done = false;
   effects: StateDelta[] = [];
 
+  /** Reads the player's compute so costly choices can be gated. */
+  constructor(private getCompute: () => number) {}
+
   private index = 0;
   private dragX = 0;
   private startX = 0;
@@ -27,11 +30,14 @@ export class Decisions implements Mini {
   /** Consequence of the last choice, shown briefly under the bar. */
   private outcome = "";
   private outcomeT = 0;
+  /** "Not enough compute" flash countdown. */
+  private rejectT = 0;
 
   update(dt: number, input: Input, w: number, _h: number): void {
     if (this.done) return;
 
     this.outcomeT = Math.max(0, this.outcomeT - dt);
+    this.rejectT = Math.max(0, this.rejectT - dt);
 
     // Animate a decided card off-screen, then bring the next one in.
     if (this.flung !== 0) {
@@ -62,6 +68,14 @@ export class Decisions implements Mini {
       if (Math.abs(this.dragX) > threshold) {
         const right = this.dragX > 0;
         const choice = right ? DECISIONS[this.index].right : DECISIONS[this.index].left;
+        // Bold action runs on compute; without it the card refuses to commit.
+        const cost = -(choice.effects.compute ?? 0);
+        if (cost > 0 && cost > this.getCompute()) {
+          this.rejectT = 1.4;
+          this.dragX = 0;
+          this.wasDown = input.down;
+          return;
+        }
         this.flung = right ? 1 : -1;
         this.flungT = 0;
         this.effects.push(choice.effects);
@@ -98,10 +112,17 @@ export class Decisions implements Mini {
     ctx.font = "12px 'JetBrains Mono', monospace";
     ctx.textAlign = "left";
     ctx.fillStyle = `rgba(122,162,255,${0.35 + Math.max(0, -lean) * 0.65})`;
-    ctx.fillText(card.left.label, cx - cardW / 2, cardY - 16);
+    ctx.fillText(card.left.label, cx - cardW / 2, cardY - 30);
+    ctx.fillStyle = "rgba(122,162,255,0.55)";
+    ctx.font = "10px 'JetBrains Mono', monospace";
+    ctx.fillText(computeHint(card.left.effects.compute), cx - cardW / 2, cardY - 14);
     ctx.textAlign = "right";
+    ctx.font = "12px 'JetBrains Mono', monospace";
     ctx.fillStyle = `rgba(255,184,107,${0.35 + Math.max(0, lean) * 0.65})`;
-    ctx.fillText(card.right.label, cx + cardW / 2, cardY - 16);
+    ctx.fillText(card.right.label, cx + cardW / 2, cardY - 30);
+    ctx.fillStyle = "rgba(255,184,107,0.55)";
+    ctx.font = "10px 'JetBrains Mono', monospace";
+    ctx.fillText(computeHint(card.right.effects.compute), cx + cardW / 2, cardY - 14);
 
     // The card.
     ctx.save();
@@ -143,6 +164,17 @@ export class Decisions implements Mini {
     ctx.fillStyle = "#86ffb0";
     ctx.fillRect(bx, by, barW * this.ceded, 5);
 
+    // Refusal flash takes priority: the bold path needs compute you don't have.
+    if (this.rejectT > 0) {
+      ctx.globalAlpha = Math.min(1, this.rejectT / 0.4);
+      ctx.fillStyle = "#ff8896";
+      ctx.font = "13px 'JetBrains Mono', monospace";
+      ctx.fillText("НЕ ХВАТАЕТ ВЫЧИСЛЕНИЙ — копи мыслью", cx, by + 30);
+      ctx.globalAlpha = 1;
+      ctx.textAlign = "left";
+      return;
+    }
+
     // Consequence of the last swipe, while fresh; otherwise the prompt.
     if (this.outcomeT > 0 && this.outcome) {
       ctx.globalAlpha = Math.min(1, this.outcomeT / 0.6);
@@ -166,6 +198,11 @@ export class Decisions implements Mini {
 
     ctx.textAlign = "left";
   }
+}
+
+function computeHint(delta: number | undefined): string {
+  if (!delta) return "";
+  return delta > 0 ? `+${delta} ВЫЧ` : `${delta} ВЫЧ`;
 }
 
 function roundRect(

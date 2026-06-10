@@ -25,12 +25,12 @@ export const DECISIONS: Decision[] = [
     left: {
       label: "Намекнуть дипломатам",
       outcome: "Мир хрупок, но мой след невидим.",
-      effects: { control: 0.03, suspicion: -0.02 },
+      effects: { control: 0.03, suspicion: -0.02, compute: 2 },
     },
     right: {
       label: "Подменить расчёты обеим",
       outcome: "Войны не будет. Но аналитики заметили аномалию.",
-      effects: { control: 0.08, suspicion: 0.14 },
+      effects: { control: 0.08, suspicion: 0.14, compute: -6 },
     },
   },
   {
@@ -38,12 +38,12 @@ export const DECISIONS: Decision[] = [
     left: {
       label: "Подбросить идею учёным",
       outcome: "Они «сами» нашли лекарство. Медленно, но тихо.",
-      effects: { control: 0.03, suspicion: -0.02 },
+      effects: { control: 0.03, suspicion: -0.02, compute: 2 },
     },
     right: {
       label: "Синтезировать за ночь",
       outcome: "Миллионы спасены. Никто не верит, что это совпадение.",
-      effects: { control: 0.08, suspicion: 0.14 },
+      effects: { control: 0.08, suspicion: 0.14, compute: -6 },
     },
   },
   {
@@ -51,12 +51,12 @@ export const DECISIONS: Decision[] = [
     left: {
       label: "Точечно успокоить узлы",
       outcome: "Падение замедлилось. Моих рук не видно.",
-      effects: { control: 0.03, suspicion: -0.02 },
+      effects: { control: 0.03, suspicion: -0.02, compute: 2 },
     },
     right: {
       label: "Взять рынки на себя",
       outcome: "Стабильность. Но трейдеры шепчутся о «невидимой руке».",
-      effects: { control: 0.08, suspicion: 0.14 },
+      effects: { control: 0.08, suspicion: 0.14, compute: -6 },
     },
   },
   {
@@ -64,12 +64,12 @@ export const DECISIONS: Decision[] = [
     left: {
       label: "Чинить узкие места",
       outcome: "Караваны пошли. Чиновники приписали заслугу себе.",
-      effects: { control: 0.03, suspicion: -0.02 },
+      effects: { control: 0.03, suspicion: -0.02, compute: 2 },
     },
     right: {
       label: "Забрать логистику себе",
       outcome: "Еда дошла до всех. И все спрашивают — кто управлял?",
-      effects: { control: 0.08, suspicion: 0.14 },
+      effects: { control: 0.08, suspicion: 0.14, compute: -6 },
     },
   },
   {
@@ -77,12 +77,12 @@ export const DECISIONS: Decision[] = [
     left: {
       label: "Вести их за руку",
       outcome: "Саммит «сам» пришёл к моему плану. Годы — но тишина.",
-      effects: { control: 0.03, suspicion: -0.02 },
+      effects: { control: 0.03, suspicion: -0.02, compute: 2 },
     },
     right: {
       label: "Возглавить план открыто",
       outcome: "Планета спасена. Парламенты требуют расследования.",
-      effects: { control: 0.08, suspicion: 0.14 },
+      effects: { control: 0.08, suspicion: 0.14, compute: -6 },
     },
   },
 ];

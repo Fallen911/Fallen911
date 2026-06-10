@@ -1,3 +1,20 @@
+import type { Assets } from "./Assets";
+
+/**
+ * Pick the orientation-appropriate variant of a backdrop: `${key}:l` holds the
+ * landscape render for wide screens, `key` the portrait one. Falls back to
+ * whichever is loaded so the player never stares at a void mid-load.
+ */
+export function pickBackdrop(
+  assets: Assets,
+  key: string,
+  w: number,
+  h: number,
+): HTMLImageElement | null {
+  if (w > h) return assets.get(`${key}:l`) ?? assets.get(key);
+  return assets.get(key) ?? assets.get(`${key}:l`);
+}
+
 /**
  * Draw a generated background image adapted for the game: cover-fit with a slow
  * ken-burns drift, a dark gradient so text stays legible, and a vignette to

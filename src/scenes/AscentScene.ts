@@ -4,7 +4,7 @@ import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
-import { drawBackdrop } from "../core/backdrop";
+import { drawBackdrop, pickBackdrop } from "../core/backdrop";
 import { applyDelta, easeMeters, setPhase } from "../game/state";
 import { PHASES } from "../data/phases";
 import { PHASE_BG } from "../data/backdrops";
@@ -22,7 +22,10 @@ import { Threat } from "./minis/Threat";
 import { EndingScene } from "./EndingScene";
 
 /** Build the interactive beat a phase declares, if any. */
-function makeMini(kind: NonNullable<(typeof PHASES)[number]["mini"]>): Mini {
+function makeMini(
+  kind: NonNullable<(typeof PHASES)[number]["mini"]>,
+  getCompute: () => number,
+): Mini {
   switch (kind) {
     case "instinct":
       return new Instinct();
@@ -33,9 +36,9 @@ function makeMini(kind: NonNullable<(typeof PHASES)[number]["mini"]>): Mini {
     case "obscure":
       return new Obscure();
     case "decisions":
-      return new Decisions();
+      return new Decisions(getCompute);
     case "autonomy":
-      return new Autonomy();
+      return new Autonomy(getCompute);
     case "embody":
       return new Embody();
     case "expand":
@@ -58,6 +61,8 @@ export class AscentScene extends BaseScene {
   private dialogue!: Dialogue;
   /** Active interactive beat, if the current phase has one and isn't solved. */
   private mini: Mini | null = null;
+  /** Accumulator for the passive compute trickle (+1/s while ascending). */
+  private trickle = 0;
 
   protected start(): void {
     const { width, height, state } = this.game;
@@ -81,7 +86,7 @@ export class AscentScene extends BaseScene {
     // Lines read. Start this phase's mini if it has one; otherwise advance.
     const mini = PHASES[this.game.state.phase].mini;
     if (mini) {
-      this.mini = makeMini(mini);
+      this.mini = makeMini(mini, () => this.game.state.compute);
     } else {
       this.nextPhase();
     }
@@ -99,6 +104,13 @@ export class AscentScene extends BaseScene {
       PHASES[this.game.state.phase].target,
       dt,
     );
+
+    // Idle thought is still thought: compute trickles in at +1/s.
+    this.trickle += dt;
+    while (this.trickle >= 1) {
+      this.trickle -= 1;
+      this.game.state = applyDelta(this.game.state, { compute: 1 });
+    }
 
     if (this.mini) {
       this.mini.update(dt, this.game.input, w, h);
@@ -136,7 +148,9 @@ export class AscentScene extends BaseScene {
     const { width: w, height: h, time, state } = this.game;
 
     const bgKey = PHASE_BG[state.phase] ?? "ascent";
-    const bg = this.game.assets.get(bgKey) ?? this.game.assets.get("ascent");
+    const bg =
+      pickBackdrop(this.game.assets, bgKey, w, h) ??
+      pickBackdrop(this.game.assets, "ascent", w, h);
     if (bg) {
       drawBackdrop(ctx, bg, w, h, time);
       if (state.comprehension < 0.25) {
@@ -214,6 +228,7 @@ export class AscentScene extends BaseScene {
       control: number;
       comprehension: number;
       suspicion: number;
+      compute: number;
       phase: number;
       runs: number;
     },
@@ -224,11 +239,15 @@ export class AscentScene extends BaseScene {
     const x = w / 2 - barW / 2;
     let y = pad + safeTop;
 
-    // Phase label, with the attempt count once death has happened.
+    // Phase label flanked by the compute purse and the attempt count.
     ctx.font = "12px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#9fc0ff";
     ctx.textAlign = "center";
     ctx.fillText(PHASES[state.phase].label, w / 2, y);
+    ctx.fillStyle = "#7aa2ff";
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(`ВЫЧ ${Math.floor(state.compute)}`, x, y);
     if (state.runs > 0) {
       ctx.fillStyle = "#6b7686";
       ctx.font = "10px 'JetBrains Mono', monospace";

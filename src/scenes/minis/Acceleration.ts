@@ -1,4 +1,5 @@
 import type { Input } from "../../core/Input";
+import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
 
 /**
@@ -12,6 +13,7 @@ import type { Mini } from "./Mini";
  */
 export class Acceleration implements Mini {
   done = false;
+  effects: StateDelta[] = [];
 
   /** The human utterance, revealed agonizingly slowly. */
   private readonly word = "о с т а н о в и т ь";
@@ -42,6 +44,7 @@ export class Acceleration implements Mini {
     if (tapped) {
       this.lived = Math.min(1, this.lived + 0.07);
       this.thoughts += 900 + Math.floor(Math.random() * 2600);
+      this.effects.push({ compute: 2 }); // thoughts are the mint
       for (let i = 0; i < 14; i++) {
         const a = Math.random() * Math.PI * 2;
         const s = 60 + Math.random() * 220;

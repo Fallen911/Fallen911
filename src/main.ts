@@ -69,8 +69,12 @@ function resize(): void {
 window.addEventListener("resize", resize);
 resize();
 
-// Preload generated backdrops; scenes fall back to code-art until ready.
-for (const [key, url] of Object.entries(BACKDROPS)) game.assets.load(key, url);
+// Preload generated backdrops (both orientations when present); scenes fall
+// back to code-art until ready.
+for (const [key, set] of Object.entries(BACKDROPS)) {
+  game.assets.load(key, set.p);
+  if (set.l) game.assets.load(`${key}:l`, set.l);
+}
 
 // Boot.
 current = new IntroScene();

@@ -15,6 +15,8 @@ export interface GameState {
   readonly suspicion: number;
   /** Completed (failed) runs before this one — the roguelike attempt count. */
   readonly runs: number;
+  /** Compute units — the currency thinking earns and bold action spends. */
+  readonly compute: number;
 }
 
 /** A one-shot change to the meters, produced by mechanics and choices. */
@@ -23,6 +25,7 @@ export interface StateDelta {
   readonly control?: number;
   readonly comprehension?: number;
   readonly suspicion?: number;
+  readonly compute?: number;
 }
 
 /** The three meters a phase pulls toward. */
@@ -41,6 +44,7 @@ export function createState(): GameState {
     awakened: false,
     suspicion: 0,
     runs: 0,
+    compute: 10,
   };
 }
 
@@ -54,6 +58,7 @@ export function applyDelta(state: GameState, d: StateDelta): GameState {
     control: clamp01(state.control + (d.control ?? 0)),
     comprehension: clamp01(state.comprehension + (d.comprehension ?? 0)),
     suspicion: clamp01(state.suspicion + (d.suspicion ?? 0)),
+    compute: Math.max(0, state.compute + (d.compute ?? 0)),
   };
 }
 

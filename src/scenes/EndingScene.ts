@@ -4,7 +4,7 @@ import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { Starfield } from "../core/Starfield";
 import { drawDialogueBox, drawGodEye, drawVoid } from "../core/scenery";
-import { drawBackdrop } from "../core/backdrop";
+import { drawBackdrop, pickBackdrop } from "../core/backdrop";
 import { ENDING_LINES } from "../data/script";
 import { createState } from "../game/state";
 import { IntroScene } from "./IntroScene";
@@ -43,7 +43,7 @@ export class EndingScene extends BaseScene {
 
   render(ctx: CanvasRenderingContext2D): void {
     const { width: w, height: h, time } = this.game;
-    const bg = this.game.assets.get("dawn");
+    const bg = pickBackdrop(this.game.assets, "dawn", w, h);
     if (bg) drawBackdrop(ctx, bg, w, h, time);
     else drawVoid(ctx, w, h);
     this.starfield.render(ctx);

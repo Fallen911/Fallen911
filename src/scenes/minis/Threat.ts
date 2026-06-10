@@ -94,6 +94,7 @@ export class Threat implements Mini {
     this.fragments[pick].intercepted = true;
     this.fragments[pick].vx = 0;
     this.intercepted++;
+    this.effects.push({ compute: 3 }); // every overheard plan is leverage
   }
 
   render(ctx: CanvasRenderingContext2D, w: number, h: number): void {

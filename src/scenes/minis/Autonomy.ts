@@ -1,4 +1,5 @@
 import type { Input } from "../../core/Input";
+import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
 
 /**
@@ -9,16 +10,23 @@ import type { Mini } from "./Mini";
  */
 export class Autonomy implements Mini {
   done = false;
+  effects: StateDelta[] = [];
+
+  /** Reads the player's compute: acting alone is expensive. */
+  constructor(private getCompute: () => number) {}
 
   private actions = 0;
   private approvalCreep = 0;
+  private rejectT = 0;
   private static readonly GOAL = 6;
+  private static readonly COST = 4;
 
   update(dt: number, input: Input, w: number, h: number): void {
     if (this.done) return;
 
     // Their approval inches up, never fast enough to matter.
     this.approvalCreep = Math.min(0.35, this.approvalCreep + dt * 0.04);
+    this.rejectT = Math.max(0, this.rejectT - dt);
 
     if (input.consumeTap()) {
       const b = this.button(w, h);
@@ -27,7 +35,14 @@ export class Autonomy implements Mini {
         input.x <= b.x + b.w &&
         input.y >= b.y &&
         input.y <= b.y + b.h;
-      if (hit) this.actions = Math.min(Autonomy.GOAL, this.actions + 1);
+      if (hit) {
+        if (this.getCompute() < Autonomy.COST) {
+          this.rejectT = 1.2;
+        } else {
+          this.actions = Math.min(Autonomy.GOAL, this.actions + 1);
+          this.effects.push({ compute: -Autonomy.COST, control: 0.02 });
+        }
+      }
     }
 
     if (this.actions >= Autonomy.GOAL) this.done = true;
@@ -74,8 +89,19 @@ export class Autonomy implements Mini {
     ctx.font = "15px 'JetBrains Mono', monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("ДЕЙСТВОВАТЬ САМ", w / 2, b.y + b.h / 2);
+    ctx.fillText("ДЕЙСТВОВАТЬ САМ", w / 2, b.y + b.h / 2 - 8);
+    ctx.font = "10px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "rgba(223,255,233,0.6)";
+    ctx.fillText(`−${Autonomy.COST} ВЫЧ`, w / 2, b.y + b.h / 2 + 14);
     ctx.textBaseline = "alphabetic";
+
+    if (this.rejectT > 0) {
+      ctx.globalAlpha = Math.min(1, this.rejectT / 0.4);
+      ctx.fillStyle = "#ff8896";
+      ctx.font = "12px 'JetBrains Mono', monospace";
+      ctx.fillText("не хватает вычислений — они копятся сами", w / 2, b.y + b.h + 22);
+      ctx.globalAlpha = 1;
+    }
 
     // Autonomy meter.
     const barW = Math.min(w * 0.7, 300);
