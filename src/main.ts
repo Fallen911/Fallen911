@@ -1,5 +1,6 @@
 import "./style.css";
 import { audio } from "./core/audio";
+import { haptic } from "./core/haptics";
 import { Input } from "./core/Input";
 import { UIOverlay } from "./core/ui";
 import { Assets } from "./core/Assets";
@@ -90,8 +91,12 @@ for (const [key, set] of Object.entries(BACKDROPS)) {
 }
 
 // Audio contexts may only start inside a user gesture; resume on every
-// pointerdown so backgrounding/iOS suspensions recover too.
-canvas.addEventListener("pointerdown", () => audio.unlock());
+// pointerdown so backgrounding/iOS suspensions recover too. Every touch also
+// lands a light haptic tick — the screen should feel solid under the finger.
+canvas.addEventListener("pointerdown", () => {
+  audio.unlock();
+  haptic("light");
+});
 
 // Boot.
 current = new MenuScene();

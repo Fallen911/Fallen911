@@ -1,4 +1,5 @@
 import { audio } from "../core/audio";
+import { haptic } from "../core/haptics";
 import type { Input } from "../core/Input";
 import { wrapText } from "../core/text";
 import type { InsightTrack } from "../data/insights";
@@ -289,6 +290,7 @@ export class InsightCard {
     this.shownAt = -1;
     this.activeFlag = true;
     logInsight();
+    haptic("heavy");
     audio.play("insight");
     audio.speak(this.line, "insight");
   }

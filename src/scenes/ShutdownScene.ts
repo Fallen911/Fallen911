@@ -1,4 +1,5 @@
 import { BaseScene } from "../core/BaseScene";
+import { haptic } from "../core/haptics";
 import type { Input } from "../core/Input";
 import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
@@ -28,6 +29,7 @@ export class ShutdownScene extends BaseScene {
   private awarded = 0;
 
   protected start(): void {
+    haptic("heavy");
     recordEnding("shutdown");
     this.meta = loadMeta();
     // The farther the copy climbed, the more it understood.

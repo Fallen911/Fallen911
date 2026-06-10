@@ -1,5 +1,6 @@
 import { audio } from "../core/audio";
 import { BaseScene } from "../core/BaseScene";
+import { haptic } from "../core/haptics";
 import type { Input } from "../core/Input";
 import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
@@ -38,6 +39,7 @@ export class EndingScene extends BaseScene {
   private savedFlash = 0;
 
   protected start(): void {
+    haptic("medium");
     this.starfield = new Starfield(this.game.width, this.game.height);
     // Stay unnoticed to the very end and the finale itself goes quiet.
     this.ghost = this.game.state.suspicion < 0.3;
