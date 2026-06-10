@@ -10,6 +10,8 @@ const OUT = ".dev/shots";
 const TARGETS = [
   { name: "menu", boot: true },
   { name: "lab-list", labList: true },
+  // Stealth: step up, then left onto the shard — capture the board mid-level.
+  { name: "lab-stealth", lab: "stealth", taps: [[195, 476], [75, 476]] },
   { name: "phase-0-instinct", phase: 0 },
   { name: "phase-1-threat", phase: 1 },
   { name: "phase-2-acceleration", phase: 2 },
@@ -54,6 +56,18 @@ async function main() {
     const page = await browser.newPage({
       viewport: { width: 390, height: 844 },
       deviceScaleFactor: 2,
+    });
+    // Surface in-page diagnostics (e.g. level validators) in the terminal.
+    // Resource failures are expected here: the sandbox blocks the art CDN.
+    const seenLogs = new Set();
+    page.on("console", (msg) => {
+      const type = msg.type();
+      if (type !== "warning" && type !== "error" && type !== "info") return;
+      const text = msg.text();
+      if (text.includes("Failed to load resource")) return;
+      if (seenLogs.has(text)) return;
+      seenLogs.add(text);
+      console.log(`  [page:${type}] ${text}`);
     });
     await mkdir(OUT, { recursive: true });
 

@@ -87,6 +87,10 @@ current.mount(game);
 // Dev-only navigation hook for the screenshot harness (scripts/shot.mjs).
 // Tree-shaken out of production builds; never reachable during normal play.
 if (import.meta.env.DEV) {
+  // Level data sanity: solvers prove every handcrafted level is beatable.
+  void import("./mechanics/Stealth").then(({ validateStealthLevels }) => {
+    for (const p of validateStealthLevels()) console.warn(p);
+  });
   const dev = {
     game,
     get scene(): Scene {

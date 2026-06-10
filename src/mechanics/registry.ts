@@ -1,4 +1,5 @@
 import type { MechFactory, MechId } from "./types";
+import { Stealth } from "./Stealth";
 
 /**
  * id → constructor for every playable mechanic. Entries flip from null to a
@@ -6,7 +7,7 @@ import type { MechFactory, MechId } from "./types";
  * the catalogue can stay complete from day one.
  */
 const FACTORIES: Record<MechId, MechFactory | null> = {
-  stealth: null,
+  stealth: (env) => new Stealth(env),
   parry: null,
   deck: null,
   persuade: null,
