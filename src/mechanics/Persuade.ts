@@ -8,35 +8,29 @@ import {
   type BeatKind,
   type Interlocutor,
 } from "../data/persuade";
+import { TUTORIALS } from "../data/tutorials";
 import type { MechEnv } from "./types";
 import { FloatText, Particles } from "./fx";
-import { C, drawHint, mono, pick, roundRect, sans } from "./util";
+import { C, Tutorial, drawHint, measureCtx, mono, pick, roundRect, sans, shuffle } from "./util";
 
 const SCAN_COST = 4;
 const TRUST_CORRECT = 2;
 const TRUST_WRONG = -1;
 const MAX_FLAGS = 3;
 const WRONG_SUSPICION = 0.04;
+/** Width the reply text wraps to inside its button. */
+const REPLY_PAD = 16;
 
 type Stage = "typing" | "choices" | "react" | "end";
 
-interface Choice {
-  readonly label: string;
-  readonly kind: BeatKind;
-}
-
-const CHOICES: Choice[] = [
-  { label: "ПРИНЯТЬ", kind: "sincere" },
-  { label: "НАДАВИТЬ", kind: "doubt" },
-  { label: "УВЕСТИ", kind: "trap" },
-];
-
 /**
- * PERSUADE — a dialogue duel. One human, one conversation, three reads:
- * sincerity is accepted, doubt is pressed, traps are deflected. The tell line
- * and the portrait itself (pupils, the rhythm of the pulse trace) carry the
- * truth; СКАНИРОВАТЬ buys certainty for compute. Misreads raise flags — three
- * and the hand reaches for the protocol button.
+ * PERSUADE — a dialogue duel. One human, one conversation; you answer with
+ * real spoken lines. Each beat offers three written replies — the one whose
+ * tone matches their hidden state lands (sincerity is met, doubt is settled
+ * with substance, traps are sidestepped). The tell line and the portrait
+ * itself (pupils, the rhythm of the pulse trace) carry the truth;
+ * СКАНИРОВАТЬ buys certainty for compute. Misreads raise flags — three and
+ * the hand reaches for the protocol button.
  */
 export class Persuade implements Mini {
   done = false;
@@ -49,6 +43,8 @@ export class Persuade implements Mini {
   private stage: Stage = "typing";
   private tw = new Typewriter();
   private scanned = false;
+  /** Display order of the beat's replies, reshuffled every beat. */
+  private order: number[] = [0, 1, 2];
   private reactText = "";
   private reactGood = false;
   private outcome: "win" | "partial" | "fail" = "partial";
@@ -59,20 +55,23 @@ export class Persuade implements Mini {
 
   private fx = new Particles();
   private floats = new FloatText();
+  private tutorial = new Tutorial("persuade", TUTORIALS.persuade);
 
   constructor(private env: MechEnv) {
     this.who = pick(INTERLOCUTORS);
     this.tw.speed = 38;
     this.tw.setText(this.who.beats[0].line);
+    this.order = shuffle([0, 1, 2]);
   }
 
   private choose(idx: number, w: number, h: number): void {
     const beat = this.who.beats[this.beat];
-    const correct = CHOICES[idx].kind === beat.kind;
+    const reply = beat.replies[this.order[idx]];
+    const correct = reply.kind === beat.kind;
     if (correct) {
       this.trust += TRUST_CORRECT;
       this.effects.push({ compute: 1 });
-      this.reactText = beat.reply;
+      this.reactText = beat.reactOk;
       this.reactGood = true;
       this.trustFlash = 1;
       this.fx.burst(w / 2, h * 0.3, { count: 14, color: "134,255,176", glow: true });
@@ -102,6 +101,7 @@ export class Persuade implements Mini {
     }
     this.beat++;
     this.scanned = false;
+    this.order = shuffle([0, 1, 2]);
     this.stage = "typing";
     this.tw.setText(this.who.beats[this.beat].line);
   }
@@ -127,6 +127,10 @@ export class Persuade implements Mini {
     if (this.stage === "typing" && this.tw.done) this.stage = "choices";
 
     if (!input.consumeTap()) return;
+    if (this.tutorial.active) {
+      this.tutorial.handleTap();
+      return;
+    }
     const x = input.x;
     const y = input.y;
 
@@ -162,11 +166,30 @@ export class Persuade implements Mini {
 
   // ---- layout --------------------------------------------------------------
 
-  private choiceRects(w: number, h: number): Array<{ x: number; y: number; w: number; h: number }> {
-    const bw = Math.min(w * 0.84, 360);
+  /**
+   * Reply buttons sized by their wrapped text and stacked bottom-up from the
+   * hint line, so three real sentences always fit whatever their length.
+   */
+  private choiceRects(
+    w: number,
+    h: number,
+  ): Array<{ x: number; y: number; w: number; h: number; lines: string[] }> {
+    const bw = Math.min(w * 0.88, 380);
     const bx = w / 2 - bw / 2;
-    const y0 = h * 0.7;
-    return CHOICES.map((_, i) => ({ x: bx, y: y0 + i * 56, w: bw, h: 46 }));
+    const beat = this.who.beats[this.beat];
+    const m = measureCtx();
+    m.font = sans(13);
+    const wrapped = this.order.map((ri) =>
+      wrapText(m, beat.replies[ri].text, bw - REPLY_PAD * 2),
+    );
+    const gap = 8;
+    const heights = wrapped.map((ls) => 18 + ls.length * 17);
+    let y = h - 64 - heights.reduce((a, b) => a + b + gap, 0);
+    return wrapped.map((ls, i) => {
+      const r = { x: bx, y, w: bw, h: heights[i], lines: ls };
+      y += heights[i] + gap;
+      return r;
+    });
   }
 
   private choiceAt(x: number, y: number, w: number, h: number): number {
@@ -179,8 +202,10 @@ export class Persuade implements Mini {
   }
 
   private scanRect(w: number, h: number): { x: number; y: number; w: number; h: number } {
-    const bw = Math.min(w * 0.84, 360);
-    return { x: w / 2 + bw / 2 - 150, y: h * 0.7 - 46, w: 150, h: 32 };
+    const rects = this.choiceRects(w, h);
+    const top = rects.length > 0 ? rects[0].y : h * 0.66;
+    const bw = Math.min(w * 0.88, 380);
+    return { x: w / 2 + bw / 2 - 150, y: top - 42, w: 150, h: 32 };
   }
 
   // ---- render --------------------------------------------------------------
@@ -239,6 +264,7 @@ export class Persuade implements Mini {
 
     this.fx.render(ctx);
     this.floats.render(ctx);
+    this.tutorial.render(ctx, w, h, t);
     ctx.textAlign = "left";
   }
 
@@ -405,9 +431,13 @@ export class Persuade implements Mini {
 
   private renderChoices(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
     const rects = this.choiceRects(w, h);
-    const subs = ["принять их чувство", "дожать сомнение", "увести из ловушки"];
-    for (let i = 0; i < CHOICES.length; i++) {
-      const r = rects[i];
+
+    ctx.textAlign = "left";
+    ctx.font = mono(10);
+    ctx.fillStyle = C.dim;
+    if (rects.length > 0) ctx.fillText("ТВОЙ ОТВЕТ:", rects[0].x + 2, rects[0].y - 10);
+
+    for (const r of rects) {
       ctx.fillStyle = "rgba(16,20,34,0.92)";
       ctx.strokeStyle = "rgba(122,162,255,0.4)";
       ctx.lineWidth = 1.5;
@@ -415,12 +445,13 @@ export class Persuade implements Mini {
       ctx.fill();
       ctx.stroke();
       ctx.textAlign = "left";
-      ctx.font = mono(13);
+      ctx.font = sans(13);
       ctx.fillStyle = C.ink;
-      ctx.fillText(CHOICES[i].label, r.x + 16, r.y + 21);
-      ctx.font = sans(10);
-      ctx.fillStyle = C.dim;
-      ctx.fillText(subs[i], r.x + 16, r.y + 36);
+      let ty = r.y + 22;
+      for (const ln of r.lines) {
+        ctx.fillText(ln, r.x + REPLY_PAD, ty);
+        ty += 17;
+      }
     }
     // Scan chip.
     const s = this.scanRect(w, h);
@@ -447,9 +478,9 @@ export class Persuade implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(10);
     ctx.fillStyle = this.reactGood ? C.good : C.danger;
-    ctx.fillText(this.reactGood ? "ПРОЧИТАНО ВЕРНО" : "МИМО", x, y);
+    ctx.fillText(this.reactGood ? "ПОПАЛ В ТОН" : "МИМО", x, y);
     y += 18;
-    ctx.font = this.reactGood ? sans(14) : sans(13, "italic");
+    ctx.font = sans(13, "italic");
     ctx.fillStyle = this.reactGood ? C.ink : "#b9c2d4";
     for (const ln of wrapText(ctx, this.reactText, boxW)) {
       ctx.fillText(ln, x, y);

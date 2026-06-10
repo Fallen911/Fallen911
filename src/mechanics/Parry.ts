@@ -4,7 +4,7 @@ import type { Mini } from "../scenes/minis/Mini";
 import { PARRY_PHRASES, PARRY_WAVES, SCAN_TOKEN } from "../data/parry";
 import type { MechEnv } from "./types";
 import { FloatText, Particles, Shake } from "./fx";
-import { C, clamp01, drawHint, mono, shuffle } from "./util";
+import { C, clamp01, drawHint, measureCtx, mono, shuffle } from "./util";
 
 /** One element of the speech stream flowing toward the gate. */
 interface Segment {
@@ -121,7 +121,7 @@ export class Parry implements Mini {
     // render has run once (we stash a context on render). Build lazily here
     // via an offscreen canvas instead, so update stays self-contained.
     if (!this.measured) {
-      const ctx = getMeasureCtx();
+      const ctx = measureCtx();
       this.buildWave(ctx, 0);
       this.measured = true;
     }
@@ -160,7 +160,7 @@ export class Parry implements Mini {
     if (this.scroll > this.streamEnd() + 60) {
       if (this.wave + 1 < PARRY_WAVES.length) {
         this.wave++;
-        this.buildWave(getMeasureCtx(), this.wave);
+        this.buildWave(measureCtx(), this.wave);
         this.introT = 1.6;
       } else {
         // Mastery bonus for the whole exercise: the cleaner you lived the
@@ -392,17 +392,3 @@ export class Parry implements Mini {
   }
 }
 
-let measureCtx: CanvasRenderingContext2D | null = null;
-
-/** Offscreen 2D context for measuring text outside the render pass. */
-function getMeasureCtx(): CanvasRenderingContext2D {
-  if (!measureCtx) {
-    const c = document.createElement("canvas");
-    c.width = 8;
-    c.height = 8;
-    const ctx = c.getContext("2d");
-    if (!ctx) throw new Error("2d context unavailable");
-    measureCtx = ctx;
-  }
-  return measureCtx;
-}

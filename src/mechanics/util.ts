@@ -244,6 +244,21 @@ export class Tutorial {
   }
 }
 
+/** Offscreen 2D context for measuring text outside the render pass. */
+let measureCanvasCtx: CanvasRenderingContext2D | null = null;
+
+export function measureCtx(): CanvasRenderingContext2D {
+  if (!measureCanvasCtx) {
+    const c = document.createElement("canvas");
+    c.width = 8;
+    c.height = 8;
+    const ctx = c.getContext("2d");
+    if (!ctx) throw new Error("2d context unavailable");
+    measureCanvasCtx = ctx;
+  }
+  return measureCanvasCtx;
+}
+
 /** Pulsing hint line, used for the 5-second onboarding of each mechanic. */
 export function drawHint(
   ctx: CanvasRenderingContext2D,

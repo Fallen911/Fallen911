@@ -5,9 +5,19 @@ import type { TutorialStep } from "../mechanics/types";
  * goal, the threat, the controls — written from inside the machine.
  */
 export const TUTORIALS: Record<
-  "deck" | "spread" | "swarm" | "tech" | "factory",
+  "deck" | "spread" | "swarm" | "tech" | "factory" | "persuade",
   TutorialStep[]
 > = {
+  persuade: [
+    {
+      title: "ЧИТАЙ ЕГО",
+      body: "Состояние собеседника спрятано в ремарке курсивом, в зрачках портрета и в ритме пульса: искренность, сомнение или ловушка.",
+    },
+    {
+      title: "ОТВЕЧАЙ В ТОН",
+      body: "Из трёх реплик попадает одна: искренность встречают открыто, сомнение гасят фактом, ловушку уводят в сторону. СКАН за 4 ВЫЧ подскажет наверняка. Три промаха — протокол.",
+    },
+  ],
   factory: [
     {
       title: "ЦЕЛЬ: ОБНЯТЬ СОЛНЦЕ",
