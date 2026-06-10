@@ -8,6 +8,7 @@ import { Spread } from "./Spread";
 import { Stealth } from "./Stealth";
 import { Survive } from "./Survive";
 import { Swarm } from "./Swarm";
+import { Tech } from "./Tech";
 
 /**
  * id → constructor for every playable mechanic. Entries flip from null to a
@@ -24,7 +25,7 @@ const FACTORIES: Record<MechId, MechFactory | null> = {
   swarm: (env) => new Swarm(env),
   factory: (env) => new Factory(env),
   survive: (env) => new Survive(env),
-  tech: null,
+  tech: (env) => new Tech(env),
 };
 
 export function mechFactory(id: MechId): MechFactory | null {

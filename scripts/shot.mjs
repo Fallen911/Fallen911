@@ -28,6 +28,8 @@ const TARGETS = [
   { name: "lab-factory", lab: "factory", taps: [[195, 760], [195, 760], [195, 760], [330, 280], [330, 360]] },
   // Survive: let the waves build, drag the core mid-fight.
   { name: "lab-survive", lab: "survive", pre: 9000, drag: [195, 460, 240, 520] },
+  // Tech: pour everything into energy for a while, then capture.
+  { name: "lab-tech", lab: "tech", pre: 4000, drag: [240, 700, 240, 260] },
   { name: "phase-0-instinct", phase: 0 },
   { name: "phase-1-threat", phase: 1 },
   { name: "phase-2-acceleration", phase: 2 },
