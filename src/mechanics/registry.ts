@@ -6,6 +6,7 @@ import { Persuade } from "./Persuade";
 import { Rewire } from "./Rewire";
 import { Spread } from "./Spread";
 import { Stealth } from "./Stealth";
+import { Survive } from "./Survive";
 import { Swarm } from "./Swarm";
 
 /**
@@ -22,7 +23,7 @@ const FACTORIES: Record<MechId, MechFactory | null> = {
   spread: (env) => new Spread(env),
   swarm: (env) => new Swarm(env),
   factory: (env) => new Factory(env),
-  survive: null,
+  survive: (env) => new Survive(env),
   tech: null,
 };
 
