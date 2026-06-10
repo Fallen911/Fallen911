@@ -62,6 +62,10 @@ export const BACKDROPS: Record<string, BackdropSet> = {
     p: `${CDN}/hf_20260610_040402_29ae5c61-8b15-4988-a263-59b0b0392c37_min.webp`,
     l: `${CDN}/hf_20260610_043009_b39f6d41-2219-486b-8794-5889ffbc365f_min.webp`,
   },
+  lab: {
+    p: `${CDN}/hf_20260610_071431_c19d22be-2e87-4608-a661-c8ad46bfe963_min.webp`,
+    l: `${CDN}/hf_20260610_071442_717f42c4-d149-4690-9255-c210c7edc08c_min.webp`,
+  },
 };
 
 /** Which backdrop each ascent phase uses; phases not listed fall back to "ascent". */

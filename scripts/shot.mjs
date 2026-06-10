@@ -73,6 +73,11 @@ async function main() {
       viewport: { width: 390, height: 844 },
       deviceScaleFactor: 2,
     });
+    // Crashes inside the page must fail the run loudly.
+    page.on("pageerror", (err) => {
+      console.error(`  [pageerror] ${err.message}`);
+      process.exitCode = 1;
+    });
     // Surface in-page diagnostics (e.g. level validators) in the terminal.
     // Resource failures are expected here: the sandbox blocks the art CDN.
     const seenLogs = new Set();

@@ -1,5 +1,6 @@
 import { BaseScene } from "../core/BaseScene";
 import type { Input } from "../core/Input";
+import { drawBackdrop, pickBackdrop } from "../core/backdrop";
 import { drawVoid } from "../core/scenery";
 import { LAB_ENTRIES } from "../data/lab";
 import { mechFactory } from "../mechanics/registry";
@@ -90,7 +91,9 @@ export class LabScene extends BaseScene {
 
   render(ctx: CanvasRenderingContext2D): void {
     const { width: w, height: h, time } = this.game;
-    drawVoid(ctx, w, h);
+    const bg = pickBackdrop(this.game.assets, "lab", w, h);
+    if (bg) drawBackdrop(ctx, bg, w, h, time, 0.55);
+    else drawVoid(ctx, w, h);
 
     // Faint scanline texture, the lab as a diagnostics room.
     ctx.fillStyle = "rgba(122,162,255,0.025)";

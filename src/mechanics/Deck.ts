@@ -258,8 +258,8 @@ export class Deck implements Mini {
         if (idx >= 0) {
           this.deck.push(this.rewardChoices[idx]);
           this.startFight(this.fight + 1);
-        } else if (input.y > h * 0.78) {
-          // "Skip" zone under the cards.
+        } else if (input.y > h * 0.4 + 150 + 12) {
+          // Anywhere under the reward cards skips, matching the hint line.
           this.startFight(this.fight + 1);
         }
         return;
