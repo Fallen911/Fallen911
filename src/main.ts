@@ -142,6 +142,22 @@ if (import.meta.env.DEV) {
       this.goHot(2, 0.7);
       (current as unknown as { maybeStartAudit(): void }).maybeStartAudit();
     },
+    /** Harness-only: raise the ascent map mid-run. */
+    forceMap(): void {
+      this.goPhase(4);
+      (current as unknown as { mapMode: boolean }).mapMode = true;
+    },
+    /** Harness-only: hold the bet card before a phase mechanic. */
+    forceStake(): void {
+      this.goPhase(0);
+      const sc = current as unknown as {
+        dialogue: { advance(): void; done: boolean };
+        stake: string | null;
+        mini: unknown;
+      };
+      for (let i = 0; i < 8 && !sc.dialogue.done; i++) sc.dialogue.advance();
+      sc.stake = "stealth";
+    },
     /** Harness-only: an evolution fork on the very next sim tick. */
     forceSpreadFork(): void {
       this.lab("spread");

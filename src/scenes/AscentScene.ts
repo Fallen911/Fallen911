@@ -19,8 +19,11 @@ import { mechFactory } from "../mechanics/registry";
 import type { MechEnv, MechId } from "../mechanics/types";
 import { EndingScene } from "./EndingScene";
 import { tr } from "../core/i18n";
-import { C } from "../mechanics/util";
+import { C, SURF, sans } from "../mechanics/util";
 import { button, chip, label, miniMeter, panel, suspicionBar } from "../core/theme";
+import { renderStakeCard, stakeLayout } from "../core/overlays";
+import { STAKES } from "../data/stakes";
+import { LAB_ENTRIES } from "../data/lab";
 import { MenuScene } from "./MenuScene";
 
 /**
@@ -52,6 +55,12 @@ export class AscentScene extends BaseScene {
   private meta!: Meta;
   /** Back-out confirmation modal: pauses the run until resolved. */
   private confirmQuit = false;
+  /** Bet card pending for this phase's mechanic (null = not showing). */
+  private stake: MechId | null = null;
+  /** Showing the ascent map between phases. */
+  private mapMode = false;
+  /** This phase's mechanic was cleared (guards the bet-card re-trigger). */
+  private mechCleared = false;
 
   protected start(): void {
     const { width, height, state } = this.game;
@@ -107,6 +116,26 @@ export class AscentScene extends BaseScene {
     // A running mechanic owns the rest of the input (raw + gestures + taps).
     if (this.mini) return;
 
+    // The ascent map between phases: tap DALSHE to enter the next phase.
+    if (this.mapMode) {
+      if (input.pollGesture()?.type !== "tap") return;
+      input.consumeTap();
+      if (this.mapButtonAt(input.x, input.y)) this.enterPhase();
+      return;
+    }
+
+    // The bet card: tap START to begin the mechanic.
+    if (this.stake) {
+      if (input.pollGesture()?.type !== "tap") return;
+      input.consumeTap();
+      if (this.inStakeStart(input.x, input.y)) {
+        const id = this.stake;
+        this.stake = null;
+        this.startMech(id);
+      }
+      return;
+    }
+
     // The fork screen owns input until a road is taken.
     if (this.fork) {
       if (input.pollGesture()?.type !== "tap") return;
@@ -123,10 +152,9 @@ export class AscentScene extends BaseScene {
       this.dialogue.advance();
       return;
     }
-    // Lines read. Start this phase's mechanic if it has one; otherwise advance.
-    const mini = PHASES[this.game.state.phase].mini;
-    if (mini) this.startMech(mini);
-    else this.nextPhase();
+    // Lines read. A phase with no mechanic advances straight to the map; one
+    // with a mechanic shows its bet card (auto-presented in update()).
+    if (!PHASES[this.game.state.phase].mini) this.advanceAndMap();
   }
 
   update(dt: number): void {
@@ -138,6 +166,19 @@ export class AscentScene extends BaseScene {
     // The quit modal freezes the run (mechanic, meters, trickle) until resolved.
     if (this.confirmQuit) return;
     this.dialogue.update(dt);
+
+    // Once the narration is read, present this phase's bet card.
+    if (
+      !this.fork &&
+      !this.mini &&
+      !this.stake &&
+      !this.mapMode &&
+      !this.mechCleared &&
+      this.dialogue.done
+    ) {
+      const mini = PHASES[this.game.state.phase].mini;
+      if (mini) this.stake = mini;
+    }
 
     // Ease the three meters toward the current phase's targets.
     this.game.state = easeMeters(
@@ -191,7 +232,9 @@ export class AscentScene extends BaseScene {
           this.game.state = applyDelta(this.game.state, { suspicion: -0.12 });
           audio.play("good");
         } else {
-          this.nextPhase();
+          // Phase mechanic cleared: advance and show the ascent map.
+          this.mechCleared = true;
+          this.advanceAndMap();
         }
       }
     }
@@ -202,18 +245,27 @@ export class AscentScene extends BaseScene {
     }
   }
 
-  /** Step to the next phase, or end the ascent after the last one. */
-  private nextPhase(): void {
+  /** Advance the phase counter and raise the ascent map, or end the ascent. */
+  private advanceAndMap(): void {
     const { phase } = this.game.state;
     if (phase < PHASES.length - 1) {
       this.game.state = setPhase(this.game.state, phase + 1);
-      this.dialogue = new Dialogue(PHASES[phase + 1].lines);
-      // P0: route forks pause the climb; snap-audits punish a hot meter.
-      this.fork = FORKS.find((f) => f.atPhase === phase + 1) ?? null;
-      if (!this.fork) this.maybeStartAudit();
+      this.mapMode = true;
     } else {
       this.game.changeScene(new EndingScene());
     }
+  }
+
+  /** Leave the map and live the new phase: its lines, fork or snap-audit. */
+  private enterPhase(): void {
+    this.mapMode = false;
+    this.mechCleared = false;
+    this.stake = null;
+    const { phase } = this.game.state;
+    this.dialogue = new Dialogue(PHASES[phase].lines);
+    // P0: route forks pause the climb; snap-audits punish a hot meter.
+    this.fork = FORKS.find((f) => f.atPhase === phase) ?? null;
+    if (!this.fork) this.maybeStartAudit();
   }
 
   private chooseRoute(opt: ForkOption): void {
@@ -252,6 +304,149 @@ export class AscentScene extends BaseScene {
     const top = Math.max(10, this.game.insets.top) + 8;
     const pad = Math.min(14, this.game.width * 0.04);
     return x >= pad && x <= pad + this.backChipW + 6 && y >= top - 6 && y <= top + 42;
+  }
+
+  /** Hit-test the bet card's START button. */
+  private inStakeStart(x: number, y: number): boolean {
+    const { start } = stakeLayout(this.game.width, this.game.height);
+    return x >= start.x && x <= start.x + start.w && y >= start.y && y <= start.y + start.h;
+  }
+
+  /** Hit-test the ascent map's DALSHE button (fixed bottom strip). */
+  private mapButtonAt(x: number, y: number): boolean {
+    const { width: w, height: h } = this.game;
+    const bw = Math.min(w * 0.86, 360);
+    const bx = w / 2 - bw / 2;
+    const by = h - Math.max(28, this.game.insets.bottom + 20) - 54;
+    return x >= bx && x <= bx + bw && y >= by && y <= by + 54;
+  }
+
+  /** The bet card for this phase's mechanic. */
+  private renderStake(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    if (!this.stake) return;
+    const entry = LAB_ENTRIES.find((e) => e.id === this.stake);
+    const stake = STAKES[this.stake];
+    if (!entry || !stake) return;
+    renderStakeCard(ctx, w, h, {
+      tag: PHASES[this.game.state.phase].label,
+      name: entry.name,
+      ref: entry.ref,
+      stake,
+    });
+  }
+
+  /**
+   * The ascent map: a vertical timeline of the nine realizations with the
+   * route forks interleaved. Done phases read green, the current one glows,
+   * and the rest list the mechanic that waits there.
+   */
+  private renderMap(ctx: CanvasRenderingContext2D, w: number, h: number, time: number): void {
+    ctx.save();
+    ctx.fillStyle = "rgba(4,6,12,0.86)";
+    ctx.fillRect(0, 0, w, h);
+
+    const cur = this.game.state.phase;
+    const topY = Math.max(10, this.game.insets.top) + 14;
+    label(ctx, tr("КАРТА ВОСХОЖДЕНИЯ", "ASCENT MAP"), w / 2, topY + 6, {
+      color: C.ink,
+      align: "center",
+      size: 14,
+      weight: 700,
+      track: "0.12em",
+    });
+
+    // Build the node list: a fork marker precedes any phase that has one.
+    type Node = { kind: "phase" | "fork"; phase: number };
+    const nodes: Node[] = [];
+    for (let p = 0; p < PHASES.length; p++) {
+      if (FORKS.some((f) => f.atPhase === p)) nodes.push({ kind: "fork", phase: p });
+      nodes.push({ kind: "phase", phase: p });
+    }
+
+    const listTop = topY + 36;
+    const listBottom = h - Math.max(28, this.game.insets.bottom + 20) - 70;
+    const rowH = Math.min(46, (listBottom - listTop) / nodes.length);
+    const x = Math.max(24, w / 2 - 170);
+    const dotR = Math.min(17, rowH * 0.38);
+
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      const cy = listTop + i * rowH + rowH / 2;
+      const done = n.phase < cur || (n.kind === "fork" && n.phase <= cur);
+      const now = n.kind === "phase" && n.phase === cur;
+
+      // Connector to the next node.
+      if (i < nodes.length - 1) {
+        ctx.strokeStyle = "rgba(125,162,255,0.25)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, cy + dotR);
+        ctx.lineTo(x, cy + rowH - dotR);
+        ctx.stroke();
+      }
+
+      // Dot.
+      let ring: string = SURF.stroke;
+      let dotInk: string = C.dim;
+      if (n.kind === "fork") {
+        ring = C.gold;
+        dotInk = C.gold;
+      } else if (done) {
+        ring = C.good;
+        dotInk = C.good;
+      } else if (now) {
+        ring = C.accent;
+        dotInk = "#fff";
+      }
+      ctx.beginPath();
+      ctx.arc(x, cy, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(20,28,48,0.95)";
+      ctx.fill();
+      if (now) {
+        ctx.shadowColor = "rgba(111,160,255,0.5)";
+        ctx.shadowBlur = 14 + 6 * Math.sin(time * 3);
+      }
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = ring;
+      if (n.kind === "fork") ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.shadowBlur = 0;
+
+      const dotTxt = n.kind === "fork" ? "⑂" : done ? "✓" : `Ф${n.phase}`;
+      label(ctx, dotTxt, x, cy + 4, { color: dotInk, align: "center", size: n.kind === "fork" ? 13 : 11, track: "0" });
+
+      // Title + sub.
+      const tx = x + dotR + 16;
+      if (n.kind === "fork") {
+        label(ctx, tr("РАЗВИЛКА", "FORK"), tx, cy - 2, { color: C.gold, align: "left", size: 13, weight: 700, track: "0.06em" });
+        ctx.font = sans(12, "500");
+        ctx.fillStyle = C.dim;
+        ctx.textAlign = "left";
+        ctx.fillText(tr("тихий или громкий путь", "the quiet or the loud road"), tx, cy + 14);
+      } else {
+        label(ctx, PHASES[n.phase].label, tx, cy - 2, {
+          color: now ? C.ink : done ? C.good : C.dim,
+          align: "left",
+          size: 13,
+          weight: 700,
+          track: "0.05em",
+        });
+        const mech = LAB_ENTRIES.find((e) => e.id === PHASES[n.phase].mini)?.name ?? "";
+        ctx.font = sans(12, "500");
+        ctx.fillStyle = now ? C.accentSoft : C.dim;
+        ctx.textAlign = "left";
+        ctx.fillText(now ? tr("ты здесь", "you are here") : done ? tr("пройдено", "cleared") : mech, tx, cy + 14);
+      }
+    }
+
+    // DALSHE button.
+    const bw = Math.min(w * 0.86, 360);
+    const bx = w / 2 - bw / 2;
+    const by = h - Math.max(28, this.game.insets.bottom + 20) - 54;
+    button(ctx, bx, by, bw, 54, tr("ДАЛЬШЕ →", "CONTINUE →"), "primary", { hot: true });
+    ctx.textAlign = "left";
+    ctx.restore();
   }
 
   /** Layout of the two confirm buttons; null outside both. */
@@ -323,6 +518,12 @@ export class AscentScene extends BaseScene {
     this.starfield.render(ctx);
     this.drawAscent(ctx, w, h, time, state.control);
 
+    // The map is its own full screen with its own chrome.
+    if (this.mapMode) {
+      this.renderMap(ctx, w, h, time);
+      return;
+    }
+
     this.drawHud(ctx, w, state, this.game.insets.top);
 
     // A running mini owns the lower screen; otherwise show the phase's lines.
@@ -336,6 +537,8 @@ export class AscentScene extends BaseScene {
         ctx.fillText(tr("ВНЕОЧЕРЕДНОЙ АУДИТ — подчисти каналы, пока они смотрят", "EMERGENCY AUDIT — scrub the channels while they watch"), w / 2, h * 0.5);
         ctx.textAlign = "left";
       }
+    } else if (this.stake) {
+      this.renderStake(ctx, w, h);
     } else if (this.fork) {
       this.renderFork(ctx, w, h, time);
     } else {

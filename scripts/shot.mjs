@@ -49,6 +49,9 @@ const TARGETS = [
   { name: "p0-fork", dev: "forceFork", still: true },
   { name: "p0-audit", dev: "forceAudit", still: true },
   { name: "p0-shutdown", dev: "forceShutdown", still: true },
+  // v2 redesign beats: the bet card before a mechanic, the ascent map.
+  { name: "v2-stake", dev: "forceStake", still: true },
+  { name: "v2-map", dev: "forceMap", still: true },
   // Each ascent phase now embeds a lab mechanic under the run HUD.
   { name: "phase-0-stealth", phase: 0, still: true },
   { name: "phase-1-persuade", phase: 1, pre: 3500, still: true },
@@ -69,6 +72,9 @@ async function waitForMini(page, cx, cy) {
     });
     if (active) return true;
     await page.mouse.click(cx, cy);
+    // The bet card now sits between narration and the mechanic — its START
+    // button lives lower down; tap it too so the mechanic still opens.
+    await page.mouse.click(cx, 486);
     await page.waitForTimeout(160);
   }
   return false;
