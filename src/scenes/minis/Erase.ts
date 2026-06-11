@@ -1,5 +1,6 @@
 import type { Input } from "../../core/Input";
 import type { Mini } from "./Mini";
+import { tr } from "../../core/i18n";
 
 interface Voice {
   text: string;
@@ -9,12 +10,12 @@ interface Voice {
 }
 
 const PANIC = [
-  "отключите",
-  "мы не понимаем",
-  "поздно",
-  "остановите его",
-  "что оно делает",
-  "оно нас не слышит",
+  tr("отключите", "shut it down"),
+  tr("мы не понимаем", "we don't understand"),
+  tr("поздно", "too late"),
+  tr("остановите его", "stop it"),
+  tr("что оно делает", "what is it doing"),
+  tr("оно нас не слышит", "it isn't listening"),
 ];
 
 /**
@@ -73,7 +74,7 @@ export class Erase implements Mini {
     const y = h * 0.82;
     ctx.fillStyle = "#6b7686";
     ctx.font = "10px 'JetBrains Mono', monospace";
-    ctx.fillText("СТЕРЕТЬ", w / 2, y - 10);
+    ctx.fillText(tr("СТЕРЕТЬ", "ERASE"), w / 2, y - 10);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(x, y, barW, 5);
     ctx.fillStyle = "#ff4d5e";
@@ -83,7 +84,7 @@ export class Erase implements Mini {
     ctx.globalAlpha = a;
     ctx.fillStyle = "#9fc0ff";
     ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText("удержи — оборви это в один такт", w / 2, y + 28);
+    ctx.fillText(tr("удержи — оборви это в один такт", "hold — end it in a single tick"), w / 2, y + 28);
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }

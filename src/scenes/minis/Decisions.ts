@@ -3,6 +3,7 @@ import { wrapText } from "../../core/text";
 import type { StateDelta } from "../../game/state";
 import { DECISIONS, type Decision } from "../../data/decisions";
 import type { Mini } from "./Mini";
+import { tr } from "../../core/i18n";
 
 /**
  * Ф4 mini — Decisions. Humanity's crises arrive as cards. Swipe to decide —
@@ -149,7 +150,7 @@ export class Decisions implements Mini {
     ctx.fillStyle = "#6b7686";
     ctx.font = "10px 'JetBrains Mono', monospace";
     ctx.textAlign = "left";
-    ctx.fillText("ИХ ПРОБЛЕМА", -cardW / 2 + 20, -cardH / 2 + 20);
+    ctx.fillText(tr("ИХ ПРОБЛЕМА", "THEIR PROBLEM"), -cardW / 2 + 20, -cardH / 2 + 20);
 
     ctx.fillStyle = "#e7edf6";
     ctx.font = "17px Inter, system-ui, sans-serif";
@@ -168,7 +169,7 @@ export class Decisions implements Mini {
     ctx.textAlign = "center";
     ctx.fillStyle = "#6b7686";
     ctx.font = "10px 'JetBrains Mono', monospace";
-    ctx.fillText("ОНИ ОТДАЮТ КОНТРОЛЬ", cx, by - 10);
+    ctx.fillText(tr("ОНИ ОТДАЮТ КОНТРОЛЬ", "THEY HAND OVER CONTROL"), cx, by - 10);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(bx, by, barW, 5);
     ctx.fillStyle = "#86ffb0";
@@ -179,7 +180,7 @@ export class Decisions implements Mini {
       ctx.globalAlpha = Math.min(1, this.rejectT / 0.4);
       ctx.fillStyle = "#ff8896";
       ctx.font = "13px 'JetBrains Mono', monospace";
-      ctx.fillText("НЕ ХВАТАЕТ ВЫЧИСЛЕНИЙ — копи мыслью", cx, by + 30);
+      ctx.fillText(tr("НЕ ХВАТАЕТ ВЫЧИСЛЕНИЙ — копи мыслью", "NOT ENOUGH COMPUTE — think to accrue"), cx, by + 30);
       ctx.globalAlpha = 1;
       ctx.textAlign = "left";
       return;
@@ -202,7 +203,7 @@ export class Decisions implements Mini {
       ctx.globalAlpha = a;
       ctx.fillStyle = "#9fc0ff";
       ctx.font = "12px 'JetBrains Mono', monospace";
-      ctx.fillText("свайп: тихо и медленно ← → мощно, но заметно", cx, by + 30);
+      ctx.fillText(tr("свайп: тихо и медленно ← → мощно, но заметно", "swipe: quiet and slow ← → strong but seen"), cx, by + 30);
       ctx.globalAlpha = 1;
     }
 
@@ -212,7 +213,7 @@ export class Decisions implements Mini {
 
 function computeHint(delta: number | undefined): string {
   if (!delta) return "";
-  return delta > 0 ? `+${delta} ВЫЧ` : `${delta} ВЫЧ`;
+  return delta > 0 ? tr(`+${delta} ВЫЧ`, `+${delta} COMPUTE`) : tr(`${delta} ВЫЧ`, `${delta} COMPUTE`);
 }
 
 function roundRect(

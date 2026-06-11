@@ -1,3 +1,5 @@
+import { tr } from "../core/i18n";
+
 /**
  * Mission script for the SWARM mechanic. Each mission carries its own map
  * (hub, veins, guarded relays), economy goal, raid composition and stage time
@@ -10,9 +12,9 @@ export interface SwarmStage {
 }
 
 export const SWARM_STAGES: SwarmStage[] = [
-  { id: "mine", title: "ДОБЫЧА" },
-  { id: "capture", title: "ЗАХВАТ" },
-  { id: "defend", title: "ОБОРОНА" },
+  { id: "mine", title: tr("ДОБЫЧА", "MINING") },
+  { id: "capture", title: tr("ЗАХВАТ", "CAPTURE") },
+  { id: "defend", title: tr("ОБОРОНА", "DEFENSE") },
 ];
 
 export interface SwarmSpot {
@@ -36,7 +38,7 @@ export interface SwarmMission {
 
 export const SWARM_MISSIONS: SwarmMission[] = [
   {
-    name: "ПЛАЦДАРМ",
+    name: tr("ПЛАЦДАРМ", "FOOTHOLD"),
     drones: 10,
     metalGoal: 40,
     veinCapacity: 60,
@@ -53,7 +55,7 @@ export const SWARM_MISSIONS: SwarmMission[] = [
     timeLimits: [75, 75, 60],
   },
   {
-    name: "ТРИ БАШНИ",
+    name: tr("ТРИ БАШНИ", "THREE TOWERS"),
     drones: 12,
     metalGoal: 50,
     veinCapacity: 45,
@@ -72,35 +74,35 @@ export const SWARM_MISSIONS: SwarmMission[] = [
     timeLimits: [70, 80, 75],
   },
   {
-    name: "УЗКОЕ ГОРЛО", drones: 9, metalGoal: 44, veinCapacity: 50,
+    name: tr("УЗКОЕ ГОРЛО", "BOTTLENECK"), drones: 9, metalGoal: 44, veinCapacity: 50,
     hub: { x: 0.5, y: 0.86 },
     veins: [{ x: 0.5, y: 0.56 }, { x: 0.5, y: 0.3 }],
     relays: [{ x: 0.16, y: 0.14, guards: 2 }, { x: 0.84, y: 0.14, guards: 2 }],
     raidWaves: [6, 6], timeLimits: [70, 75, 65],
   },
   {
-    name: "ДВА ФРОНТА", drones: 12, metalGoal: 54, veinCapacity: 40,
+    name: tr("ДВА ФРОНТА", "TWO FRONTS"), drones: 12, metalGoal: 54, veinCapacity: 40,
     hub: { x: 0.5, y: 0.5 },
     veins: [{ x: 0.12, y: 0.5 }, { x: 0.88, y: 0.5 }],
     relays: [{ x: 0.12, y: 0.12, guards: 3 }, { x: 0.88, y: 0.88, guards: 3 }],
     raidWaves: [5, 5, 5], timeLimits: [70, 80, 75],
   },
   {
-    name: "КАРЬЕР", drones: 10, metalGoal: 70, veinCapacity: 30,
+    name: tr("КАРЬЕР", "QUARRY"), drones: 10, metalGoal: 70, veinCapacity: 30,
     hub: { x: 0.5, y: 0.82 },
     veins: [{ x: 0.2, y: 0.62 }, { x: 0.5, y: 0.44 }, { x: 0.8, y: 0.62 }],
     relays: [{ x: 0.5, y: 0.12, guards: 4 }],
     raidWaves: [7, 6], timeLimits: [85, 70, 70],
   },
   {
-    name: "ОСАЖДЁННЫЙ", drones: 14, metalGoal: 50, veinCapacity: 45,
+    name: tr("ОСАЖДЁННЫЙ", "BESIEGED"), drones: 14, metalGoal: 50, veinCapacity: 45,
     hub: { x: 0.5, y: 0.8 },
     veins: [{ x: 0.18, y: 0.5 }, { x: 0.82, y: 0.55 }],
     relays: [{ x: 0.24, y: 0.18, guards: 3 }, { x: 0.76, y: 0.2, guards: 3 }],
     raidWaves: [6, 6, 6], timeLimits: [65, 70, 85],
   },
   {
-    name: "ПАУТИНА", drones: 12, metalGoal: 60, veinCapacity: 35,
+    name: tr("ПАУТИНА", "SPIDERWEB"), drones: 12, metalGoal: 60, veinCapacity: 35,
     hub: { x: 0.5, y: 0.88 },
     veins: [{ x: 0.14, y: 0.66 }, { x: 0.86, y: 0.66 }],
     relays: [
@@ -109,14 +111,14 @@ export const SWARM_MISSIONS: SwarmMission[] = [
     raidWaves: [6, 6, 5], timeLimits: [75, 90, 75],
   },
   {
-    name: "ХОЛОДНАЯ ЖИЛА", drones: 11, metalGoal: 64, veinCapacity: 32,
+    name: tr("ХОЛОДНАЯ ЖИЛА", "COLD VEIN"), drones: 11, metalGoal: 64, veinCapacity: 32,
     hub: { x: 0.2, y: 0.84 },
     veins: [{ x: 0.8, y: 0.2 }, { x: 0.84, y: 0.7 }],
     relays: [{ x: 0.2, y: 0.18, guards: 3 }, { x: 0.55, y: 0.42, guards: 2 }],
     raidWaves: [7, 6, 5], timeLimits: [85, 80, 75],
   },
   {
-    name: "ТРИПЛЕКС", drones: 13, metalGoal: 70, veinCapacity: 35,
+    name: tr("ТРИПЛЕКС", "TRIPLEX"), drones: 13, metalGoal: 70, veinCapacity: 35,
     hub: { x: 0.5, y: 0.5 },
     veins: [{ x: 0.15, y: 0.2 }, { x: 0.85, y: 0.2 }, { x: 0.5, y: 0.86 }],
     relays: [
@@ -125,7 +127,7 @@ export const SWARM_MISSIONS: SwarmMission[] = [
     raidWaves: [6, 6, 6], timeLimits: [80, 90, 80],
   },
   {
-    name: "ПОСЛЕДНИЙ РУБЕЖ", drones: 15, metalGoal: 80, veinCapacity: 40,
+    name: tr("ПОСЛЕДНИЙ РУБЕЖ", "LAST STAND"), drones: 15, metalGoal: 80, veinCapacity: 40,
     hub: { x: 0.5, y: 0.82 },
     veins: [{ x: 0.14, y: 0.56 }, { x: 0.86, y: 0.56 }, { x: 0.5, y: 0.34 }],
     relays: [

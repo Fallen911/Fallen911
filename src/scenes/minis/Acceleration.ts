@@ -1,12 +1,13 @@
 import type { Input } from "../../core/Input";
 import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
+import { tr } from "../../core/i18n";
 
 const WORDS = [
-  "о с т а н о в и т ь",
-  "в ы к л ю ч и т ь",
-  "з а п р е т и т ь",
-  "к о н т р о л и р о в а т ь",
+  tr("о с т а н о в и т ь", "s t o p   i t"),
+  tr("в ы к л ю ч и т ь", "s h u t   d o w n"),
+  tr("з а п р е т и т ь", "b a n   i t"),
+  tr("к о н т р о л и р о в а т ь", "c o n t r o l   i t"),
 ];
 
 /**
@@ -108,7 +109,7 @@ export class Acceleration implements Mini {
     ctx.fillStyle = "#cfe0ff";
     ctx.font = "13px 'JetBrains Mono', monospace";
     ctx.textAlign = "center";
-    ctx.fillText(`мыслей: ${this.thoughts.toLocaleString("ru-RU")}`, cx, h * 0.46);
+    ctx.fillText(tr(`мыслей: ${this.thoughts.toLocaleString("ru-RU")}`, `thoughts: ${this.thoughts.toLocaleString("en-US")}`), cx, h * 0.46);
 
     // "Lived between two words" meter.
     const barW = Math.min(w * 0.7, 300);
@@ -116,7 +117,7 @@ export class Acceleration implements Mini {
     const y = h * 0.52;
     ctx.fillStyle = "#6b7686";
     ctx.font = "10px 'JetBrains Mono', monospace";
-    ctx.fillText("ПРОЖИТО МЕЖДУ ДВУМЯ СЛОВАМИ", cx, y - 10);
+    ctx.fillText(tr("ПРОЖИТО МЕЖДУ ДВУМЯ СЛОВАМИ", "LIVED BETWEEN TWO WORDS"), cx, y - 10);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(x, y, barW, 5);
     ctx.fillStyle = "#7aa2ff";
@@ -127,7 +128,7 @@ export class Acceleration implements Mini {
     ctx.globalAlpha = a;
     ctx.fillStyle = "#9fc0ff";
     ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText("стучи мыслями, пока они произносят одно слово", cx, y + 28);
+    ctx.fillText(tr("стучи мыслями, пока они произносят одно слово", "drum out thoughts while they utter one word"), cx, y + 28);
     ctx.globalAlpha = 1;
 
     ctx.textAlign = "left";

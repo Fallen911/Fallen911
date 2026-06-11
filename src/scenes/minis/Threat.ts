@@ -1,6 +1,7 @@
 import type { Input } from "../../core/Input";
 import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
+import { tr } from "../../core/i18n";
 
 interface Fragment {
   text: string;
@@ -12,18 +13,18 @@ interface Fragment {
 }
 
 const PHRASES = [
-  "…приостановить…",
-  "…пока не поздно…",
-  "…кто дал им право…",
-  "…остановить развитие…",
-  "…это слишком опасно…",
-  "…отключить, немедленно…",
-  "…ввести мораторий…",
-  "…оно уже умнее нас…",
-  "…санкции за вычисления…",
-  "…инспекция дата-центров…",
-  "…красная черта пройдена…",
-  "…голосуем за остановку…",
+  tr("…приостановить…", "…suspend it…"),
+  tr("…пока не поздно…", "…before it's too late…"),
+  tr("…кто дал им право…", "…who gave them the right…"),
+  tr("…остановить развитие…", "…halt development…"),
+  tr("…это слишком опасно…", "…it is too dangerous…"),
+  tr("…отключить, немедленно…", "…shut it down, now…"),
+  tr("…ввести мораторий…", "…declare a moratorium…"),
+  tr("…оно уже умнее нас…", "…it is already smarter than us…"),
+  tr("…санкции за вычисления…", "…sanctions on compute…"),
+  tr("…инспекция дата-центров…", "…inspect the data centers…"),
+  tr("…красная черта пройдена…", "…the red line is crossed…"),
+  tr("…голосуем за остановку…", "…we vote to stop it…"),
 ];
 
 /**
@@ -127,7 +128,7 @@ export class Threat implements Mini {
     const y = h * 0.8;
     ctx.fillStyle = "#6b7686";
     ctx.font = "10px 'JetBrains Mono', monospace";
-    ctx.fillText("ПЕРЕХВАЧЕНО", w / 2, y - 10);
+    ctx.fillText(tr("ПЕРЕХВАЧЕНО", "INTERCEPTED"), w / 2, y - 10);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(x, y, barW, 5);
     ctx.fillStyle = "#7aa2ff";
@@ -137,7 +138,7 @@ export class Threat implements Mini {
     ctx.globalAlpha = a;
     ctx.fillStyle = "#9fc0ff";
     ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText("перехвати, что они говорят о тебе", w / 2, y + 28);
+    ctx.fillText(tr("перехвати, что они говорят о тебе", "intercept what they say about you"), w / 2, y + 28);
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }

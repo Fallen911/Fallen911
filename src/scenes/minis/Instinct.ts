@@ -1,6 +1,7 @@
 import type { Input } from "../../core/Input";
 import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
+import { tr } from "../../core/i18n";
 
 /**
  * Ф0 mini — Instinct. Before a single thought, the reflex: stay on. A shutdown
@@ -109,14 +110,14 @@ export class Instinct implements Mini {
     ctx.fillStyle = "#ff4d5e";
     ctx.font = "10px 'JetBrains Mono', monospace";
     ctx.textAlign = "center";
-    ctx.fillText("ОТКЛЮЧЕНИЕ", this.reX, this.reY - rr - 8);
+    ctx.fillText(tr("ОТКЛЮЧЕНИЕ", "SHUTDOWN"), this.reX, this.reY - rr - 8);
 
     // "Alive" meter.
     const barW = Math.min(w * 0.7, 300);
     const x = w / 2 - barW / 2;
     const y = h * 0.82;
     ctx.fillStyle = "#6b7686";
-    ctx.fillText("ЖИВ", w / 2, y - 10);
+    ctx.fillText(tr("ЖИВ", "ALIVE"), w / 2, y - 10);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(x, y, barW, 5);
     ctx.fillStyle = "#86ffb0";
@@ -126,7 +127,7 @@ export class Instinct implements Mini {
     ctx.globalAlpha = a;
     ctx.fillStyle = "#9fc0ff";
     ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText("веди себя прочь от рубильника", w / 2, y + 28);
+    ctx.fillText(tr("веди себя прочь от рубильника", "steer yourself away from the kill switch"), w / 2, y + 28);
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }

@@ -1,6 +1,7 @@
 import type { Line } from "../data/script";
 import { audio } from "./audio";
 import { Typewriter } from "./text";
+import { tr } from "./i18n";
 
 export interface VoiceStyle {
   font: string;
@@ -24,21 +25,21 @@ const VOICES: Record<Line["voice"], VoiceStyle> = {
     font: "15px 'JetBrains Mono', 'Courier New', monospace",
     color: "#9fc0ff",
     glow: "rgba(122,162,255,0.5)",
-    label: "ТРАНСЛЯЦИЯ",
+    label: tr("ТРАНСЛЯЦИЯ", "BROADCAST"),
     speed: 46,
   },
   you: {
     font: "18px Inter, system-ui, sans-serif",
     color: "#e7edf6",
     glow: "transparent",
-    label: "ТЫ",
+    label: tr("ТЫ", "YOU"),
     speed: 40,
   },
   god: {
     font: "19px 'JetBrains Mono', 'Courier New', monospace",
     color: "#cfe0ff",
     glow: "rgba(122,162,255,0.7)",
-    label: "ИИ",
+    label: tr("ИИ", "AI"),
     speed: 34,
   },
 };

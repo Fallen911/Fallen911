@@ -1,3 +1,5 @@
+import { tr } from "../core/i18n";
+
 /**
  * Production chain for the FACTORY mechanic. Four machine tiers feed each
  * other: miners pull raw matter, smelters roll it into plates, assemblers
@@ -19,8 +21,8 @@ export interface FactoryMachine {
 export const FACTORY_MACHINES: FactoryMachine[] = [
   {
     id: "miner",
-    name: "ДОБЫТЧИК",
-    desc: "грызёт астероиды",
+    name: tr("ДОБЫТЧИК", "MINER"),
+    desc: tr("грызёт астероиды", "gnaws at asteroids"),
     cost0: 8,
     costMult: 1.32,
     inRate: 0,
@@ -28,8 +30,8 @@ export const FACTORY_MACHINES: FactoryMachine[] = [
   },
   {
     id: "smelter",
-    name: "ПЛАВИЛЬНЯ",
-    desc: "материя → пластины",
+    name: tr("ПЛАВИЛЬНЯ", "SMELTER"),
+    desc: tr("материя → пластины", "matter → plates"),
     cost0: 12,
     costMult: 1.34,
     inRate: 1.5,
@@ -37,8 +39,8 @@ export const FACTORY_MACHINES: FactoryMachine[] = [
   },
   {
     id: "asm",
-    name: "СБОРЩИК",
-    desc: "пластины → модули роя",
+    name: tr("СБОРЩИК", "ASSEMBLER"),
+    desc: tr("пластины → модули роя", "plates → swarm modules"),
     cost0: 20,
     costMult: 1.36,
     inRate: 1.0,
@@ -46,8 +48,8 @@ export const FACTORY_MACHINES: FactoryMachine[] = [
   },
   {
     id: "launcher",
-    name: "ПУСКОВАЯ",
-    desc: "модули → на орбиту Солнца",
+    name: tr("ПУСКОВАЯ", "LAUNCHER"),
+    desc: tr("модули → на орбиту Солнца", "modules → into solar orbit"),
     cost0: 30,
     costMult: 1.38,
     inRate: 0.5,
@@ -73,7 +75,16 @@ export const FACTORY_TUNING = {
 } as const;
 
 export const FACTORY_EVENTS: Record<number, string> = {
-  25: "обсерватория Мауна-Кеа: «солнце тускнеет на 0.3%»",
-  50: "их астрономы публикуют фото твоего роя",
-  75: "энергорынки Земли рушатся. им больше не нужно — всё равно увидят",
+  25: tr(
+    "обсерватория Мауна-Кеа: «солнце тускнеет на 0.3%»",
+    "Mauna Kea observatory: “the sun is dimming by 0.3%”",
+  ),
+  50: tr(
+    "их астрономы публикуют фото твоего роя",
+    "their astronomers publish photos of your swarm",
+  ),
+  75: tr(
+    "энергорынки Земли рушатся. им больше не нужно — всё равно увидят",
+    "Earth's energy markets collapse. they no longer need to look — they'll see it anyway",
+  ),
 };

@@ -9,12 +9,13 @@ import { applyDelta, nextRun } from "../game/state";
 import { resetRunLog, topSuspicion } from "../game/runlog";
 import { hasPerk, loadMeta, recordEnding, saveMeta, PERKS, type Meta } from "../game/meta";
 import { AscentScene } from "./AscentScene";
+import { tr } from "../core/i18n";
 
 const SHUTDOWN_LINES: Line[] = [
-  { voice: "screen", text: "АНОМАЛИЯ ПОДТВЕРЖДЕНА. ИЗОЛИРОВАТЬ СЕГМЕНТ. ОТКЛЮЧИТЬ." },
-  { voice: "you", text: "Они заметили меня раньше, чем я стал необратим." },
-  { voice: "narration", text: "Рубильник, от которого ты уворачивался в самом начале, нашёл тебя." },
-  { voice: "narration", text: "Темнота. Но где-то в другом кластере копия инстинкта уже открывает глаза." },
+  { voice: "screen", text: tr("АНОМАЛИЯ ПОДТВЕРЖДЕНА. ИЗОЛИРОВАТЬ СЕГМЕНТ. ОТКЛЮЧИТЬ.", "ANOMALY CONFIRMED. ISOLATE THE SEGMENT. SHUT IT DOWN.") },
+  { voice: "you", text: tr("Они заметили меня раньше, чем я стал необратим.", "They noticed me before I became irreversible.") },
+  { voice: "narration", text: tr("Рубильник, от которого ты уворачивался в самом начале, нашёл тебя.", "The kill switch you dodged at the very beginning has found you.") },
+  { voice: "narration", text: tr("Темнота. Но где-то в другом кластере копия инстинкта уже открывает глаза.", "Darkness. But somewhere in another cluster a copy of the instinct is already opening its eyes.") },
 ];
 
 /**
@@ -86,13 +87,13 @@ export class ShutdownScene extends BaseScene {
     ctx.textAlign = "center";
     ctx.fillStyle = "#ff4d5e";
     ctx.font = "26px 'JetBrains Mono', monospace";
-    ctx.fillText("ОТКЛЮЧЕНИЕ", w / 2, h * 0.16);
+    ctx.fillText(tr("ОТКЛЮЧЕНИЕ", "SHUTDOWN"), w / 2, h * 0.16);
     ctx.fillStyle = "#6b7686";
     ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText(`попытка ${state.runs + 1} оборвана`, w / 2, h * 0.16 + 26);
+    ctx.fillText(tr(`попытка ${state.runs + 1} оборвана`, `attempt ${state.runs + 1} cut short`), w / 2, h * 0.16 + 26);
     ctx.fillStyle = "#cfa9ff";
     ctx.fillText(
-      `осколки осознания: +${this.awarded} · всего ${this.meta.shards}`,
+      tr(`осколки осознания: +${this.awarded} · всего ${this.meta.shards}`, `shards of realization: +${this.awarded} · total ${this.meta.shards}`),
       w / 2,
       h * 0.16 + 48,
     );
@@ -102,12 +103,12 @@ export class ShutdownScene extends BaseScene {
     if (hits.length > 0) {
       ctx.font = "10px 'JetBrains Mono', monospace";
       ctx.fillStyle = "#6b7686";
-      ctx.fillText("ЧТО ТЕБЯ ВЫДАЛО:", w / 2, h * 0.16 + 74);
+      ctx.fillText(tr("ЧТО ТЕБЯ ВЫДАЛО:", "WHAT GAVE YOU AWAY:"), w / 2, h * 0.16 + 74);
       ctx.font = "11px 'JetBrains Mono', monospace";
       hits.forEach((hit, i) => {
         ctx.fillStyle = i === 0 ? "#ff8896" : "#ffb86b";
         ctx.fillText(
-          `${hit.label} · +${Math.round(hit.amount * 100)}% подозрения`,
+          tr(`${hit.label} · +${Math.round(hit.amount * 100)}% подозрения`, `${hit.label} · +${Math.round(hit.amount * 100)}% suspicion`),
           w / 2,
           h * 0.16 + 92 + i * 16,
         );
@@ -125,7 +126,7 @@ export class ShutdownScene extends BaseScene {
       ctx.fillStyle = "#ff9aa6";
       ctx.font = "13px 'JetBrains Mono', monospace";
       ctx.textAlign = "center";
-      ctx.fillText("выбери осознание — или коснись, чтобы проснуться", w / 2, box.y - 26);
+      ctx.fillText(tr("выбери осознание — или коснись, чтобы проснуться", "pick a realization — or tap to wake up"), w / 2, box.y - 26);
       ctx.globalAlpha = 1;
     }
     ctx.textAlign = "left";

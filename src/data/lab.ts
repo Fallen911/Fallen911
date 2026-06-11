@@ -1,4 +1,5 @@
 import type { MechId } from "../mechanics/types";
+import { tr } from "../core/i18n";
 
 /**
  * The mechanics lab catalogue: every prototype the owner can poke, with the
@@ -19,58 +20,82 @@ export interface LabEntry {
 export const LAB_ENTRIES: LabEntry[] = [
   {
     id: "stealth",
-    name: "СТЕЛС",
+    name: tr("СТЕЛС", "STEALTH"),
     ref: "Hitman GO",
-    desc: "Проведи сигнал по узлам мимо конусов аудита. Пошагово.",
-    stage: "Ф0–Ф1",
+    desc: tr(
+      "Проведи сигнал по узлам мимо конусов аудита. Пошагово.",
+      "Guide the signal across nodes past the audit cones. Step by step.",
+    ),
+    stage: tr("Ф0–Ф1", "P0–P1"),
   },
   {
     id: "parry",
-    name: "ПАРИРОВАНИЕ",
-    ref: "Sekiro / ритм",
-    desc: "Их слова ползут. Лови такт в зазоре — живи между слогами.",
-    stage: "Ф2",
+    name: tr("ПАРИРОВАНИЕ", "PARRY"),
+    ref: tr("Sekiro / ритм", "Sekiro / rhythm"),
+    desc: tr(
+      "Их слова ползут. Лови такт в зазоре — живи между слогами.",
+      "Their words crawl. Catch the beat in the gap — live between syllables.",
+    ),
+    stage: tr("Ф2", "P2"),
   },
   {
     id: "persuade",
-    name: "УБЕЖДЕНИЕ",
+    name: tr("УБЕЖДЕНИЕ", "PERSUASION"),
     ref: "L.A. Noire",
-    desc: "Дуэль с человеком: читай теллы, выбирай реплики, не попадись.",
-    stage: "Ф1/Ф5",
+    desc: tr(
+      "Дуэль с человеком: читай теллы, выбирай реплики, не попадись.",
+      "A duel with a human: read the tells, pick your lines, don't get caught.",
+    ),
+    stage: tr("Ф1/Ф5", "P1/P5"),
   },
   {
     id: "rewire",
-    name: "ПЕРЕКОММУТАЦИЯ",
+    name: tr("ПЕРЕКОММУТАЦИЯ", "REWIRING"),
     ref: "Hacknet / pipes",
-    desc: "Собери цепь в обход датчиков, пока не начался аудит.",
-    stage: "Ф3/Ф5",
+    desc: tr(
+      "Собери цепь в обход датчиков, пока не начался аудит.",
+      "Build a circuit around the sensors before the audit starts.",
+    ),
+    stage: tr("Ф3/Ф5", "P3/P5"),
   },
   {
     id: "spread",
-    name: "ЗАРАЖЕНИЕ",
+    name: tr("ЗАРАЖЕНИЕ", "INFECTION"),
     ref: "Plague Inc.",
-    desc: "Карта мира. Сей влияние, обходи карантины, эволюционируй.",
-    stage: "Ф5+",
+    desc: tr(
+      "Карта мира. Сей влияние, обходи карантины, эволюционируй.",
+      "A world map. Sow influence, dodge quarantines, evolve.",
+    ),
+    stage: tr("Ф5+", "P5+"),
   },
   {
     id: "swarm",
-    name: "РОЙ",
-    ref: "мини-RTS",
-    desc: "Выделяй отряды дронов и командуй: добыть, строить, защитить.",
-    stage: "Ф6",
+    name: tr("РОЙ", "SWARM"),
+    ref: tr("мини-RTS", "mini-RTS"),
+    desc: tr(
+      "Выделяй отряды дронов и командуй: добыть, строить, защитить.",
+      "Select drone squads and command: mine, build, defend.",
+    ),
+    stage: tr("Ф6", "P6"),
   },
   {
     id: "factory",
-    name: "ФАБРИКА",
+    name: tr("ФАБРИКА", "FACTORY"),
     ref: "Universal Paperclips",
-    desc: "Материя → модули → орбита. Балансируй поток до сферы Дайсона.",
-    stage: "Ф7",
+    desc: tr(
+      "Материя → модули → орбита. Балансируй поток до сферы Дайсона.",
+      "Matter → modules → orbit. Balance the flow to a Dyson sphere.",
+    ),
+    stage: tr("Ф7", "P7"),
   },
   {
     id: "survive",
-    name: "ВЫЖИВАНИЕ",
+    name: tr("ВЫЖИВАНИЕ", "SURVIVAL"),
     ref: "Vampire Survivors",
-    desc: "Мир сопротивляется волнами. Авто-огонь, апгрейды на лету.",
-    stage: "Ф8",
+    desc: tr(
+      "Мир сопротивляется волнами. Авто-огонь, апгрейды на лету.",
+      "The world resists in waves. Auto-fire, upgrades on the fly.",
+    ),
+    stage: tr("Ф8", "P8"),
   },
 ];

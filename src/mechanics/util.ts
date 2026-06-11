@@ -1,5 +1,6 @@
 import { audio } from "../core/audio";
 import { haptic } from "../core/haptics";
+import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import { wrapText } from "../core/text";
 import type { InsightTrack } from "../data/insights";
@@ -240,7 +241,7 @@ export class Tutorial {
     ctx.font = mono(10);
     ctx.textAlign = "right";
     ctx.fillText(
-      this.step + 1 < this.steps.length ? "коснись — дальше" : "коснись — играть",
+      this.step + 1 < this.steps.length ? tr("коснись — дальше", "tap — next") : tr("коснись — играть", "tap — play"),
       x + boxW - 18,
       y + boxH - 14,
     );
@@ -315,7 +316,7 @@ export class InsightCard {
     ctx.textAlign = "center";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`О С О З Н А Н И Е · ${this.idx}/${this.total}`, w / 2, h * 0.3);
+    ctx.fillText(tr(`О С О З Н А Н И Е · ${this.idx}/${this.total}`, `R E A L I Z A T I O N · ${this.idx}/${this.total}`), w / 2, h * 0.3);
 
     // The percentage counts up, then twitches once — a synapse closing.
     const k = clamp01(t / 0.9);
@@ -336,7 +337,7 @@ export class InsightCard {
     ctx.shadowBlur = 0;
     ctx.font = mono(10);
     ctx.fillStyle = C.dim;
-    ctx.fillText("КОГНИЦИЯ", w / 2, h * 0.41 + 22);
+    ctx.fillText(tr("КОГНИЦИЯ", "COGNITION"), w / 2, h * 0.41 + 22);
 
     // The realization line, revealed once the number settles.
     ctx.globalAlpha = clamp01((t - 0.5) / 0.5);
@@ -354,7 +355,7 @@ export class InsightCard {
       ctx.globalAlpha = 0.45 + 0.4 * Math.sin(time * 3);
       ctx.font = mono(11);
       ctx.fillStyle = C.dim;
-      ctx.fillText("коснись — дальше", w / 2, h * 0.72);
+      ctx.fillText(tr("коснись — дальше", "tap — next"), w / 2, h * 0.72);
       ctx.globalAlpha = 1;
     }
     ctx.textAlign = "left";

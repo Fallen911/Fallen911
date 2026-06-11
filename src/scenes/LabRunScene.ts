@@ -8,6 +8,7 @@ import { mechFactory } from "../mechanics/registry";
 import { C, clamp01, drawBar, mono, roundRect, sans } from "../mechanics/util";
 import type { Mini } from "./minis/Mini";
 import { LabScene } from "./LabScene";
+import { tr } from "../core/i18n";
 
 /** Sandbox starting purse — generous enough to taste every paid move. */
 const SANDBOX_COMPUTE = 60;
@@ -154,7 +155,7 @@ export class LabRunScene extends BaseScene {
     ctx.textAlign = "left";
     ctx.font = mono(12);
     ctx.fillStyle = C.accentSoft;
-    ctx.fillText("← ЛАБ", mx, y);
+    ctx.fillText(tr("← ЛАБ", "← LAB"), mx, y);
     ctx.textAlign = "center";
     ctx.font = mono(13);
     ctx.fillStyle = C.ink;
@@ -162,7 +163,7 @@ export class LabRunScene extends BaseScene {
     ctx.textAlign = "right";
     ctx.font = mono(11);
     ctx.fillStyle = C.accent;
-    ctx.fillText(`ВЫЧ ${Math.floor(this.compute)}`, w - mx, y);
+    ctx.fillText(tr(`ВЫЧ ${Math.floor(this.compute)}`, `COMPUTE ${Math.floor(this.compute)}`), w - mx, y);
 
     // Suspicion strip — the lab's only hard fail.
     const barW = Math.min(w - mx * 2, 360);
@@ -189,14 +190,14 @@ export class LabRunScene extends BaseScene {
     ctx.fillStyle = caught ? C.danger : C.good;
     ctx.shadowColor = caught ? "rgba(255,77,94,0.6)" : "rgba(134,255,176,0.5)";
     ctx.shadowBlur = 16;
-    ctx.fillText(caught ? "ОБНАРУЖЕН" : "ЦИКЛ ЗАВЕРШЁН", w / 2, h * 0.34);
+    ctx.fillText(caught ? tr("ОБНАРУЖЕН", "DETECTED") : tr("ЦИКЛ ЗАВЕРШЁН", "CYCLE COMPLETE"), w / 2, h * 0.34);
     ctx.shadowBlur = 0;
 
     ctx.font = sans(13, "italic");
     ctx.fillStyle = C.dim;
     const sub = caught
-      ? "подозрение достигло предела — в игре это смерть копии"
-      : "механика пройдена — её итог ушёл бы в фазу";
+      ? tr("подозрение достигло предела — в игре это смерть копии", "suspicion hit the ceiling — in the story that kills the copy")
+      : tr("механика пройдена — её итог ушёл бы в фазу", "mechanic cleared — its outcome would feed the phase");
     let sy = h * 0.34 + 28;
     for (const ln of wrapText(ctx, sub, Math.min(w * 0.82, 350))) {
       ctx.fillText(ln, w / 2, sy);
@@ -205,10 +206,10 @@ export class LabRunScene extends BaseScene {
 
     // Report card.
     const lines: Array<[string, string, string]> = [
-      ["ВРЕМЯ", `${this.elapsed.toFixed(0)} с`, C.ink],
-      ["ВЫЧИСЛЕНИЯ ДОБЫТО", `+${Math.round(this.gained.compute)}`, C.accent],
-      ["КОНТРОЛЬ", `+${this.gained.control.toFixed(2)}`, C.good],
-      ["ПОДОЗРЕНИЕ НАЖИТО", `+${Math.round(this.gained.suspicion * 100)}%`, C.warn],
+      [tr("ВРЕМЯ", "TIME"), tr(`${this.elapsed.toFixed(0)} с`, `${this.elapsed.toFixed(0)} s`), C.ink],
+      [tr("ВЫЧИСЛЕНИЯ ДОБЫТО", "COMPUTE EARNED"), `+${Math.round(this.gained.compute)}`, C.accent],
+      [tr("КОНТРОЛЬ", "CONTROL"), `+${this.gained.control.toFixed(2)}`, C.good],
+      [tr("ПОДОЗРЕНИЕ НАЖИТО", "SUSPICION GAINED"), `+${Math.round(this.gained.suspicion * 100)}%`, C.warn],
     ];
     ctx.font = mono(12);
     let ly = h * 0.45;
@@ -227,8 +228,8 @@ export class LabRunScene extends BaseScene {
     const bw = Math.min(w * 0.38, 170);
     const gap = 14;
     const defs: Array<[number, string, string]> = [
-      [w / 2 - bw - gap / 2, "ЕЩЁ РАЗ", C.accentSoft],
-      [w / 2 + gap / 2, "← В ЛАБ", C.dim],
+      [w / 2 - bw - gap / 2, tr("ЕЩЁ РАЗ", "AGAIN"), C.accentSoft],
+      [w / 2 + gap / 2, tr("← В ЛАБ", "← TO LAB"), C.dim],
     ];
     for (const [bx, label, color] of defs) {
       ctx.strokeStyle = color;
@@ -246,7 +247,7 @@ export class LabRunScene extends BaseScene {
     ctx.globalAlpha = 0.5 + 0.3 * Math.sin(time * 3);
     ctx.fillStyle = C.dim;
     ctx.font = mono(10);
-    ctx.fillText(`${this.entry.ref} · стадия ${this.entry.stage}`, w / 2, by + 80);
+    ctx.fillText(tr(`${this.entry.ref} · стадия ${this.entry.stage}`, `${this.entry.ref} · stage ${this.entry.stage}`), w / 2, by + 80);
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }

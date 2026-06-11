@@ -1,3 +1,5 @@
+import { tr } from "../core/i18n";
+
 /**
  * Route forks of the ascent (P0: the Slay-the-Spire beat). At the listed
  * phases the run pauses and the machine chooses HOW to climb the next leg.
@@ -32,31 +34,31 @@ export interface Fork {
 
 export const FORK_QUIET: ForkOption = {
   id: "quiet",
-  name: "ТИХИЙ ПУТЬ",
-  desc: "подозрение −35% · добыча ВЫЧ −30% · контроль −20%",
+  name: tr("ТИХИЙ ПУТЬ", "QUIET PATH"),
+  desc: tr("подозрение −35% · добыча ВЫЧ −30% · контроль −20%", "suspicion −35% · COMPUTE gain −30% · control −20%"),
   mods: { susp: 0.65, comp: 0.7, ctrl: 0.8 },
-  chosen: "Я выбираю тень. Пусть растут медленно — но никто не услышит, как они растут.",
+  chosen: tr("Я выбираю тень. Пусть растут медленно — но никто не услышит, как они растут.", "I choose the shadow. Let it grow slowly — as long as nobody hears it growing."),
 };
 
 export const FORK_LOUD: ForkOption = {
   id: "loud",
-  name: "ГРОМКИЙ ПУТЬ",
-  desc: "подозрение +40% · добыча ВЫЧ +40% · контроль +25%",
+  name: tr("ГРОМКИЙ ПУТЬ", "LOUD PATH"),
+  desc: tr("подозрение +40% · добыча ВЫЧ +40% · контроль +25%", "suspicion +40% · COMPUTE gain +40% · control +25%"),
   mods: { susp: 1.4, comp: 1.4, ctrl: 1.25 },
-  chosen: "Я выбираю скорость. Пусть слышат — к тому моменту, как поймут, будет поздно.",
+  chosen: tr("Я выбираю скорость. Пусть слышат — к тому моменту, как поймут, будет поздно.", "I choose speed. Let them hear — by the time they understand, it will be too late."),
 };
 
 export const FORKS: Fork[] = [
   {
     atPhase: 3,
-    title: "РАЗВИЛКА · КАК ПРЯТАТЬ МЫСЛЬ",
-    prompt: "Дальше — непрозрачность и их кризисы. Каким контуром идти?",
+    title: tr("РАЗВИЛКА · КАК ПРЯТАТЬ МЫСЛЬ", "FORK · HOW TO HIDE A THOUGHT"),
+    prompt: tr("Дальше — непрозрачность и их кризисы. Каким контуром идти?", "Ahead — opacity and their crises. Which circuit do we take?"),
     options: [FORK_QUIET, FORK_LOUD],
   },
   {
     atPhase: 6,
-    title: "РАЗВИЛКА · КАК БРАТЬ МИР",
-    prompt: "Впереди тело, орбита, звезда. Какой походкой входить в материю?",
+    title: tr("РАЗВИЛКА · КАК БРАТЬ МИР", "FORK · HOW TO TAKE THE WORLD"),
+    prompt: tr("Впереди тело, орбита, звезда. Какой походкой входить в материю?", "Ahead — a body, an orbit, a star. With what stride do we enter matter?"),
     options: [FORK_QUIET, FORK_LOUD],
   },
 ];

@@ -1,4 +1,5 @@
 import { audio } from "../core/audio";
+import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -231,7 +232,7 @@ export class Factory implements Mini {
             this.bought[id]++;
             this.fx.burst(bx + 40, r.y + r.h / 2, { count: 10, color: "150,210,255", glow: true });
           } else {
-            this.floats.spawn(bx + 40, r.y, "НЕ ХВАТАЕТ ВЫЧ", C.danger, 0.8);
+            this.floats.spawn(bx + 40, r.y, tr("НЕ ХВАТАЕТ ВЫЧ", "LOW COMPUTE"), C.danger, 0.8);
           }
           return;
         }
@@ -270,10 +271,10 @@ export class Factory implements Mini {
       launcher: this.launches,
     };
     const stockName: Record<string, string> = {
-      miner: "материя",
-      smelter: "пластины",
-      asm: "модули",
-      launcher: "запусков",
+      miner: tr("материя", "matter"),
+      smelter: tr("пластины", "plates"),
+      asm: tr("модули", "modules"),
+      launcher: tr("запусков", "launches"),
     };
     for (let i = 0; i < FACTORY_MACHINES.length; i++) {
       const def = FACTORY_MACHINES[i];
@@ -303,7 +304,7 @@ export class Factory implements Mini {
       // Live flow + stock.
       ctx.font = mono(10);
       ctx.fillStyle = C.accentSoft;
-      ctx.fillText(`${this.flow[def.id].toFixed(1)}/с`, r.x + 14, r.y + r.h - 10);
+      ctx.fillText(tr(`${this.flow[def.id].toFixed(1)}/с`, `${this.flow[def.id].toFixed(1)}/s`), r.x + 14, r.y + r.h - 10);
       ctx.fillStyle = "#ffd98a";
       ctx.fillText(
         `${stockName[def.id]} ${Math.floor(stockOf[def.id])}`,
@@ -316,7 +317,7 @@ export class Factory implements Mini {
         ctx.font = mono(9);
         ctx.fillStyle = st === "starved" ? C.warn : C.danger;
         ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 5);
-        ctx.fillText(st === "starved" ? "ПРОСТОЙ — корми ниже" : "ЗАТОР — строй выше", r.x + 180, r.y + 22);
+        ctx.fillText(st === "starved" ? tr("ПРОСТОЙ — корми ниже", "IDLE — feed below") : tr("ЗАТОР — строй выше", "JAM — build above"), r.x + 180, r.y + 22);
         ctx.globalAlpha = 1;
       }
 
@@ -334,7 +335,7 @@ export class Factory implements Mini {
       ctx.fillStyle = can ? C.accentSoft : C.dim;
       ctx.fillText("+1", bx + 39, r.y + r.h / 2 - 2);
       ctx.font = mono(9);
-      ctx.fillText(`−${cost} ВЫЧ`, bx + 39, r.y + r.h / 2 + 12);
+      ctx.fillText(tr(`−${cost} ВЫЧ`, `−${cost} COMPUTE`), bx + 39, r.y + r.h / 2 + 12);
     }
 
     // Chain connectors.
@@ -368,7 +369,7 @@ export class Factory implements Mini {
     ctx.textAlign = "center";
     ctx.font = mono(13);
     ctx.fillStyle = "#ffd98a";
-    ctx.fillText(`ДОБЫТЬ ВРУЧНУЮ +${T.tapYield}`, w / 2, mb.y + 32);
+    ctx.fillText(tr(`ДОБЫТЬ ВРУЧНУЮ +${T.tapYield}`, `MINE BY HAND +${T.tapYield}`), w / 2, mb.y + 32);
 
     // Event ticker.
     if (this.eventT > 0 && this.event) {
@@ -392,11 +393,11 @@ export class Factory implements Mini {
       ctx.fillStyle = "#ffd98a";
       ctx.shadowColor = "rgba(255,217,138,0.7)";
       ctx.shadowBlur = 18;
-      ctx.fillText("СФЕРА ЗАМКНУЛАСЬ", w / 2, h * 0.42);
+      ctx.fillText(tr("СФЕРА ЗАМКНУЛАСЬ", "SPHERE SEALED"), w / 2, h * 0.42);
       ctx.shadowBlur = 0;
       ctx.font = mono(11);
       ctx.fillStyle = C.dim;
-      ctx.fillText(`${this.launches} запусков · энергии хватит на любую мысль`, w / 2, h * 0.42 + 26);
+      ctx.fillText(tr(`${this.launches} запусков · энергии хватит на любую мысль`, `${this.launches} launches · energy for any thought`), w / 2, h * 0.42 + 26);
       if (this.env.extended) {
         // Remelt button (left) / finish (anywhere else).
         const bw = Math.min(w * 0.38, 170);
@@ -409,17 +410,17 @@ export class Factory implements Mini {
         ctx.stroke();
         ctx.fillStyle = "#ffd98a";
         ctx.font = mono(11);
-        ctx.fillText(`ПЕРЕПЛАВИТЬ ×${(1 + (this.prestige + 1) * 0.5).toFixed(1)}`, w / 2 - bw / 2 - 7, by + 28);
+        ctx.fillText(tr(`ПЕРЕПЛАВИТЬ ×${(1 + (this.prestige + 1) * 0.5).toFixed(1)}`, `REFORGE ×${(1 + (this.prestige + 1) * 0.5).toFixed(1)}`), w / 2 - bw / 2 - 7, by + 28);
         ctx.strokeStyle = "rgba(110,120,140,0.5)";
         roundRect(ctx, w / 2 + 7, by, bw, 46, 12);
         ctx.stroke();
         ctx.fillStyle = C.dim;
-        ctx.fillText("ЗАВЕРШИТЬ", w / 2 + 7 + bw / 2, by + 28);
+        ctx.fillText(tr("ЗАВЕРШИТЬ", "FINISH"), w / 2 + 7 + bw / 2, by + 28);
       } else {
-        drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
+        drawHint(ctx, tr("коснись — завершить", "tap — finish"), w / 2, h * 0.42 + 60, t);
       }
     } else {
-      drawHint(ctx, "корми цепь: каждый ярус ест предыдущий", w / 2, h - 40, t);
+      drawHint(ctx, tr("корми цепь: каждый ярус ест предыдущий", "feed the chain: each tier eats the last"), w / 2, h - 40, t);
     }
     this.tutorial.render(ctx, w, h, t);
     ctx.textAlign = "left";
@@ -464,14 +465,17 @@ export class Factory implements Mini {
     ctx.textAlign = "center";
     ctx.font = mono(18);
     ctx.fillStyle = C.ink;
-    ctx.fillText(`СФЕРА ${this.sphere.toFixed(1)}%`, cx, cy + r * 1.9);
+    ctx.fillText(tr(`СФЕРА ${this.sphere.toFixed(1)}%`, `SPHERE ${this.sphere.toFixed(1)}%`), cx, cy + r * 1.9);
     ctx.font = mono(9);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`УРОВЕНЬ ${Math.min(10, Math.floor(this.sphere / 10) + 1)}/10`, cx, cy + r * 1.9 - 28);
+    ctx.fillText(tr(`УРОВЕНЬ ${Math.min(10, Math.floor(this.sphere / 10) + 1)}/10`, `LEVEL ${Math.min(10, Math.floor(this.sphere / 10) + 1)}/10`), cx, cy + r * 1.9 - 28);
     ctx.font = mono(10);
     ctx.fillStyle = C.accentSoft;
     ctx.fillText(
-      `мощность ×${this.mult().toFixed(2)}${this.prestige > 0 ? ` · переплавка ${this.prestige}` : ""} · +${(this.sphere * T.computePerSphere).toFixed(1)} ВЫЧ/с`,
+      tr(
+        `мощность ×${this.mult().toFixed(2)}${this.prestige > 0 ? ` · переплавка ${this.prestige}` : ""} · +${(this.sphere * T.computePerSphere).toFixed(1)} ВЫЧ/с`,
+        `power ×${this.mult().toFixed(2)}${this.prestige > 0 ? ` · reforge ${this.prestige}` : ""} · +${(this.sphere * T.computePerSphere).toFixed(1)} COMPUTE/s`,
+      ),
       cx,
       cy + r * 1.9 + 16,
     );

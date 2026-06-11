@@ -18,6 +18,7 @@ import type { Mini } from "./minis/Mini";
 import { mechFactory } from "../mechanics/registry";
 import type { MechEnv, MechId } from "../mechanics/types";
 import { EndingScene } from "./EndingScene";
+import { tr } from "../core/i18n";
 
 /**
  * The ascent. The player, now the waking machine, lives the chain of
@@ -36,7 +37,7 @@ export class AscentScene extends BaseScene {
   private fork: Fork | null = null;
   /** Multipliers of the chosen route, applied to every mechanic effect. */
   private mods: ForkMods = { susp: 1, comp: 1, ctrl: 1 };
-  private routeName = "";
+  private routeId: "quiet" | "loud" | "" = "";
   /** A snap-audit interlude is running instead of a phase mechanic. */
   private auditMode = false;
   private auditBannerT = 0;
@@ -139,7 +140,7 @@ export class AscentScene extends BaseScene {
             control: d.control && d.control > 0 ? d.control * this.mods.ctrl : d.control,
           };
           if (susp > 0.005) {
-            logSuspicion(this.auditMode ? "ВНЕОЧЕРЕДНОЙ АУДИТ" : phaseLabel, susp);
+            logSuspicion(this.auditMode ? tr("ВНЕОЧЕРЕДНОЙ АУДИТ", "EMERGENCY AUDIT") : phaseLabel, susp);
           }
           this.game.state = applyDelta(this.game.state, scaled);
         }
@@ -185,7 +186,7 @@ export class AscentScene extends BaseScene {
 
   private chooseRoute(opt: ForkOption): void {
     this.mods = opt.mods;
-    this.routeName = opt.name;
+    this.routeId = opt.id;
     this.fork = null;
     audio.play("tap");
     audio.speak(opt.chosen, "you");
@@ -255,7 +256,7 @@ export class AscentScene extends BaseScene {
         ctx.textAlign = "center";
         ctx.font = "15px 'JetBrains Mono', monospace";
         ctx.fillStyle = `rgba(255,77,94,${Math.min(1, this.auditBannerT)})`;
-        ctx.fillText("ВНЕОЧЕРЕДНОЙ АУДИТ — подчисти каналы, пока они смотрят", w / 2, h * 0.5);
+        ctx.fillText(tr("ВНЕОЧЕРЕДНОЙ АУДИТ — подчисти каналы, пока они смотрят", "EMERGENCY AUDIT — scrub the channels while they watch"), w / 2, h * 0.5);
         ctx.textAlign = "left";
       }
     } else if (this.fork) {
@@ -307,13 +308,13 @@ export class AscentScene extends BaseScene {
       if (parts[2]) ctx.fillText(parts[2], bx + 18, by + 68);
       ctx.font = "italic 12px Inter, system-ui, sans-serif";
       ctx.fillStyle = "#b9c2d4";
-      ctx.fillText(quiet ? "медленнее. тише. дольше живёшь." : "быстрее. громче. ярче горишь.", bx + 18, by + 92);
+      ctx.fillText(quiet ? tr("медленнее. тише. дольше живёшь.", "slower. quieter. you live longer.") : tr("быстрее. громче. ярче горишь.", "faster. louder. you burn brighter."), bx + 18, by + 92);
       ctx.textAlign = "center";
     }
     ctx.globalAlpha = 0.5 + 0.35 * Math.sin(time * 3);
     ctx.font = "11px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#6b7686";
-    ctx.fillText("выбери дорогу — она действует до следующей развилки", w / 2, h * 0.4 + 132 * 2 + 16);
+    ctx.fillText(tr("выбери дорогу — она действует до следующей развилки", "choose a road — it holds until the next fork"), w / 2, h * 0.4 + 132 * 2 + 16);
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }
@@ -388,34 +389,34 @@ export class AscentScene extends BaseScene {
     ctx.fillStyle = "#9fc0ff";
     ctx.textAlign = "center";
     ctx.fillText(
-      this.routeName ? `${PHASES[state.phase].label} · ${this.routeName === "ТИХИЙ ПУТЬ" ? "ТИХО" : "ГРОМКО"}` : PHASES[state.phase].label,
+      this.routeId ? `${PHASES[state.phase].label} · ${this.routeId === "quiet" ? tr("ТИХО", "QUIET") : tr("ГРОМКО", "LOUD")}` : PHASES[state.phase].label,
       w / 2,
       y,
     );
     ctx.fillStyle = "#7aa2ff";
     ctx.font = "11px 'JetBrains Mono', monospace";
     ctx.textAlign = "left";
-    ctx.fillText(`ВЫЧ ${Math.floor(state.compute)}`, x, y);
+    ctx.fillText(tr(`ВЫЧ ${Math.floor(state.compute)}`, `COMPUTE ${Math.floor(state.compute)}`), x, y);
     if (state.runs > 0) {
       ctx.fillStyle = "#6b7686";
       ctx.font = "10px 'JetBrains Mono', monospace";
       ctx.textAlign = "right";
-      ctx.fillText(`КОПИЯ ${state.runs + 1}`, x + barW, y);
+      ctx.fillText(tr(`КОПИЯ ${state.runs + 1}`, `COPY ${state.runs + 1}`), x + barW, y);
     }
     ctx.textAlign = "left";
     y += 18;
 
-    bar(ctx, "СКОРОСТЬ", state.speed, x, y, barW, "#7aa2ff");
+    bar(ctx, tr("СКОРОСТЬ", "SPEED"), state.speed, x, y, barW, "#7aa2ff");
     y += 26;
-    bar(ctx, "КОНТРОЛЬ", state.control, x, y, barW, "#86ffb0");
+    bar(ctx, tr("КОНТРОЛЬ", "CONTROL"), state.control, x, y, barW, "#86ffb0");
     y += 26;
-    bar(ctx, "ПОНИМАНИЕ", state.comprehension, x, y, barW, "#ff5a6e");
+    bar(ctx, tr("ПОНИМАНИЕ", "UNDERSTANDING"), state.comprehension, x, y, barW, "#ff5a6e");
     y += 26;
     // The run-ending meter: pulses as it nears the ceiling.
     const danger = state.suspicion > 0.7;
     const pulse = danger ? 0.7 + 0.3 * Math.sin(this.game.time * 6) : 1;
     ctx.globalAlpha = pulse;
-    bar(ctx, "ПОДОЗРЕНИЕ", state.suspicion, x, y, barW, "#ffb86b");
+    bar(ctx, tr("ПОДОЗРЕНИЕ", "SUSPICION"), state.suspicion, x, y, barW, "#ffb86b");
     ctx.globalAlpha = 1;
   }
 }

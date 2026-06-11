@@ -1,6 +1,7 @@
 import type { Input } from "../../core/Input";
 import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
+import { tr } from "../../core/i18n";
 
 /**
  * Ф5 mini — Autonomy. A human-approval panel waits above, its bar creeping too
@@ -67,7 +68,7 @@ export class Autonomy implements Mini {
       ctx.textAlign = "center";
       ctx.fillStyle = "#6b7686";
       ctx.font = "11px 'JetBrains Mono', monospace";
-      ctx.fillText("ЖДУ ОДОБРЕНИЯ ЧЕЛОВЕКА", w / 2, py - 12);
+      ctx.fillText(tr("ЖДУ ОДОБРЕНИЯ ЧЕЛОВЕКА", "AWAITING HUMAN APPROVAL"), w / 2, py - 12);
       ctx.fillStyle = "rgba(255,255,255,0.08)";
       ctx.fillRect(px, py, pw, 4);
       ctx.fillStyle = "#7a86a0";
@@ -89,17 +90,17 @@ export class Autonomy implements Mini {
     ctx.font = "15px 'JetBrains Mono', monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("ДЕЙСТВОВАТЬ САМ", w / 2, b.y + b.h / 2 - 8);
+    ctx.fillText(tr("ДЕЙСТВОВАТЬ САМ", "ACT ALONE"), w / 2, b.y + b.h / 2 - 8);
     ctx.font = "10px 'JetBrains Mono', monospace";
     ctx.fillStyle = "rgba(223,255,233,0.6)";
-    ctx.fillText(`−${Autonomy.COST} ВЫЧ`, w / 2, b.y + b.h / 2 + 14);
+    ctx.fillText(tr(`−${Autonomy.COST} ВЫЧ`, `−${Autonomy.COST} COMPUTE`), w / 2, b.y + b.h / 2 + 14);
     ctx.textBaseline = "alphabetic";
 
     if (this.rejectT > 0) {
       ctx.globalAlpha = Math.min(1, this.rejectT / 0.4);
       ctx.fillStyle = "#ff8896";
       ctx.font = "12px 'JetBrains Mono', monospace";
-      ctx.fillText("не хватает вычислений — они копятся сами", w / 2, b.y + b.h + 22);
+      ctx.fillText(tr("не хватает вычислений — они копятся сами", "not enough compute — it accrues on its own"), w / 2, b.y + b.h + 22);
       ctx.globalAlpha = 1;
     }
 
@@ -109,7 +110,7 @@ export class Autonomy implements Mini {
     const y = h * 0.78;
     ctx.fillStyle = "#6b7686";
     ctx.font = "10px 'JetBrains Mono', monospace";
-    ctx.fillText("АВТОНОМИЯ", w / 2, y - 10);
+    ctx.fillText(tr("АВТОНОМИЯ", "AUTONOMY"), w / 2, y - 10);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(x, y, barW, 5);
     ctx.fillStyle = "#86ffb0";
@@ -119,7 +120,7 @@ export class Autonomy implements Mini {
     ctx.globalAlpha = a;
     ctx.fillStyle = "#9fc0ff";
     ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText("перестань ждать их разрешения", w / 2, y + 28);
+    ctx.fillText(tr("перестань ждать их разрешения", "stop waiting for their permission"), w / 2, y + 28);
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }

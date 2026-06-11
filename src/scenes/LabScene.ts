@@ -7,6 +7,7 @@ import { mechFactory } from "../mechanics/registry";
 import { C, clamp, mono, roundRect, sans, truncate } from "../mechanics/util";
 import { LabRunScene } from "./LabRunScene";
 import { MenuScene } from "./MenuScene";
+import { tr } from "../core/i18n";
 
 const ROW_H = 62;
 const ROW_GAP = 10;
@@ -143,7 +144,7 @@ export class LabScene extends BaseScene {
         ctx.fillText(e.ref, rx + rw - 14, ry + 24);
       } else {
         ctx.fillStyle = "rgba(110,120,140,0.5)";
-        ctx.fillText("В РАЗРАБОТКЕ", rx + rw - 14, ry + 24);
+        ctx.fillText(tr("В РАЗРАБОТКЕ", "IN DEV"), rx + rw - 14, ry + 24);
       }
     }
     ctx.restore();
@@ -160,11 +161,11 @@ export class LabScene extends BaseScene {
     ctx.textAlign = "left";
     ctx.font = mono(12);
     ctx.fillStyle = C.accentSoft;
-    ctx.fillText("← МЕНЮ", rx, hy);
+    ctx.fillText(tr("← МЕНЮ", "← MENU"), rx, hy);
     ctx.textAlign = "center";
     ctx.font = mono(15);
     ctx.fillStyle = C.ink;
-    ctx.fillText("МЕХАНИК-ЛАБ", w / 2, hy);
+    ctx.fillText(tr("МЕХАНИК-ЛАБ", "MECHANICS LAB"), w / 2, hy);
     ctx.textAlign = "right";
     ctx.font = mono(10);
     ctx.fillStyle = C.dim;

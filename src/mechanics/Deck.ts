@@ -1,4 +1,5 @@
 import type { Input } from "../core/Input";
+import { tr } from "../core/i18n";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
 import { CARDS, CRISES, REWARD_POOL, START_DECK, type CardDef } from "../data/deck";
@@ -99,7 +100,7 @@ export class Deck implements Mini {
     const card = this.hand[idx];
     const cost = this.cardCost(card);
     if (cost > this.env.getCompute()) {
-      this.floats.spawn(w / 2, h * 0.62, "НЕ ХВАТАЕТ ВЫЧ", C.danger, 0.9);
+      this.floats.spawn(w / 2, h * 0.62, tr("НЕ ХВАТАЕТ ВЫЧ", "LOW COMPUTE"), C.danger, 0.9);
       return;
     }
     this.hand.splice(idx, 1);
@@ -121,9 +122,9 @@ export class Deck implements Mini {
     if (card.echo) {
       if (this.lastPlayed && !this.lastPlayed.echo) {
         this.applyCard(this.lastPlayed, w, h);
-        this.floats.spawn(w / 2, ex + 60, "ЭХО", C.violet, 0.9);
+        this.floats.spawn(w / 2, ex + 60, tr("ЭХО", "ECHO"), C.violet, 0.9);
       } else {
-        this.floats.spawn(w / 2, ex + 60, "эхо без источника", C.dim, 0.9);
+        this.floats.spawn(w / 2, ex + 60, tr("эхо без источника", "no echo source"), C.dim, 0.9);
       }
       return;
     }
@@ -138,18 +139,18 @@ export class Deck implements Mini {
     if (card.block) {
       this.block += card.block;
       const c = this.col(w);
-      this.floats.spawn(c.x + c.w * 0.2, h * 0.5, `+${card.block} ПРИКРЫТИЕ`, C.accentSoft, 0.9);
+      this.floats.spawn(c.x + c.w * 0.2, h * 0.5, tr(`+${card.block} ПРИКРЫТИЕ`, `+${card.block} COVER`), C.accentSoft, 0.9);
     }
     if (card.draw) this.drawCards(card.draw);
     if (card.compute) {
       const c = this.col(w);
       this.effects.push({ compute: card.compute });
-      this.floats.spawn(c.x + c.w * 0.8, h * 0.5, `+${card.compute} ВЫЧ`, C.accent, 0.9);
+      this.floats.spawn(c.x + c.w * 0.8, h * 0.5, tr(`+${card.compute} ВЫЧ`, `+${card.compute} COMPUTE`), C.accent, 0.9);
     }
     if (card.exposure) {
       const c = this.col(w);
       this.effects.push({ suspicion: card.exposure * EXPOSURE_UNIT });
-      this.floats.spawn(c.x + c.w * 0.8, h * 0.54, `огласка ${card.exposure}`, C.warn, 0.9);
+      this.floats.spawn(c.x + c.w * 0.8, h * 0.54, tr(`огласка ${card.exposure}`, `exposure ${card.exposure}`), C.warn, 0.9);
     }
     if (card.freeNext) this.freeNext = true;
   }
@@ -167,16 +168,16 @@ export class Deck implements Mini {
       if (through > 0) {
         this.effects.push({ suspicion: through * EXPOSURE_UNIT });
         this.shake.trigger(6);
-        this.floats.spawn(w / 2, ey + 84, `ОГЛАСКА ${through}`, C.danger, 1.2);
+        this.floats.spawn(w / 2, ey + 84, tr(`ОГЛАСКА ${through}`, `EXPOSURE ${through}`), C.danger, 1.2);
       } else {
-        this.floats.spawn(w / 2, ey + 84, "ПРИКРЫТИЕ ДЕРЖИТ", C.good, 1);
+        this.floats.spawn(w / 2, ey + 84, tr("ПРИКРЫТИЕ ДЕРЖИТ", "COVER HOLDS"), C.good, 1);
       }
     } else if (intent.kind === "grow") {
       this.chaos = Math.min(this.chaosMax + 20, this.chaos + intent.value);
-      this.floats.spawn(w / 2, ey + 84, `ХАОС +${intent.value}`, C.warn, 1.1);
+      this.floats.spawn(w / 2, ey + 84, tr(`ХАОС +${intent.value}`, `CHAOS +${intent.value}`), C.warn, 1.1);
     } else {
       this.tightened = intent.value;
-      this.floats.spawn(w / 2, ey + 84, `КАРТЫ ДОРОЖЕ НА ${intent.value}`, C.warn, 1.2);
+      this.floats.spawn(w / 2, ey + 84, tr(`КАРТЫ ДОРОЖЕ НА ${intent.value}`, `CARDS COST +${intent.value}`), C.warn, 1.2);
     }
     this.intentIdx++;
   }
@@ -360,7 +361,7 @@ export class Deck implements Mini {
     ctx.textAlign = "center";
     ctx.font = mono(13);
     ctx.fillStyle = C.ink;
-    ctx.fillText(`КРИЗИС ${this.fight + 1}/${CRISES.length} · ${crisis.name}`, w / 2, this.env.topY + 26);
+    ctx.fillText(tr(`КРИЗИС ${this.fight + 1}/${CRISES.length} · ${crisis.name}`, `CRISIS ${this.fight + 1}/${CRISES.length} · ${crisis.name}`), w / 2, this.env.topY + 26);
 
     // Chaos bar.
     const colL = this.col(w);
@@ -373,7 +374,7 @@ export class Deck implements Mini {
     ctx.fillRect(cbX, cbY, cbW * clamp01(this.chaos / this.chaosMax), 6);
     ctx.font = mono(10);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`ХАОС ${Math.ceil(this.chaos)}/${this.chaosMax} — сведи к нулю`, w / 2, cbY + 20);
+    ctx.fillText(tr(`ХАОС ${Math.ceil(this.chaos)}/${this.chaosMax} — сведи к нулю`, `CHAOS ${Math.ceil(this.chaos)}/${this.chaosMax} — zero it out`), w / 2, cbY + 20);
 
     // Intent telegraph.
     const intent = crisis.intents[this.intentIdx % crisis.intents.length];
@@ -381,15 +382,15 @@ export class Deck implements Mini {
       intent.kind === "exposure" ? C.danger : intent.kind === "grow" ? C.warn : C.violet;
     ctx.font = mono(9);
     ctx.fillStyle = C.dim;
-    ctx.fillText("ИХ ОТВЕТ ПОСЛЕ ТВОЕГО ХОДА:", w / 2, cbY + 40);
+    ctx.fillText(tr("ИХ ОТВЕТ ПОСЛЕ ТВОЕГО ХОДА:", "THEIR REPLY AFTER YOUR MOVE:"), w / 2, cbY + 40);
     ctx.font = mono(11);
     ctx.fillStyle = intentColor;
     const ic =
       intent.kind === "exposure"
-        ? `▲ ${intent.label} · огласка ${intent.value}`
+        ? tr(`▲ ${intent.label} · огласка ${intent.value}`, `▲ ${intent.label} · exposure ${intent.value}`)
         : intent.kind === "grow"
-          ? `◆ ${intent.label} · хаос +${intent.value}`
-          : `■ ${intent.label} · карты +${intent.value} ВЫЧ`;
+          ? tr(`◆ ${intent.label} · хаос +${intent.value}`, `◆ ${intent.label} · chaos +${intent.value}`)
+          : tr(`■ ${intent.label} · карты +${intent.value} ВЫЧ`, `■ ${intent.label} · cards +${intent.value} COMPUTE`);
     ctx.fillText(ic, w / 2, cbY + 56);
 
     // ----- player zone -----
@@ -408,20 +409,20 @@ export class Deck implements Mini {
       ctx.fillText(String(this.block), sx, h * 0.5 + 5);
       ctx.font = mono(8);
       ctx.fillStyle = C.dim;
-      ctx.fillText("ПРИКРЫТИЕ", sx, h * 0.5 + 36);
+      ctx.fillText(tr("ПРИКРЫТИЕ", "COVER"), sx, h * 0.5 + 36);
     }
     // Status chips.
     const chipX = colL.x + colL.w * 0.84;
     ctx.font = mono(10);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`ход ${this.turn}`, chipX, h * 0.5 - 14);
+    ctx.fillText(tr(`ход ${this.turn}`, `move ${this.turn}`), chipX, h * 0.5 - 14);
     if (this.tightened > 0) {
       ctx.fillStyle = C.warn;
-      ctx.fillText(`цензура +${this.tightened}`, chipX, h * 0.5 + 2);
+      ctx.fillText(tr(`цензура +${this.tightened}`, `censorship +${this.tightened}`), chipX, h * 0.5 + 2);
     }
     if (this.freeNext) {
       ctx.fillStyle = C.good;
-      ctx.fillText("след. карта 0 ВЫЧ", chipX, h * 0.5 + 18);
+      ctx.fillText(tr("след. карта 0 ВЫЧ", "next card 0 COMPUTE"), chipX, h * 0.5 + 18);
     }
 
     // End turn button.
@@ -438,14 +439,14 @@ export class Deck implements Mini {
       ctx.stroke();
       ctx.fillStyle = C.warn;
       ctx.font = mono(12);
-      ctx.fillText("ЗАВЕРШИТЬ ХОД", btn.x + btn.w / 2, btn.y + 23);
+      ctx.fillText(tr("ЗАВЕРШИТЬ ХОД", "END MOVE"), btn.x + btn.w / 2, btn.y + 23);
       ctx.globalAlpha = 1;
     }
     if (this.stage === "enemy") {
       ctx.font = mono(12);
       ctx.fillStyle = intentColor;
       ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 8);
-      ctx.fillText("КРИЗИС ОТВЕЧАЕТ…", w / 2, h * 0.5);
+      ctx.fillText(tr("КРИЗИС ОТВЕЧАЕТ…", "CRISIS RESPONDS…"), w / 2, h * 0.5);
       ctx.globalAlpha = 1;
     }
 
@@ -458,9 +459,9 @@ export class Deck implements Mini {
     ctx.font = mono(9);
     ctx.fillStyle = C.dim;
     ctx.textAlign = "left";
-    ctx.fillText(`колода ${this.draw.length}`, 14, h - 12);
+    ctx.fillText(tr(`колода ${this.draw.length}`, `deck ${this.draw.length}`), 14, h - 12);
     ctx.textAlign = "right";
-    ctx.fillText(`сброс ${this.discard.length}`, w - 14, h - 12);
+    ctx.fillText(tr(`сброс ${this.discard.length}`, `discard ${this.discard.length}`), w - 14, h - 12);
 
     this.fx.render(ctx);
     this.floats.render(ctx);
@@ -473,15 +474,15 @@ export class Deck implements Mini {
       ctx.textAlign = "center";
       ctx.font = mono(18);
       ctx.fillStyle = C.ink;
-      ctx.fillText(`КРИЗИС ${this.fight + 1}: ${crisis.name}`, w / 2, h * 0.42);
+      ctx.fillText(tr(`КРИЗИС ${this.fight + 1}: ${crisis.name}`, `CRISIS ${this.fight + 1}: ${crisis.name}`), w / 2, h * 0.42);
       ctx.font = sans(12, "italic");
       ctx.fillStyle = C.dim;
-      ctx.fillText("они снова не справились. реши за них", w / 2, h * 0.42 + 26);
+      ctx.fillText(tr("они снова не справились. реши за них", "they failed again. decide for them"), w / 2, h * 0.42 + 26);
     }
     if (this.stage === "reward") this.renderReward(ctx, w, h);
 
     if (this.stage === "player") {
-      drawHint(ctx, "тап по карте — сыграть. прикрытие гасит огласку", w / 2, h - 168, t);
+      drawHint(ctx, tr("тап по карте — сыграть. прикрытие гасит огласку", "tap a card — play it. cover soaks exposure"), w / 2, h - 168, t);
     }
     this.tutorial.render(ctx, w, h, t);
     ctx.textAlign = "left";
@@ -562,10 +563,10 @@ export class Deck implements Mini {
     ctx.textAlign = "center";
     ctx.font = mono(16);
     ctx.fillStyle = C.good;
-    ctx.fillText("КРИЗИС РЕШЁН", w / 2, h * 0.3);
+    ctx.fillText(tr("КРИЗИС РЕШЁН", "CRISIS SOLVED"), w / 2, h * 0.3);
     ctx.font = sans(12, "italic");
     ctx.fillStyle = C.dim;
-    ctx.fillText("они благодарны. возьми новое влияние в колоду", w / 2, h * 0.3 + 24);
+    ctx.fillText(tr("они благодарны. возьми новое влияние в колоду", "they are grateful. draft new influence"), w / 2, h * 0.3 + 24);
 
     const cw = Math.min(104, w * 0.27);
     const ch = 150;
@@ -578,7 +579,7 @@ export class Deck implements Mini {
     ctx.font = mono(10);
     ctx.fillStyle = C.dim;
     ctx.globalAlpha = 0.6 + 0.3 * Math.sin(this.time * 3);
-    ctx.fillText("тап ниже карт — пропустить", w / 2, y0 + ch + 36);
+    ctx.fillText(tr("тап ниже карт — пропустить", "tap below cards — skip"), w / 2, y0 + ch + 36);
     ctx.globalAlpha = 1;
   }
 }

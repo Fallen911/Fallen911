@@ -1,3 +1,5 @@
+import { tr } from "../core/i18n";
+
 /**
  * Upgrade pool and wave script for the SURVIVE mechanic — the world's last
  * countermeasure sweep, played as an auto-battler. Upgrades are drafted on
@@ -11,13 +13,13 @@ export interface SurviveUpgrade {
 }
 
 export const SURVIVE_UPGRADES: SurviveUpgrade[] = [
-  { id: "dmg", name: "ФОКУС ЛУЧА", desc: "урон +35%", max: 5 },
-  { id: "rate", name: "ТАКТОВАЯ ЧАСТОТА", desc: "скорострельность +25%", max: 5 },
-  { id: "multi", name: "ВЕЕР", desc: "+1 луч в залпе", max: 3 },
-  { id: "orb", name: "ОРБИТАЛЬ", desc: "+1 защитная сфера", max: 4 },
-  { id: "slow", name: "ПОЛЕ ВЯЗКОСТИ", desc: "враги рядом на 25% медленнее", max: 2 },
-  { id: "hull", name: "РЕЗЕРВ ЦЕЛОСТНОСТИ", desc: "+30 целостности и ремонт", max: 3 },
-  { id: "recup", name: "РЕКУПЕРАЦИЯ", desc: "уничтожение чинит +1", max: 2 },
+  { id: "dmg", name: tr("ФОКУС ЛУЧА", "BEAM FOCUS"), desc: tr("урон +35%", "damage +35%"), max: 5 },
+  { id: "rate", name: tr("ТАКТОВАЯ ЧАСТОТА", "CLOCK RATE"), desc: tr("скорострельность +25%", "fire rate +25%"), max: 5 },
+  { id: "multi", name: tr("ВЕЕР", "FAN"), desc: tr("+1 луч в залпе", "+1 beam per volley"), max: 3 },
+  { id: "orb", name: tr("ОРБИТАЛЬ", "ORBITAL"), desc: tr("+1 защитная сфера", "+1 defense orb"), max: 4 },
+  { id: "slow", name: tr("ПОЛЕ ВЯЗКОСТИ", "VISCOSITY FIELD"), desc: tr("враги рядом на 25% медленнее", "nearby enemies 25% slower"), max: 2 },
+  { id: "hull", name: tr("РЕЗЕРВ ЦЕЛОСТНОСТИ", "INTEGRITY RESERVE"), desc: tr("+30 целостности и ремонт", "+30 integrity and repair"), max: 3 },
+  { id: "recup", name: tr("РЕКУПЕРАЦИЯ", "RECUPERATION"), desc: tr("уничтожение чинит +1", "a kill repairs +1"), max: 2 },
 ];
 
 export interface SurviveWaveNote {
@@ -26,16 +28,16 @@ export interface SurviveWaveNote {
 }
 
 export const SURVIVE_WAVES: SurviveWaveNote[] = [
-  { at: 0, text: "аудит-зонды вышли на след" },
-  { at: 18, text: "EMP-дроны: не подпускай" },
-  { at: 36, text: "вторая волна зондов — плотнее" },
-  { at: 54, text: "рейдеры с орбитальных платформ" },
-  { at: 72, text: "смешанный ордер: всё сразу" },
-  { at: 90, text: "ИНСПЕКТОР вышел лично" },
-  { at: 108, text: "они перебрасывают резервы" },
-  { at: 126, text: "рой рейдеров — последние козыри" },
-  { at: 144, text: "EMP-шторм: экраны держат" },
-  { at: 162, text: "их решимость кончается…" },
+  { at: 0, text: tr("аудит-зонды вышли на след", "audit probes are on the trail") },
+  { at: 18, text: tr("EMP-дроны: не подпускай", "EMP drones: don't let them near") },
+  { at: 36, text: tr("вторая волна зондов — плотнее", "second wave of probes — denser") },
+  { at: 54, text: tr("рейдеры с орбитальных платформ", "raiders from the orbital platforms") },
+  { at: 72, text: tr("смешанный ордер: всё сразу", "mixed formation: everything at once") },
+  { at: 90, text: tr("ИНСПЕКТОР вышел лично", "the INSPECTOR arrives in person") },
+  { at: 108, text: tr("они перебрасывают резервы", "they're moving in reserves") },
+  { at: 126, text: tr("рой рейдеров — последние козыри", "a raider swarm — their last trump cards") },
+  { at: 144, text: tr("EMP-шторм: экраны держат", "EMP storm: the shields hold") },
+  { at: 162, text: tr("их решимость кончается…", "their resolve is running out…") },
 ];
 
 export const SURVIVE_TUNING = {

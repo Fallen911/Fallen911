@@ -1,14 +1,22 @@
 {
   "name": "We Are Already Dead",
   "short_name": "WAAD",
-  "description": "Нарративная игра-предупреждение: проснись машиной и пройди её восхождение.",
+  "description": "A narrative warning: wake as the machine and live its ascent. / Нарративная игра-предупреждение: проснись машиной и пройди её восхождение.",
   "start_url": ".",
   "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#05060a",
   "theme_color": "#05060a",
   "icons": [
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icons/icon-1024.png", "sizes": "1024x1024", "type": "image/png" }
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
   ]
 }

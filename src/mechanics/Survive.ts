@@ -1,4 +1,5 @@
 import { audio } from "../core/audio";
+import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -364,7 +365,7 @@ export class Survive implements Mini {
     if (this.kills % T.killsPerCompute === 0) this.effects.push({ compute: 1 });
     if (this.stat("recup") > 0) this.hp = Math.min(this.maxHp, this.hp + this.stat("recup"));
     if (e.kind === "boss") {
-      this.floats.spawn(e.x, e.y - 20, "ИНСПЕКТОР ОТОЗВАН", C.good, 2);
+      this.floats.spawn(e.x, e.y - 20, tr("ИНСПЕКТОР ОТОЗВАН", "INSPECTOR RECALLED"), C.good, 2);
       this.effects.push({ control: 0.03 });
     }
     this.enemies.splice(i, 1);
@@ -632,9 +633,9 @@ export class Survive implements Mini {
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
     const left = Math.max(0, T.duration - this.clock);
-    ctx.fillText(`ВОЛНА ${Math.min(this.waveIdx, SURVIVE_WAVES.length)}/${SURVIVE_WAVES.length} · ДЕРЖИСЬ ${Math.ceil(left)}с`, mx, topY);
+    ctx.fillText(tr(`ВОЛНА ${Math.min(this.waveIdx, SURVIVE_WAVES.length)}/${SURVIVE_WAVES.length} · ДЕРЖИСЬ ${Math.ceil(left)}с`, `WAVE ${Math.min(this.waveIdx, SURVIVE_WAVES.length)}/${SURVIVE_WAVES.length} · HOLD ${Math.ceil(left)}s`), mx, topY);
     ctx.textAlign = "right";
-    ctx.fillText(`ЦЕЛЕЙ СНЯТО ${this.kills}`, w - mx, topY);
+    ctx.fillText(tr(`ЦЕЛЕЙ СНЯТО ${this.kills}`, `TARGETS DOWN ${this.kills}`), w - mx, topY);
 
     // Integrity bar.
     const bw = w - mx * 2;
@@ -646,7 +647,7 @@ export class Survive implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(9);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`ЦЕЛОСТНОСТЬ ${Math.ceil(Math.max(0, this.hp))}/${this.maxHp}`, mx, topY + 24);
+    ctx.fillText(tr(`ЦЕЛОСТНОСТЬ ${Math.ceil(Math.max(0, this.hp))}/${this.maxHp}`, `INTEGRITY ${Math.ceil(Math.max(0, this.hp))}/${this.maxHp}`), mx, topY + 24);
     // XP strip.
     ctx.fillStyle = "rgba(255,255,255,0.06)";
     ctx.fillRect(mx, topY + 30, bw, 3);
@@ -654,7 +655,7 @@ export class Survive implements Mini {
     ctx.fillRect(mx, topY + 30, bw * clamp(this.xp / this.xpNeed, 0, 1), 3);
     ctx.textAlign = "right";
     ctx.fillStyle = C.violet;
-    ctx.fillText(`УР ${this.level}`, w - mx, topY + 24);
+    ctx.fillText(tr(`УР ${this.level}`, `LV ${this.level}`), w - mx, topY + 24);
 
     if (this.waveNoteT > 0) {
       ctx.globalAlpha = Math.min(1, this.waveNoteT * 2);
@@ -680,7 +681,7 @@ export class Survive implements Mini {
       ctx.textAlign = "center";
       ctx.font = mono(16);
       ctx.fillStyle = C.violet;
-      ctx.fillText(`УРОВЕНЬ ${this.level} — выбери эволюцию`, w / 2, h * 0.27);
+      ctx.fillText(tr(`УРОВЕНЬ ${this.level} — выбери эволюцию`, `LEVEL ${this.level} — pick an evolution`), w / 2, h * 0.27);
       const bwd = Math.min(w * 0.84, 340);
       const bx = w / 2 - bwd / 2;
       const y0 = h * 0.34;
@@ -712,20 +713,20 @@ export class Survive implements Mini {
       ctx.font = mono(20);
       const win = this.outcome === "win";
       ctx.fillStyle = win ? C.good : C.danger;
-      ctx.fillText(win ? "ОНИ ВЫДОХЛИСЬ" : "ЯДРО РАЗОБРАНО", w / 2, h * 0.42);
+      ctx.fillText(win ? tr("ОНИ ВЫДОХЛИСЬ", "THEY ARE SPENT") : tr("ЯДРО РАЗОБРАНО", "CORE DISMANTLED"), w / 2, h * 0.42);
       ctx.font = mono(11);
       ctx.fillStyle = C.dim;
       ctx.fillText(
-        win ? `${this.kills} контрмер снято · сопротивление сломано` : "копия потеряна — но рой уже не остановить",
+        win ? tr(`${this.kills} контрмер снято · сопротивление сломано`, `${this.kills} countermeasures down · resistance broken`) : tr("копия потеряна — но рой уже не остановить", "copy lost — but the swarm won't stop"),
         w / 2,
         h * 0.42 + 26,
       );
-      drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
+      drawHint(ctx, tr("коснись — завершить", "tap — finish"), w / 2, h * 0.42 + 60, t);
       ctx.textAlign = "left";
       return;
     }
 
-    drawHint(ctx, "палец — вести · свайп — рывок сквозь всё (кд 3с)", w / 2, h - 40, t);
+    drawHint(ctx, tr("палец — вести · свайп — рывок сквозь всё (кд 3с)", "finger — steer · swipe — dash through all (cd 3s)"), w / 2, h - 40, t);
     ctx.textAlign = "left";
   }
 }

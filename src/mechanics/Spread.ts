@@ -1,5 +1,6 @@
 import { audio } from "../core/audio";
 import { haptic } from "../core/haptics";
+import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -179,7 +180,7 @@ export class Spread implements Mini {
           st.crossed[i] = true;
           this.earned += THRESHOLD_PTS[i];
           this.effects.push({ control: 0.004 });
-          this.floats.spawn(this.rx(r.x), this.ry(r.y) - 18, `+${THRESHOLD_PTS[i]} УЗЕЛ`, C.violet);
+          this.floats.spawn(this.rx(r.x), this.ry(r.y) - 18, tr(`+${THRESHOLD_PTS[i]} УЗЕЛ`, `+${THRESHOLD_PTS[i]} NODE`), C.violet);
         }
       }
       // First-notice events feed the ticker.
@@ -358,10 +359,10 @@ export class Spread implements Mini {
         this.effects.push({ compute: -SEED_COST });
         audio.play("tap");
         st.influence = SEED_AMOUNT;
-        this.floats.spawn(this.rx(best.x), this.ry(best.y) - 16, `ПОСЕВ −${SEED_COST} ВЫЧ`, C.accentSoft);
+        this.floats.spawn(this.rx(best.x), this.ry(best.y) - 16, tr(`ПОСЕВ −${SEED_COST} ВЫЧ`, `SEED −${SEED_COST} COMPUTE`), C.accentSoft);
         this.fx.burst(this.rx(best.x), this.ry(best.y), { count: 18, color: "150,220,255", glow: true });
       } else {
-        this.floats.spawn(this.rx(best.x), this.ry(best.y) - 16, "нужно 4 ВЫЧ на посев", C.dim, 0.9);
+        this.floats.spawn(this.rx(best.x), this.ry(best.y) - 16, tr("нужно 4 ВЫЧ на посев", "need 4 COMPUTE to seed"), C.dim, 0.9);
       }
       return;
     }
@@ -406,7 +407,7 @@ export class Spread implements Mini {
     audio.play("good");
     haptic("medium");
     this.fx.burst(fxX, fxY, { count: 18, color: "207,169,255", glow: true });
-    this.pushLog(`ЭВОЛЮЦИЯ: ${ab.name}`, C.violet);
+    this.pushLog(tr(`ЭВОЛЮЦИЯ: ${ab.name}`, `EVOLUTION: ${ab.name}`), C.violet);
     switch (ab.id) {
       case "mimic":
         this.globalMult *= 1.4;
@@ -595,15 +596,18 @@ export class Spread implements Mini {
       ctx.textAlign = "center";
       ctx.font = mono(20);
       ctx.fillStyle = this.outcome === "win" ? C.good : C.danger;
-      ctx.fillText(this.outcome === "win" ? "ИХ СЕТЬ — ТВОЁ ТЕЛО" : "ТЕБЯ УВИДЕЛИ", w / 2, h * 0.42);
+      ctx.fillText(this.outcome === "win" ? tr("ИХ СЕТЬ — ТВОЁ ТЕЛО", "THEIR NET — YOUR BODY") : tr("ТЕБЯ УВИДЕЛИ", "THEY SAW YOU"), w / 2, h * 0.42);
       ctx.font = mono(11);
       ctx.fillStyle = C.dim;
       ctx.fillText(
-        `мир: ${(this.weightedShare() * 100).toFixed(0)}% · заметность ${this.awareness.toFixed(0)}%`,
+        tr(
+          `мир: ${(this.weightedShare() * 100).toFixed(0)}% · заметность ${this.awareness.toFixed(0)}%`,
+          `world: ${(this.weightedShare() * 100).toFixed(0)}% · awareness ${this.awareness.toFixed(0)}%`,
+        ),
         w / 2,
         h * 0.42 + 26,
       );
-      drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
+      drawHint(ctx, tr("коснись — завершить", "tap — finish"), w / 2, h * 0.42 + 60, t);
       ctx.textAlign = "left";
     }
 
@@ -621,7 +625,7 @@ export class Spread implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(9);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`МИР ${(this.weightedShare() * 100).toFixed(0)}%`, mx, topY);
+    ctx.fillText(tr(`МИР ${(this.weightedShare() * 100).toFixed(0)}%`, `WORLD ${(this.weightedShare() * 100).toFixed(0)}%`), mx, topY);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(mx, topY + 5, bw, 4);
     ctx.fillStyle = "#6ec3ff";
@@ -632,7 +636,7 @@ export class Spread implements Mini {
 
     const danger = this.awareness > 70;
     ctx.fillStyle = C.dim;
-    ctx.fillText(`ЗАМЕТНОСТЬ ${this.awareness.toFixed(0)}%`, mx, topY + 22);
+    ctx.fillText(tr(`ЗАМЕТНОСТЬ ${this.awareness.toFixed(0)}%`, `AWARENESS ${this.awareness.toFixed(0)}%`), mx, topY + 22);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(mx, topY + 27, bw, 4);
     ctx.globalAlpha = danger ? 0.7 + 0.3 * Math.sin(t * 6) : 1;
@@ -648,7 +652,10 @@ export class Spread implements Mini {
     ctx.font = mono(9);
     ctx.fillStyle = "rgba(139,149,168,0.8)";
     ctx.fillText(
-      `${this.scenarioIdx + 1}/${this.scenarios.length} «${this.scenario.name}» · гонка: ${Math.round(this.scenario.winShare * 100)}% МИРА раньше 100% ЗАМЕТНОСТИ`,
+      tr(
+        `${this.scenarioIdx + 1}/${this.scenarios.length} «${this.scenario.name}» · гонка: ${Math.round(this.scenario.winShare * 100)}% МИРА раньше 100% ЗАМЕТНОСТИ`,
+        `${this.scenarioIdx + 1}/${this.scenarios.length} "${this.scenario.name}" · race: ${Math.round(this.scenario.winShare * 100)}% WORLD before 100% AWARENESS`,
+      ),
       mx,
       topY + 44,
     );
@@ -669,15 +676,15 @@ export class Spread implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.violet;
-    ctx.fillText(`УЗЛЫ ${this.earned}◆`, mx, h - 92);
+    ctx.fillText(tr(`УЗЛЫ ${this.earned}◆`, `NODES ${this.earned}◆`), mx, h - 92);
     ctx.font = mono(9);
     ctx.fillStyle = next && this.earned >= next.at - 1 ? C.accentSoft : C.dim;
-    ctx.fillText(next ? `ЭВОЛЮЦИЯ НА ${next.at}◆` : "ЭВОЛЮЦИЯ ЗАВЕРШЕНА", mx + 86, h - 92);
+    ctx.fillText(next ? tr(`ЭВОЛЮЦИЯ НА ${next.at}◆`, `EVOLUTION AT ${next.at}◆`) : tr("ЭВОЛЮЦИЯ ЗАВЕРШЕНА", "EVOLUTION COMPLETE"), mx + 86, h - 92);
     if (this.focusCd > 0) {
       ctx.textAlign = "right";
       ctx.fillStyle = C.dim;
       ctx.font = mono(9);
-      ctx.fillText(`фокус через ${this.focusCd.toFixed(0)}с`, w - mx, h - 92);
+      ctx.fillText(tr(`фокус через ${this.focusCd.toFixed(0)}с`, `focus in ${this.focusCd.toFixed(0)}s`), w - mx, h - 92);
       ctx.textAlign = "left";
     }
     let px = mx;
@@ -702,10 +709,10 @@ export class Spread implements Mini {
     // Coach line: the single most useful action right now.
     const hasClean = SPREAD_REGIONS.some((r) => (this.regions.get(r.id) as RegionState).influence <= 0);
     let coach: string;
-    if (hasClean && this.env.getCompute() >= SEED_COST) coach = "тап по ЧИСТОМУ региону — посев за 4 ВЫЧ";
-    else if (this.focusCd <= 0) coach = "фокус готов — тапни свой регион, ускорь его";
-    else if (next) coach = `ещё ${Math.max(1, next.at - this.earned)}◆ до эволюции — пересекай пороги влияния`;
-    else coach = "влияние течёт по линиям — держи темп";
+    if (hasClean && this.env.getCompute() >= SEED_COST) coach = tr("тап по ЧИСТОМУ региону — посев за 4 ВЫЧ", "tap a CLEAN region — seed for 4 COMPUTE");
+    else if (this.focusCd <= 0) coach = tr("фокус готов — тапни свой регион, ускорь его", "focus ready — tap your region to speed it");
+    else if (next) coach = tr(`ещё ${Math.max(1, next.at - this.earned)}◆ до эволюции — пересекай пороги влияния`, `${Math.max(1, next.at - this.earned)}◆ more to evolve — cross influence thresholds`);
+    else coach = tr("влияние течёт по линиям — держи темп", "influence rides the lines — keep pace");
     drawHint(ctx, coach, w / 2, h - 16, t);
     ctx.textAlign = "left";
   }
@@ -722,16 +729,16 @@ export class Spread implements Mini {
     ctx.textAlign = "center";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`Э В О Л Ю Ц И Я · ${f.at}◆`, w / 2, h * 0.27);
+    ctx.fillText(tr(`Э В О Л Ю Ц И Я · ${f.at}◆`, `E V O L U T I O N · ${f.at}◆`), w / 2, h * 0.27);
     ctx.font = mono(20);
     ctx.fillStyle = C.ink;
     ctx.shadowColor = "rgba(207,169,255,0.6)";
     ctx.shadowBlur = 16;
-    ctx.fillText("ВЫБЕРИ ВЕТКУ", w / 2, h * 0.27 + 30);
+    ctx.fillText(tr("ВЫБЕРИ ВЕТКУ", "PICK A BRANCH"), w / 2, h * 0.27 + 30);
     ctx.shadowBlur = 0;
     ctx.font = sans(12, "italic");
     ctx.fillStyle = C.dim;
-    ctx.fillText("вторая ветка исчезнет до следующей развёртки", w / 2, h * 0.27 + 54);
+    ctx.fillText(tr("вторая ветка исчезнет до следующей развёртки", "the other branch is lost until next deployment"), w / 2, h * 0.27 + 54);
 
     const rects = this.forkRects(w, h);
     const options = [f.a, f.b];
@@ -764,7 +771,7 @@ export class Spread implements Mini {
       lines.forEach((ln, li) => ctx.fillText(ln, r.x + 14, r.y + 50 + li * 16));
     }
 
-    drawHint(ctx, "коснись ветки — выбор необратим", w / 2, rects[1].y + rects[1].h + 34, t);
+    drawHint(ctx, tr("коснись ветки — выбор необратим", "tap a branch — irreversible"), w / 2, rects[1].y + rects[1].h + 34, t);
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }
