@@ -11,7 +11,9 @@
 - Пауза сим-цикла на blur/hidden ✓ (батарея).
 - Capacitor-конфиг готов: appId/appName/тёмный фон/contentInset never.
 
-Требует Мака (ограничение Apple, по 5 минут каждый шаг):
+Требует Мака (ограничение Apple, по 5 минут каждый шаг) — пошаговый гайд
+до App Store: `docs/IOS.md`; privacy-страница для карточки готова:
+`public/privacy.html` → `/privacy.html` на сайте.
 1. `node scripts/fetch-art.mjs` — скачает все фоны в `public/bg/` и перепишет `data/backdrops.ts` на локальные пути (CDN из песочницы недоступен — 403). Без этого офлайн-арт не работает. Закоммитить бинарники.
 2. `npm run ios:add` (один раз) → `npm run ios` → в Xcode: подставить Team, иконку из `public/icons/icon-1024.png` в Asset Catalog, ▶ на устройство.
 3. Опционально: `@capacitor/haptics` для вибро-отклика (см. роадмап ниже).
