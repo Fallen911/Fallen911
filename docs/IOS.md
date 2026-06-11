@@ -8,8 +8,7 @@
 
 ## 0. Предпосылки (один раз)
 
-- Mac с свежим **Xcode** (App Store) — после установки открой его раз, чтобы он доставил компоненты.
-- **CocoaPods**: `brew install cocoapods`.
+- Mac с свежим **Xcode** (App Store) — после установки открой его раз, чтобы он доставил компоненты. CocoaPods не нужен: проект на Capacitor 8 / SwiftPM, пакеты Xcode тянет сам.
 - Apple ID платного аккаунта подключён к Xcode: **Xcode → Settings → Accounts → «+» → Apple ID**. В списке появится твоя команда (Team).
 
 ## 1. Проект
@@ -17,12 +16,12 @@
 ```bash
 git clone https://github.com/Fallen911/Fallen911 && cd Fallen911
 npm install
-npm i @capacitor/haptics      # нативная гаптика (хук в core/haptics.ts уже ждёт её)
-npm run ios:add               # один раз: создаёт нативный проект ios/
-npm run ios                   # собирает веб, синхронизирует, открывает Xcode
+npm run ios
 ```
 
-Арты уже в бандле (`public/bg/`) — игра работает офлайн из коробки.
+`npm run ios` собирает веб, синхронизирует нативный проект и открывает Xcode.
+Нативный проект `ios/` уже в репозитории (как и арты в `public/bg/` —
+игра офлайн из коробки), поэтому `ios:add` не нужен.
 
 ## 2. Подпись (Signing & Capabilities)
 
@@ -86,6 +85,6 @@ npm run ios                   # собирает веб, синхронизир�
 | Симптом | Лечение |
 |---|---|
 | «Failed to register bundle identifier» | ID занят — суффикс в Bundle Identifier и тот же ID в App Store Connect |
-| Pod-ошибки при `npm run ios` | `cd ios/App && pod install --repo-update` |
+| Pod-ошибки при `npm run ios` | их не бывает: проект на SwiftPM; если Xcode не находит пакеты — File → Packages → Resolve Package Versions |
 | Билд не появился в TestFlight | подожди письмо об обработке; проверь Activity на предмет missing compliance — лечится ключом из шага 5 |
 | Иконка «пустая» на устройстве | слот 1024 в AppIcon пуст или формат не PNG без альфы — пересохрани `icon-1024.png` |

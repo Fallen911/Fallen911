@@ -15,8 +15,8 @@
 до App Store: `docs/IOS.md`; privacy-страница для карточки готова:
 `public/privacy.html` → `/privacy.html` на сайте.
 1. ✅ Арты в бандле — владелец прогнал `fetch-art.mjs`, бинарники в `public/bg/`, пути локальные, CDN убран из CSP. Офлайн-арт работает.
-2. `npm run ios:add` (один раз) → `npm run ios` → в Xcode: подставить Team, иконку из `public/icons/icon-1024.png` в Asset Catalog, ▶ на устройство.
-3. Опционально: `@capacitor/haptics` для вибро-отклика (см. роадмап ниже).
+2. `npm run ios` → в Xcode: подставить Team, иконку из `public/icons/icon-1024.png` в Asset Catalog, ▶ на устройство. Нативный проект `ios/` уже в репо (Capacitor 8 / SwiftPM) — `ios:add` и CocoaPods не нужны.
+3. `npm i @capacitor/haptics` локально — хук `core/haptics.ts` подхватит нативные импакты сам (ставится владельцем на Маке).
 
 ## Безопасность — выводы аудита
 
