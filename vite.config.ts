@@ -3,7 +3,7 @@ import { defineConfig, type Plugin } from "vite";
 /**
  * Inject a Content-Security-Policy only into production builds — the dev
  * server needs inline styles and websockets for HMR, the shipped app does
- * not. Images stay open to the art CDN until fetch-art.mjs localizes them.
+ * not. Art is bundled locally (public/bg/), so img-src stays closed.
  */
 function cspPlugin(): Plugin {
   return {
@@ -14,7 +14,7 @@ function cspPlugin(): Plugin {
         "default-src 'self'",
         "script-src 'self'",
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: https://d8j0ntlcm91z4.cloudfront.net",
+        "img-src 'self' data:",
         "media-src 'self'",
         "connect-src 'self'",
         "object-src 'none'",

@@ -14,14 +14,14 @@
 Требует Мака (ограничение Apple, по 5 минут каждый шаг) — пошаговый гайд
 до App Store: `docs/IOS.md`; privacy-страница для карточки готова:
 `public/privacy.html` → `/privacy.html` на сайте.
-1. `node scripts/fetch-art.mjs` — скачает все фоны в `public/bg/` и перепишет `data/backdrops.ts` на локальные пути (CDN из песочницы недоступен — 403). Без этого офлайн-арт не работает. Закоммитить бинарники.
+1. ✅ Арты в бандле — владелец прогнал `fetch-art.mjs`, бинарники в `public/bg/`, пути локальные, CDN убран из CSP. Офлайн-арт работает.
 2. `npm run ios:add` (один раз) → `npm run ios` → в Xcode: подставить Team, иконку из `public/icons/icon-1024.png` в Asset Catalog, ▶ на устройство.
 3. Опционально: `@capacitor/haptics` для вибро-отклика (см. роадмап ниже).
 
 ## Безопасность — выводы аудита
 
 - **Зависимости**: 2 moderate (esbuild→vite, GHSA-67mh-4wv8-2f99) — уязвим только **dev-сервер**, в собранное приложение код не попадает. Лечится мажорным апгрейдом Vite 5→7; делать осознанно, не `--force`. Риск для прода: нулевой.
-- **CSP**: в продакшн-сборку инжектится Content-Security-Policy (vite-плагин в `vite.config.ts`): `script-src 'self'`, `object-src 'none'`, img только self/data/арт-CDN. В dev не применяется (HMR). После локализации артов можно убрать CDN из img-src.
+- **CSP**: в продакшн-сборку инжектится Content-Security-Policy (vite-плагин в `vite.config.ts`): `script-src 'self'`, `object-src 'none'`, img только self/data (CDN убран после локализации артов ✓). В dev не применяется (HMR).
 - **Поверхность**: нет eval/Function, нет пользовательского ввода в DOM (innerHTML только со статикой в неиспользуемом overlay), нет секретов в репо, сетевых запросов кроме картинок нет, `__dev`-хуки вырезаются из прод-сборки (`import.meta.env.DEV`).
 - **Данные игрока**: только localStorage (мета/туториалы/звук) — не PII.
 

@@ -17,11 +17,12 @@
 ```bash
 git clone https://github.com/Fallen911/Fallen911 && cd Fallen911
 npm install
-node scripts/fetch-art.mjs    # арты в public/bg/ — офлайн-фоны (закоммить результат!)
 npm i @capacitor/haptics      # нативная гаптика (хук в core/haptics.ts уже ждёт её)
 npm run ios:add               # один раз: создаёт нативный проект ios/
 npm run ios                   # собирает веб, синхронизирует, открывает Xcode
 ```
+
+Арты уже в бандле (`public/bg/`) — игра работает офлайн из коробки.
 
 ## 2. Подпись (Signing & Capabilities)
 

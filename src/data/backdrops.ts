@@ -1,8 +1,7 @@
 /**
  * Generated narrative backdrops (Higgsfield · Soul Location), keyed by beat.
  * Each set has a portrait (9:16) and, where ready, a landscape (16:9) so wide
- * screens get a real composition instead of a brutal crop. Remote URLs for
- * now; swap to bundled files for offline/iOS later.
+ * screens get a real composition instead of a brutal crop.
  */
 // Bundled locally by scripts/fetch-art.mjs — the game runs fully offline.
 const BASE = "bg";
