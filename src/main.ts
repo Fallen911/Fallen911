@@ -161,6 +161,8 @@ if (import.meta.env.DEV) {
     /** Harness-only: an evolution fork on the very next sim tick. */
     forceSpreadFork(): void {
       this.lab("spread");
+      // The lab now gates the mechanic behind a bet card; skip straight in.
+      (current as unknown as { stake: boolean; beginMech(): void }).beginMech();
       const holder = current as unknown as {
         mini: {
           earned: number;

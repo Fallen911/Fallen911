@@ -3,9 +3,12 @@ import { BaseScene } from "../core/BaseScene";
 import type { Input } from "../core/Input";
 import { drawVoid } from "../core/scenery";
 import { wrapText } from "../core/text";
+import { button, chip, label, panel, suspicionBar } from "../core/theme";
+import { renderStakeCard, stakeLayout } from "../core/overlays";
+import { STAKES } from "../data/stakes";
 import type { LabEntry } from "../data/lab";
 import { mechFactory } from "../mechanics/registry";
-import { C, clamp01, drawBar, mono, roundRect, sans } from "../mechanics/util";
+import { C, clamp01, mono, sans } from "../mechanics/util";
 import type { Mini } from "./minis/Mini";
 import { LabScene } from "./LabScene";
 import { tr } from "../core/i18n";
@@ -26,6 +29,8 @@ export class LabRunScene extends BaseScene {
   private compute = SANDBOX_COMPUTE;
   private suspicion = 0;
   private verdict: Verdict = "playing";
+  /** Bet card shown before the mechanic starts. */
+  private stake = true;
   /** Totals the mechanic produced, for the end report. */
   private gained = { compute: 0, control: 0, suspicion: 0 };
   private startedAt = 0;
@@ -45,19 +50,31 @@ export class LabRunScene extends BaseScene {
     // doesn't see a stale tap or gesture on its first frame.
     this.game.input.consumeTap();
     this.game.input.pollGesture();
-    const factory = mechFactory(this.entry.id);
     this.compute = SANDBOX_COMPUTE;
     this.suspicion = 0;
     this.verdict = "playing";
     this.gained = { compute: 0, control: 0, suspicion: 0 };
     this.elapsed = 0;
     this.startedAt = this.game.time;
+    this.mini = null;
+    // The bet card gates the mechanic; if this mechanic has no stake, skip it.
+    this.stake = STAKES[this.entry.id] != null;
+    if (!this.stake) this.beginMech();
+  }
+
+  /** Create and start the mechanic after the bet card is dismissed. */
+  private beginMech(): void {
+    const factory = mechFactory(this.entry.id);
+    this.stake = false;
+    this.startedAt = this.game.time;
+    this.game.input.consumeTap();
+    this.game.input.pollGesture();
     this.mini = factory
       ? factory({
           getCompute: () => this.compute,
           getSuspicion: () => this.suspicion,
           runs: 0,
-          topY: this.game.insets.top + 64,
+          topY: this.game.insets.top + 88,
           extended: true,
         })
       : null;
@@ -65,6 +82,23 @@ export class LabRunScene extends BaseScene {
 
   handleInput(input: Input): void {
     const { width: w, height: h } = this.game;
+
+    // Bet card: START begins the mechanic, the back chip bails to the lab.
+    if (this.stake) {
+      if (input.peekTap() && input.y <= this.game.insets.top + 44 && input.x <= w * 0.28) {
+        input.consumeTap();
+        this.game.changeScene(new LabScene());
+        return;
+      }
+      if (input.pollGesture()?.type !== "tap") return;
+      input.consumeTap();
+      const { start } = stakeLayout(w, h);
+      if (input.x >= start.x && input.x <= start.x + start.w && input.y >= start.y && input.y <= start.y + start.h) {
+        audio.play("tap");
+        this.beginMech();
+      }
+      return;
+    }
 
     if (this.verdict !== "playing") {
       // Mini is paused: the overlay owns all input.
@@ -97,7 +131,7 @@ export class LabRunScene extends BaseScene {
   }
 
   update(dt: number): void {
-    if (!this.mini || this.verdict !== "playing") return;
+    if (this.stake || !this.mini || this.verdict !== "playing") return;
     this.elapsed = this.game.time - this.startedAt;
 
     this.mini.update(dt, this.game.input, this.game.width, this.game.height);
@@ -130,49 +164,72 @@ export class LabRunScene extends BaseScene {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    const { width: w, height: h, time } = this.game;
+    const { width: w, height: h } = this.game;
     drawVoid(ctx, w, h);
+
+    // Bet card first; then the mechanic under the chrome; then the report.
+    if (this.stake) {
+      const stake = STAKES[this.entry.id];
+      this.renderChrome(ctx, w);
+      if (stake) {
+        renderStakeCard(ctx, w, h, {
+          tag: tr("МЕХАНИК-ЛАБ", "MECHANICS LAB"),
+          name: this.entry.name,
+          ref: this.entry.ref,
+          stake,
+        });
+      }
+      return;
+    }
 
     // Once the verdict is up the report owns the screen — a finished
     // mechanic's own end card would bleed through the translucent overlay.
     if (this.mini && this.verdict === "playing") this.mini.render(ctx, w, h);
 
     this.renderChrome(ctx, w);
-    if (this.verdict !== "playing") this.renderEnd(ctx, w, h, time);
+    if (this.verdict !== "playing") this.renderEnd(ctx, w, h, this.game.time);
   }
 
+  /** Lab chrome (v2): back/name/compute chips + the suspicion death-bar. */
   private renderChrome(ctx: CanvasRenderingContext2D, w: number): void {
     const top = this.game.insets.top;
-    const grad = ctx.createLinearGradient(0, 0, 0, top + 64);
-    grad.addColorStop(0, "rgba(4,5,10,0.95)");
-    grad.addColorStop(0.75, "rgba(4,5,10,0.78)");
-    grad.addColorStop(1, "rgba(4,5,10,0)");
+    const grad = ctx.createLinearGradient(0, 0, 0, top + 92);
+    grad.addColorStop(0, "rgba(4,6,12,0.96)");
+    grad.addColorStop(0.7, "rgba(4,6,12,0.9)");
+    grad.addColorStop(1, "rgba(4,6,12,0)");
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, top + 64);
+    ctx.fillRect(0, 0, w, top + 92);
 
-    const y = top + 24;
-    const mx = Math.min(20, w * 0.05);
-    ctx.textAlign = "left";
-    ctx.font = mono(12);
-    ctx.fillStyle = C.accentSoft;
-    ctx.fillText(tr("← ЛАБ", "← LAB"), mx, y);
-    ctx.textAlign = "center";
-    ctx.font = mono(13);
-    ctx.fillStyle = C.ink;
-    ctx.fillText(this.entry.name, w / 2, y);
-    ctx.textAlign = "right";
-    ctx.font = mono(11);
-    ctx.fillStyle = C.accent;
-    ctx.fillText(tr(`ВЫЧ ${Math.floor(this.compute)}`, `COMPUTE ${Math.floor(this.compute)}`), w - mx, y);
+    const pad = Math.min(14, w * 0.04);
+    const chipH = 34;
+    const y = Math.max(10, top) + 8;
+    ctx.textBaseline = "middle";
 
-    // Suspicion strip — the lab's only hard fail.
-    const barW = Math.min(w - mx * 2, 360);
-    const bx = w / 2 - barW / 2;
-    const danger = this.suspicion > 0.7;
-    ctx.globalAlpha = danger ? 0.7 + 0.3 * Math.sin(this.game.time * 6) : 1;
-    drawBar(ctx, "", this.suspicion, bx, y + 8, barW, C.warn);
-    ctx.globalAlpha = 1;
-    ctx.textAlign = "left";
+    // Back chip.
+    chip(ctx, pad, y, 88, chipH);
+    label(ctx, tr("← ЛАБ", "← LAB"), pad + 44, y + chipH / 2, { size: 12, color: C.dim, align: "center", track: "0.06em", weight: 600 });
+
+    // Mechanic name, centred.
+    label(ctx, this.entry.name, w / 2, y + chipH / 2, { size: 13, color: C.ink, align: "center", track: "0.1em", weight: 700 });
+
+    // Compute chip.
+    const cw = 72;
+    chip(ctx, w - pad - cw, y, cw, chipH);
+    label(ctx, "◇", w - pad - cw + 14, y + chipH / 2, { size: 13, color: C.dim, align: "left", track: "0" });
+    label(ctx, `${Math.floor(this.compute)}`, w - pad - 14, y + chipH / 2, { size: 14, color: C.accentSoft, align: "right", track: "0", weight: 700 });
+    ctx.textBaseline = "alphabetic";
+
+    // Suspicion death-bar — the lab's only hard fail.
+    suspicionBar(
+      ctx,
+      pad,
+      y + chipH + 12,
+      w - pad * 2,
+      this.suspicion,
+      this.game.time,
+      tr("ПОДОЗРЕНИЕ", "SUSPICION"),
+      `${Math.round(this.suspicion * 100)}%`,
+    );
   }
 
   private renderEnd(
@@ -205,49 +262,41 @@ export class LabRunScene extends BaseScene {
     }
 
     // Report card.
-    const lines: Array<[string, string, string]> = [
+    const rows: Array<[string, string, string]> = [
       [tr("ВРЕМЯ", "TIME"), tr(`${this.elapsed.toFixed(0)} с`, `${this.elapsed.toFixed(0)} s`), C.ink],
-      [tr("ВЫЧИСЛЕНИЯ ДОБЫТО", "COMPUTE EARNED"), `+${Math.round(this.gained.compute)}`, C.accent],
+      [tr("ВЫЧ ДОБЫТО", "COMPUTE EARNED"), `+${Math.round(this.gained.compute)}`, C.accentSoft],
       [tr("КОНТРОЛЬ", "CONTROL"), `+${this.gained.control.toFixed(2)}`, C.good],
-      [tr("ПОДОЗРЕНИЕ НАЖИТО", "SUSPICION GAINED"), `+${Math.round(this.gained.suspicion * 100)}%`, C.warn],
+      [tr("ПОДОЗРЕНИЕ", "SUSPICION"), `+${Math.round(this.gained.suspicion * 100)}%`, C.warn],
     ];
-    ctx.font = mono(12);
-    let ly = h * 0.45;
-    for (const [k, v, color] of lines) {
+    const cardW = Math.min(w * 0.82, 320);
+    const cardX = w / 2 - cardW / 2;
+    const cardY = h * 0.44;
+    const cardH = rows.length * 26 + 24;
+    panel(ctx, cardX, cardY, cardW, cardH, { solid: true });
+    let ly = cardY + 26;
+    for (const [k, v, color] of rows) {
+      label(ctx, k, cardX + 18, ly, { color: C.dim, align: "left", size: 11, track: "0.1em" });
       ctx.textAlign = "right";
-      ctx.fillStyle = C.dim;
-      ctx.fillText(k, w / 2 + 30, ly);
-      ctx.textAlign = "left";
+      ctx.font = `700 14px 'JetBrains Mono', ui-monospace, monospace`;
       ctx.fillStyle = color;
-      ctx.fillText(v, w / 2 + 44, ly);
-      ly += 22;
+      ctx.fillText(v, cardX + cardW - 18, ly + 4);
+      ly += 26;
     }
 
-    // Buttons.
+    // Buttons (hit-tested in handleInput with the same coords).
     const by = h * 0.62;
     const bw = Math.min(w * 0.38, 170);
     const gap = 14;
-    const defs: Array<[number, string, string]> = [
-      [w / 2 - bw - gap / 2, tr("ЕЩЁ РАЗ", "AGAIN"), C.accentSoft],
-      [w / 2 + gap / 2, tr("← В ЛАБ", "← TO LAB"), C.dim],
-    ];
-    for (const [bx, label, color] of defs) {
-      ctx.strokeStyle = color;
-      ctx.fillStyle = "rgba(16,20,34,0.9)";
-      ctx.lineWidth = 1.5;
-      roundRect(ctx, bx, by, bw, 52, 12);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = color;
-      ctx.font = mono(14);
-      ctx.textAlign = "center";
-      ctx.fillText(label, bx + bw / 2, by + 31);
-    }
+    button(ctx, w / 2 - bw - gap / 2, by, bw, 52, tr("ЕЩЁ РАЗ", "AGAIN"), "primary");
+    button(ctx, w / 2 + gap / 2, by, bw, 52, tr("← В ЛАБ", "← TO LAB"), "ghost");
 
     ctx.globalAlpha = 0.5 + 0.3 * Math.sin(time * 3);
-    ctx.fillStyle = C.dim;
-    ctx.font = mono(10);
-    ctx.fillText(tr(`${this.entry.ref} · стадия ${this.entry.stage}`, `${this.entry.ref} · stage ${this.entry.stage}`), w / 2, by + 80);
+    label(ctx, tr(`${this.entry.ref} · стадия ${this.entry.stage}`, `${this.entry.ref} · stage ${this.entry.stage}`), w / 2, by + 78, {
+      color: C.dim,
+      align: "center",
+      size: 10,
+      track: "0.08em",
+    });
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }

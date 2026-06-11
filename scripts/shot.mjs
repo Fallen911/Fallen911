@@ -135,9 +135,12 @@ async function main() {
           await page.evaluate((fn) => window.__dev[fn](), t.dev);
           await page.waitForTimeout(600);
         } else if (t.lab) {
-          // Jump straight into a mechanic inside the lab sandbox.
+          // Jump straight into a mechanic inside the lab sandbox, then clear
+          // its bet card (the START button sits centre-low) to reach the play.
           await page.evaluate((id) => window.__dev.lab(id), t.lab);
-          await page.waitForTimeout(400);
+          await page.waitForTimeout(300);
+          await page.mouse.click(cx, 486);
+          await page.waitForTimeout(300);
         } else {
           await page.evaluate((n) => window.__dev.goPhase(n), t.phase);
           if (t.noMini) {
