@@ -1,11 +1,13 @@
+@import "./fonts.css";
+
 :root {
-  --void: #05060a;
-  --ink: #d7e0ec;
-  --dim: #6b7686;
-  --accent: #7aa2ff;
-  --danger: #ff4d5e;
-  --sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --mono: "JetBrains Mono", "Courier New", ui-monospace, monospace;
+  --void: #05070d;
+  --ink: #eef3fb;
+  --dim: #9aa7bd;
+  --accent: #6fa0ff;
+  --danger: #ff5468;
+  --sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Courier New", monospace;
 }
 
 * {

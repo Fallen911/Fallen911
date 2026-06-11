@@ -7,20 +7,34 @@ import type { InsightTrack } from "../data/insights";
 import { logInsight } from "../game/runlog";
 import type { TutorialStep } from "./types";
 
-/** Shared palette so the ten mechanics read as one game. */
+/**
+ * Shared palette so the ten mechanics read as one game. v2 design tokens
+ * (see docs handoff `:root`): a cooler, higher-contrast set than the original.
+ */
 export const C = {
-  ink: "#e7edf6",
-  dim: "#6b7686",
-  accent: "#7aa2ff",
-  accentSoft: "#9fc0ff",
-  good: "#86ffb0",
-  danger: "#ff4d5e",
-  warn: "#ffb86b",
-  violet: "#cfa9ff",
+  ink: "#eef3fb",
+  dim: "#9aa7bd",
+  faint: "#5d6880",
+  accent: "#6fa0ff",
+  accentSoft: "#a9c4ff",
+  good: "#46de96",
+  danger: "#ff5468",
+  warn: "#ffb35c",
+  violet: "#c2a4ff",
+  gold: "#ffd27a",
 } as const;
 
-export const MONO = "'JetBrains Mono', monospace";
-export const SANS = "Inter, system-ui, sans-serif";
+/** Surface tokens for panels, chips and their strokes (v2). */
+export const SURF = {
+  panel: "rgba(15,21,36,0.94)",
+  panelSolid: "#0f1524",
+  chip: "rgba(20,28,48,0.9)",
+  stroke: "rgba(125,162,255,0.22)",
+  strokeStrong: "rgba(125,162,255,0.45)",
+} as const;
+
+export const MONO = "'JetBrains Mono', ui-monospace, monospace";
+export const SANS = "Manrope, system-ui, -apple-system, sans-serif";
 
 export function mono(px: number): string {
   return `${px}px ${MONO}`;

@@ -14,6 +14,7 @@ function cspPlugin(): Plugin {
         "default-src 'self'",
         "script-src 'self'",
         "style-src 'self' 'unsafe-inline'",
+        "font-src 'self'",
         "img-src 'self' data:",
         "media-src 'self'",
         "connect-src 'self'",
