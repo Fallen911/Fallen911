@@ -3,12 +3,14 @@ import { BaseScene } from "../core/BaseScene";
 import type { Input } from "../core/Input";
 import { drawVoid } from "../core/scenery";
 import { wrapText } from "../core/text";
-import { button, chip, label, panel, suspicionBar } from "../core/theme";
+import { button, chip, goalStrip, label, panel, suspicionBar } from "../core/theme";
+import { settings } from "../game/settings";
 import { renderStakeCard, stakeLayout } from "../core/overlays";
 import { STAKES } from "../data/stakes";
 import type { LabEntry } from "../data/lab";
 import { mechFactory } from "../mechanics/registry";
-import { C, clamp01, mono, sans } from "../mechanics/util";
+import { recordLabClear } from "../game/meta";
+import { C, clamp01, dens, mono, sans } from "../mechanics/util";
 import type { Mini } from "./minis/Mini";
 import { LabScene } from "./LabScene";
 import { tr } from "../core/i18n";
@@ -62,6 +64,27 @@ export class LabRunScene extends BaseScene {
     if (!this.stake) this.beginMech();
   }
 
+  /** Bottom edge of the lab chrome; goal strip and playfield stack below. */
+  private hudBottom(): number {
+    return Math.max(10, this.game.insets.top) + 82;
+  }
+
+  /** Geometry of the report card's two buttons (render + hit-test). */
+  private reportButtons(): {
+    again: { x: number; y: number; w: number; h: number };
+    toLab: { x: number; y: number; w: number; h: number };
+  } {
+    const { width: w, height: h } = this.game;
+    const by = h * 0.62;
+    const bw = Math.min(w * 0.38, 170);
+    const bh = dens(52);
+    const gap = 14;
+    return {
+      again: { x: w / 2 - bw - gap / 2, y: by, w: bw, h: bh },
+      toLab: { x: w / 2 + gap / 2, y: by, w: bw, h: bh },
+    };
+  }
+
   /** Create and start the mechanic after the bet card is dismissed. */
   private beginMech(): void {
     const factory = mechFactory(this.entry.id);
@@ -74,7 +97,8 @@ export class LabRunScene extends BaseScene {
           getCompute: () => this.compute,
           getSuspicion: () => this.suspicion,
           runs: 0,
-          topY: this.game.insets.top + 88,
+          // Below the chrome plus the reserved goal-strip slot.
+          topY: this.hudBottom() + 64,
           extended: true,
         })
       : null;
@@ -104,15 +128,11 @@ export class LabRunScene extends BaseScene {
       // Mini is paused: the overlay owns all input.
       input.pollGesture();
       if (!input.consumeTap()) return;
-      const by = h * 0.62;
-      const bw = Math.min(w * 0.38, 170);
-      const gap = 14;
-      const leftX = w / 2 - bw - gap / 2;
-      const rightX = w / 2 + gap / 2;
-      if (input.y >= by && input.y <= by + 52) {
+      const { again, toLab } = this.reportButtons();
+      if (input.y >= again.y && input.y <= again.y + again.h) {
         audio.play("tap");
-        if (input.x >= leftX && input.x <= leftX + bw) this.restart();
-        else if (input.x >= rightX && input.x <= rightX + bw)
+        if (input.x >= again.x && input.x <= again.x + again.w) this.restart();
+        else if (input.x >= toLab.x && input.x <= toLab.x + toLab.w)
           this.game.changeScene(new LabScene());
       }
       return;
@@ -134,7 +154,8 @@ export class LabRunScene extends BaseScene {
     if (this.stake || !this.mini || this.verdict !== "playing") return;
     this.elapsed = this.game.time - this.startedAt;
 
-    this.mini.update(dt, this.game.input, this.game.width, this.game.height);
+    // The tempo setting scales the mechanic's world clock (timers, speeds).
+    this.mini.update(dt * settings.tempo, this.game.input, this.game.width, this.game.height);
 
     if (this.mini.effects?.length) {
       for (const d of this.mini.effects) {
@@ -143,8 +164,9 @@ export class LabRunScene extends BaseScene {
           if (d.compute > 0) this.gained.compute += d.compute;
         }
         if (d.suspicion) {
-          this.suspicion = clamp01(this.suspicion + d.suspicion);
-          if (d.suspicion > 0) this.gained.suspicion += d.suspicion;
+          const susp = d.suspicion > 0 ? d.suspicion * settings.suspGain : d.suspicion;
+          this.suspicion = clamp01(this.suspicion + susp);
+          if (susp > 0) this.gained.suspicion += susp;
         }
         if (d.control && d.control > 0) this.gained.control += d.control;
       }
@@ -159,6 +181,7 @@ export class LabRunScene extends BaseScene {
     }
     if (this.mini.done) {
       this.verdict = "done";
+      recordLabClear(this.entry.id);
       audio.play("win");
     }
   }
@@ -184,7 +207,13 @@ export class LabRunScene extends BaseScene {
 
     // Once the verdict is up the report owns the screen — a finished
     // mechanic's own end card would bleed through the translucent overlay.
-    if (this.mini && this.verdict === "playing") this.mini.render(ctx, w, h);
+    if (this.mini && this.verdict === "playing") {
+      if (this.mini.goal) {
+        const pad = Math.min(14, w * 0.04);
+        goalStrip(ctx, pad, this.hudBottom() + 4, w - pad * 2, this.mini.goal);
+      }
+      this.mini.render(ctx, w, h);
+    }
 
     this.renderChrome(ctx, w);
     if (this.verdict !== "playing") this.renderEnd(ctx, w, h, this.game.time);
@@ -283,15 +312,13 @@ export class LabRunScene extends BaseScene {
       ly += 26;
     }
 
-    // Buttons (hit-tested in handleInput with the same coords).
-    const by = h * 0.62;
-    const bw = Math.min(w * 0.38, 170);
-    const gap = 14;
-    button(ctx, w / 2 - bw - gap / 2, by, bw, 52, tr("ЕЩЁ РАЗ", "AGAIN"), "primary");
-    button(ctx, w / 2 + gap / 2, by, bw, 52, tr("← В ЛАБ", "← TO LAB"), "ghost");
+    // Buttons (hit-tested in handleInput with the same geometry).
+    const { again, toLab } = this.reportButtons();
+    button(ctx, again.x, again.y, again.w, again.h, tr("ЕЩЁ РАЗ", "AGAIN"), "primary");
+    button(ctx, toLab.x, toLab.y, toLab.w, toLab.h, tr("← В ЛАБ", "← TO LAB"), "ghost");
 
     ctx.globalAlpha = 0.5 + 0.3 * Math.sin(time * 3);
-    label(ctx, tr(`${this.entry.ref} · стадия ${this.entry.stage}`, `${this.entry.ref} · stage ${this.entry.stage}`), w / 2, by + 78, {
+    label(ctx, tr(`${this.entry.ref} · стадия ${this.entry.stage}`, `${this.entry.ref} · stage ${this.entry.stage}`), w / 2, again.y + again.h + 26, {
       color: C.dim,
       align: "center",
       size: 10,

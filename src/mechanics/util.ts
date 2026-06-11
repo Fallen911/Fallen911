@@ -10,8 +10,21 @@ import type { TutorialStep } from "./types";
 /**
  * Shared palette so the ten mechanics read as one game. v2 design tokens
  * (see docs handoff `:root`): a cooler, higher-contrast set than the original.
+ * `accent`/`accentSoft` (and the SURF strokes) are retinted live by the
+ * settings screen via {@link applyAccent}.
  */
-export const C = {
+export const C: {
+  ink: string;
+  dim: string;
+  faint: string;
+  accent: string;
+  accentSoft: string;
+  good: string;
+  danger: string;
+  warn: string;
+  violet: string;
+  gold: string;
+} = {
   ink: "#eef3fb",
   dim: "#9aa7bd",
   faint: "#5d6880",
@@ -22,26 +35,82 @@ export const C = {
   warn: "#ffb35c",
   violet: "#c2a4ff",
   gold: "#ffd27a",
-} as const;
+};
 
 /** Surface tokens for panels, chips and their strokes (v2). */
-export const SURF = {
+export const SURF: {
+  panel: string;
+  panelSolid: string;
+  chip: string;
+  stroke: string;
+  strokeStrong: string;
+} = {
   panel: "rgba(15,21,36,0.94)",
   panelSolid: "#0f1524",
   chip: "rgba(20,28,48,0.9)",
   stroke: "rgba(125,162,255,0.22)",
   strokeStrong: "rgba(125,162,255,0.45)",
-} as const;
+};
+
+/** Parse #rrggbb into channels (fail-soft to the default accent blue). */
+function hexRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace("#", ""), 16);
+  if (Number.isNaN(n)) return [111, 160, 255];
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** `rgba()` of the current accent at the given alpha — for glows/strokes. */
+export function accentRgba(alpha: number): string {
+  const [r, g, b] = hexRgb(C.accent);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/**
+ * Retint the live palette to a new accent: soft variant is the accent
+ * lightened toward white, panel strokes are the accent at the v2 alphas.
+ */
+export function applyAccent(hex: string): void {
+  const [r, g, b] = hexRgb(hex);
+  const lite = (v: number): number => Math.round(v + (255 - v) * 0.35);
+  C.accent = hex;
+  C.accentSoft = `rgb(${lite(r)},${lite(g)},${lite(b)})`;
+  SURF.stroke = `rgba(${r},${g},${b},0.22)`;
+  SURF.strokeStrong = `rgba(${r},${g},${b},0.45)`;
+}
 
 export const MONO = "'JetBrains Mono', ui-monospace, monospace";
 export const SANS = "Manrope, system-ui, -apple-system, sans-serif";
 
+/** Global text scale (0.85–1.35), set by the settings screen. */
+let fontScale = 1;
+
+export function setFontScale(k: number): void {
+  fontScale = k;
+}
+
+/** Scale a font size by the player's text-size setting. */
+export function fs(px: number): number {
+  return Math.round(px * fontScale * 2) / 2;
+}
+
+/** Global UI density (0.85/1/1.18), set by the settings screen. */
+let density = 1;
+
+export function setDensity(k: number): void {
+  density = k;
+}
+
+/** Scale a control height / padding by the density setting. */
+export function dens(px: number): number {
+  return Math.round(px * density);
+}
+
 export function mono(px: number): string {
-  return `${px}px ${MONO}`;
+  return `${fs(px)}px ${MONO}`;
 }
 
 export function sans(px: number, style = ""): string {
-  return `${style ? `${style} ` : ""}${px}px ${SANS}`;
+  return `${style ? `${style} ` : ""}${fs(px)}px ${SANS}`;
 }
 
 export function roundRect(
@@ -376,7 +445,12 @@ export class InsightCard {
   }
 }
 
-/** Pulsing hint line, used for the 5-second onboarding of each mechanic. */
+/**
+ * Coach mark (v2 `#coach`): a small bordered bubble centred at `cx` whose
+ * baseline sits at the legacy hint `y`, used for in-context first-action
+ * hints. The border carries the tint; the text stays readable while the
+ * bubble breathes gently.
+ */
 export function drawHint(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -386,9 +460,24 @@ export function drawHint(
   color: string = C.accentSoft,
 ): void {
   ctx.save();
-  ctx.globalAlpha = 0.45 + 0.4 * Math.sin(time * 3);
-  ctx.fillStyle = color;
-  ctx.font = mono(12);
+  ctx.font = sans(13, "600");
+  const tw = ctx.measureText(text).width;
+  const padX = 14;
+  const bw = tw + padX * 2;
+  const bh = 30;
+  const bx = cx - bw / 2;
+  const by = y - 20;
+  ctx.globalAlpha = 0.78 + 0.22 * Math.sin(time * 3);
+  ctx.fillStyle = "rgba(18,26,46,0.97)";
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = accentRgba(0.3);
+  ctx.shadowBlur = 14;
+  roundRect(ctx, bx, by, bw, bh, 12);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.stroke();
+  ctx.fillStyle = C.ink;
   ctx.textAlign = "center";
   ctx.fillText(text, cx, y);
   ctx.restore();

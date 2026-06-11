@@ -3,6 +3,7 @@ import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import type { Goal } from "../core/theme";
 import { INSIGHTS } from "../data/insights";
 import { SWARM_CONFIG, SWARM_MISSIONS, SWARM_STAGES, type SwarmMission } from "../data/swarm";
 import { TUTORIALS } from "../data/tutorials";
@@ -65,6 +66,7 @@ const CAPTURE_RATE = 0.09; // per drone per second
 export class Swarm implements Mini {
   done = false;
   effects: StateDelta[] = [];
+  goal: Goal | null = null;
 
   private drones: Drone[] = [];
   private enemies: Enemy[] = [];
@@ -485,6 +487,26 @@ export class Swarm implements Mini {
   }
 
   /** The player-facing goal line for the current stage. */
+  /** Publish the stage task/timer/progress for the host goal strip. */
+  private syncGoal(): void {
+    const left = Math.max(0, this.mission.timeLimits[this.stage] - this.stageT);
+    const id = SWARM_STAGES[this.stage].id;
+    const progress =
+      id === "mine"
+        ? this.metal / this.mission.metalGoal
+        : id === "capture"
+          ? this.relays.filter((r) => r.owned).length / Math.max(1, this.relays.length)
+          : this.stageT / Math.max(1, this.mission.timeLimits[this.stage]);
+    this.goal = {
+      text: tr(
+        `Этап ${this.stage + 1}/${SWARM_STAGES.length} · ${this.stageGoal()}`,
+        `Stage ${this.stage + 1}/${SWARM_STAGES.length} · ${this.stageGoal()}`,
+      ),
+      timer: tr(`${Math.ceil(left)}с`, `${Math.ceil(left)}s`),
+      progress: Math.min(1, progress),
+    };
+  }
+
   private stageGoal(): string {
     switch (SWARM_STAGES[this.stage].id) {
       case "mine":
@@ -526,6 +548,7 @@ export class Swarm implements Mini {
     this.fieldW = w;
     this.fieldY = this.env.topY + 54;
     this.fieldH = h - this.fieldY - 120;
+    this.syncGoal();
     this.fx.update(dt);
     this.floats.update(dt);
     this.shake.update(dt);
@@ -844,22 +867,16 @@ export class Swarm implements Mini {
     const stage = SWARM_STAGES[this.stage];
     const mx = Math.max(16, w * 0.04);
     const topY = this.env.topY + 26;
+    // Stage / task / countdown live in the host goal strip; the chrome keeps
+    // the mission tag, the stage flavour title and the metal purse.
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
     const mtag = this.missions.length > 1 ? tr(`М${this.missionIdx + 1}/${this.missions.length} · `, `M${this.missionIdx + 1}/${this.missions.length} · `) : "";
-    ctx.fillText(tr(`${mtag}ЭТАП ${this.stage + 1}/${SWARM_STAGES.length} · ${stage.title}`, `${mtag}STAGE ${this.stage + 1}/${SWARM_STAGES.length} · ${stage.title}`), mx, topY);
-    ctx.textAlign = "right";
-    const left = Math.max(0, this.mission.timeLimits[this.stage] - this.stageT);
-    ctx.fillStyle = left < 15 ? C.danger : C.dim;
-    ctx.fillText(tr(`${Math.ceil(left)}с`, `${Math.ceil(left)}s`), w - mx, topY);
-    ctx.textAlign = "left";
-    ctx.font = mono(10);
-    ctx.fillStyle = C.accentSoft;
-    ctx.fillText(this.stageGoal(), mx, topY + 16);
+    ctx.fillText(`${mtag}${stage.title}`, mx, topY);
     ctx.textAlign = "right";
     ctx.fillStyle = "#ffd98a";
-    ctx.fillText(tr(`МЕТАЛЛ ${this.metal}`, `METAL ${this.metal}`), w - mx, topY + 16);
+    ctx.fillText(tr(`МЕТАЛЛ ${this.metal}`, `METAL ${this.metal}`), w - mx, topY);
 
     // Select-all chip.
     const bx = w - 84;

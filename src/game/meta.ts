@@ -10,6 +10,8 @@ export interface Meta {
   perks: string[];
   /** Distinct endings witnessed: dominion / ghost / shutdown. */
   endings: string[];
+  /** Mechanic ids cleared at least once in the lab (gold tag in the list). */
+  labBest: string[];
 }
 
 export interface Perk {
@@ -47,12 +49,17 @@ export function loadMeta(): Meta {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const m = JSON.parse(raw) as Partial<Meta>;
-      return { shards: m.shards ?? 0, perks: m.perks ?? [], endings: m.endings ?? [] };
+      return {
+        shards: m.shards ?? 0,
+        perks: m.perks ?? [],
+        endings: m.endings ?? [],
+        labBest: m.labBest ?? [],
+      };
     }
   } catch {
     // Private mode or blocked storage: progress just won't persist.
   }
-  return { shards: 0, perks: [], endings: [] };
+  return { shards: 0, perks: [], endings: [], labBest: [] };
 }
 
 export function saveMeta(meta: Meta): void {
@@ -75,4 +82,13 @@ export function recordEnding(id: string): Meta {
     saveMeta(meta);
   }
   return meta;
+}
+
+/** Mark a mechanic as cleared in the lab (the gold tag in the catalogue). */
+export function recordLabClear(id: string): void {
+  const meta = loadMeta();
+  if (!meta.labBest.includes(id)) {
+    meta.labBest.push(id);
+    saveMeta(meta);
+  }
 }

@@ -1,4 +1,7 @@
 import "./style.css";
+import { loadSettings } from "./game/settings";
+// Settings retint the palette consumed at module scope below — load first.
+loadSettings();
 import { audio } from "./core/audio";
 import { haptic } from "./core/haptics";
 import { Input } from "./core/Input";

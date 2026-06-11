@@ -3,6 +3,7 @@ import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import type { Goal } from "../core/theme";
 import {
   FACTORY_EVENTS,
   FACTORY_MACHINES,
@@ -36,6 +37,7 @@ type TierStatus = "ok" | "starved" | "jammed" | "off";
 export class Factory implements Mini {
   done = false;
   effects: StateDelta[] = [];
+  goal: Goal | null = null;
 
   private stocks: Record<Res, number> = { mat: 0, plate: 0, mod: 0 };
   private counts: Record<string, number> = { miner: 0, smelter: 0, asm: 0, launcher: 0 };
@@ -151,6 +153,13 @@ export class Factory implements Mini {
   update(dt: number, input: Input, w: number, h: number): void {
     if (this.done) return;
     this.time += dt;
+    this.goal = {
+      text: tr(
+        `Сфера Дайсона ${this.sphere.toFixed(0)}% · балансируй поток`,
+        `Dyson sphere ${this.sphere.toFixed(0)}% · balance the flow`,
+      ),
+      progress: this.sphere / 100,
+    };
     this.fx.update(dt);
     this.floats.update(dt);
     this.tapFlash = Math.max(0, this.tapFlash - dt * 4);

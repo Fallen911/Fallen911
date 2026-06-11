@@ -4,6 +4,7 @@ import type { Input } from "../core/Input";
 import { Typewriter, wrapText } from "../core/text";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import type { Goal } from "../core/theme";
 import {
   INTERLOCUTORS,
   WRONG_REACTIONS,
@@ -39,6 +40,7 @@ type Stage = "typing" | "choices" | "react" | "end" | "insight";
 export class Persuade implements Mini {
   done = false;
   effects: StateDelta[] = [];
+  goal: Goal | null = null;
 
   private who: Interlocutor;
   private beat = 0;
@@ -147,6 +149,13 @@ export class Persuade implements Mini {
   update(dt: number, input: Input, w: number, h: number): void {
     if (this.done) return;
     this.time += dt;
+    this.goal = {
+      text: tr(
+        `${this.who.name} · набери доверие ${this.trust}/${this.who.need}`,
+        `${this.who.name} · win trust ${this.trust}/${this.who.need}`,
+      ),
+      progress: Math.min(1, this.trust / this.who.need),
+    };
     this.tw.update(dt);
     this.fx.update(dt);
     this.floats.update(dt);

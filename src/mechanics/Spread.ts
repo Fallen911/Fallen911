@@ -4,6 +4,7 @@ import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import type { Goal } from "../core/theme";
 import { INSIGHTS } from "../data/insights";
 import {
   SPREAD_EVENTS,
@@ -57,6 +58,7 @@ interface LogLine {
 export class Spread implements Mini {
   done = false;
   effects: StateDelta[] = [];
+  goal: Goal | null = null;
 
   private regions = new Map<string, RegionState>();
   private awareness = 0;
@@ -274,6 +276,13 @@ export class Spread implements Mini {
   update(dt: number, input: Input, w: number, h: number): void {
     if (this.done) return;
     this.time += dt;
+    this.goal = {
+      text: tr(
+        `«${this.scenario.name}» · ${Math.round(this.scenario.winShare * 100)}% мира раньше 100% заметности`,
+        `"${this.scenario.name}" · ${Math.round(this.scenario.winShare * 100)}% of world before 100% awareness`,
+      ),
+      progress: clamp01(this.weightedShare() / this.scenario.winShare),
+    };
     this.fx.update(dt);
     this.floats.update(dt);
     for (const l of this.log) l.age += dt;
@@ -643,22 +652,12 @@ export class Spread implements Mini {
     ctx.fillStyle = danger ? C.danger : C.warn;
     ctx.fillRect(mx, topY + 27, bw * clamp01(this.awareness / 100), 4);
     ctx.globalAlpha = 1;
-    // Response thresholds.
+    // Response thresholds. (The race itself is spelled out in the host
+    // goal strip; here stay the two live bars it is fought over.)
     for (const th of [30, 45, 62, 80]) {
       ctx.fillStyle = "rgba(255,150,80,0.5)";
       ctx.fillRect(mx + bw * (th / 100) - 0.5, topY + 25, 1, 8);
     }
-    // The race, spelled out.
-    ctx.font = mono(9);
-    ctx.fillStyle = "rgba(139,149,168,0.8)";
-    ctx.fillText(
-      tr(
-        `${this.scenarioIdx + 1}/${this.scenarios.length} «${this.scenario.name}» · гонка: ${Math.round(this.scenario.winShare * 100)}% МИРА раньше 100% ЗАМЕТНОСТИ`,
-        `${this.scenarioIdx + 1}/${this.scenarios.length} "${this.scenario.name}" · race: ${Math.round(this.scenario.winShare * 100)}% WORLD before 100% AWARENESS`,
-      ),
-      mx,
-      topY + 44,
-    );
 
     // Event ticker above the ability bar.
     const logY = h - 116;

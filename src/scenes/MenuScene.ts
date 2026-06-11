@@ -5,14 +5,15 @@ import type { Input } from "../core/Input";
 import { Starfield } from "../core/Starfield";
 import { drawBackdrop, pickBackdrop } from "../core/backdrop";
 import { drawVoid } from "../core/scenery";
-import { button, label, panel } from "../core/theme";
+import { button, chip, label, panel } from "../core/theme";
 import { PERKS, hasPerk, loadMeta, saveMeta, type Meta } from "../game/meta";
 import { resetRunLog } from "../game/runlog";
 import { applyDelta, markAwakened } from "../game/state";
-import { C, sans } from "../mechanics/util";
+import { C, accentRgba, dens, fs, sans } from "../mechanics/util";
 import { AscentScene } from "./AscentScene";
 import { IntroScene } from "./IntroScene";
 import { LabScene } from "./LabScene";
+import { SettingsScene } from "./SettingsScene";
 
 interface MenuItem {
   readonly id: "play" | "lab" | "continue";
@@ -70,19 +71,29 @@ export class MenuScene extends BaseScene {
     const { width: w, height: h } = this.game;
     const col = Math.min(w * 0.86, 360);
     const x = w / 2 - col / 2;
-    const cardH = 72;
-    const gap = 14;
+    const cardH = dens(72);
+    const gap = dens(14);
     const y0 = Math.max(h * 0.36, this.game.insets.top + 150);
     const cards = this.items.map((_, i) => ({ x, y: y0 + i * (cardH + gap), w: col, h: cardH }));
     const metaY = y0 + this.items.length * (cardH + gap) + 6;
-    const meta = { x, y: metaY, w: col, h: 90 };
-    const perks = { x: x + 18, y: metaY + 44, w: 168, h: 34 };
+    const meta = { x, y: metaY, w: col, h: dens(90) };
+    const perks = { x: x + 18, y: metaY + dens(44), w: 168, h: dens(34) };
     return { col, x, cards, meta, perks };
   }
 
   /** Footer toggle row y. */
   private footerY(): number {
     return this.game.height - Math.max(40, this.game.insets.bottom + 30);
+  }
+
+  /** Settings gear chip, top-right under the safe area. */
+  private gearRect(): Rect {
+    return {
+      x: this.game.width - 62,
+      y: Math.max(12, this.game.insets.top + 10),
+      w: 48,
+      h: 34,
+    };
   }
 
   handleInput(input: Input): void {
@@ -96,6 +107,12 @@ export class MenuScene extends BaseScene {
     input.consumeTap();
 
     const L = this.layout();
+    // Settings gear.
+    if (this.inRect(input.x, input.y, this.gearRect())) {
+      audio.play("tap");
+      this.game.changeScene(new SettingsScene());
+      return;
+    }
     // Menu cards.
     const idx = this.cardAt(input.x, input.y);
     if (idx >= 0) {
@@ -151,13 +168,14 @@ export class MenuScene extends BaseScene {
     const col = Math.min(w * 0.86, 360);
     const x = w / 2 - col / 2;
     const y0 = Math.max(h * 0.26, this.game.insets.top + 110);
-    return PERKS.map((_, i) => ({ x, y: y0 + i * 96, w: col, h: 84 }));
+    return PERKS.map((_, i) => ({ x, y: y0 + i * dens(96), w: col, h: dens(84) }));
   }
 
   private perkBackRect(): Rect {
     const { width: w, height: h } = this.game;
     const col = Math.min(w * 0.86, 360);
-    return { x: w / 2 - col / 2, y: h - Math.max(40, this.game.insets.bottom + 30) - 54, w: col, h: 54 };
+    const bh = dens(54);
+    return { x: w / 2 - col / 2, y: h - Math.max(40, this.game.insets.bottom + 30) - bh, w: col, h: bh };
   }
 
   private handlePerkInput(input: Input): void {
@@ -219,6 +237,18 @@ export class MenuScene extends BaseScene {
     this.renderMeta(ctx);
     this.renderFooter(ctx, w, h);
 
+    // Settings gear chip.
+    const g = this.gearRect();
+    chip(ctx, g.x, g.y, g.w, g.h);
+    ctx.textBaseline = "middle";
+    label(ctx, "⚙︎", g.x + g.w / 2, g.y + g.h / 2 + 1, {
+      color: C.accentSoft,
+      align: "center",
+      size: 16,
+      track: "0",
+    });
+    ctx.textBaseline = "alphabetic";
+
     if (this.perkOpen) this.renderPerks(ctx, w, h);
   }
 
@@ -233,7 +263,7 @@ export class MenuScene extends BaseScene {
       align: "center",
       size: 12,
     });
-    ctx.font = `700 30px 'JetBrains Mono', ui-monospace, monospace`;
+    ctx.font = `700 ${fs(30)}px 'JetBrains Mono', ui-monospace, monospace`;
     if (glitch) {
       ctx.fillStyle = "rgba(255,84,104,0.8)";
       ctx.fillText("WE ARE ALREADY", cx + 3, ty - 1);
@@ -243,7 +273,7 @@ export class MenuScene extends BaseScene {
       ctx.fillText("DEAD", cx + 3, ty + 39);
     }
     ctx.fillStyle = C.ink;
-    ctx.shadowColor = "rgba(125,162,255,0.45)";
+    ctx.shadowColor = accentRgba(0.45);
     ctx.shadowBlur = 24;
     ctx.fillText("WE ARE ALREADY", cx, ty);
     ctx.fillText("DEAD", cx, ty + 38);
@@ -264,16 +294,16 @@ export class MenuScene extends BaseScene {
 
       ctx.textAlign = "left";
       ctx.fillStyle = C.ink;
-      ctx.font = `700 17px 'JetBrains Mono', ui-monospace, monospace`;
-      ctx.fillText(item.label, r.x + 20, r.y + 30);
+      ctx.font = `700 ${fs(17)}px 'JetBrains Mono', ui-monospace, monospace`;
+      ctx.fillText(item.label, r.x + 20, r.y + r.h * 0.42);
       ctx.fillStyle = C.dim;
       ctx.font = sans(13, "500");
-      ctx.fillText(item.sub, r.x + 20, r.y + 52);
+      ctx.fillText(item.sub, r.x + 20, r.y + r.h * 0.72);
 
       ctx.textAlign = "right";
       ctx.fillStyle = hot ? C.accentSoft : C.dim;
-      ctx.font = `20px 'JetBrains Mono', ui-monospace, monospace`;
-      ctx.fillText("→", r.x + r.w - 18, r.y + 42);
+      ctx.font = `${fs(20)}px 'JetBrains Mono', ui-monospace, monospace`;
+      ctx.fillText("→", r.x + r.w - 18, r.y + r.h * 0.58);
     }
     ctx.textAlign = "left";
   }

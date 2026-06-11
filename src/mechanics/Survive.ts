@@ -3,6 +3,7 @@ import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import type { Goal } from "../core/theme";
 import { INSIGHTS } from "../data/insights";
 import {
   SURVIVE_TUNING as T,
@@ -55,6 +56,7 @@ interface Gem {
 export class Survive implements Mini {
   done = false;
   effects: StateDelta[] = [];
+  goal: Goal | null = null;
 
   private px = 0;
   private py = 0;
@@ -177,6 +179,15 @@ export class Survive implements Mini {
   update(dt: number, input: Input, w: number, h: number): void {
     if (this.done) return;
     this.time += dt;
+    const left = Math.max(0, T.duration - this.clock);
+    this.goal = {
+      text: tr(
+        `Волна ${Math.min(this.waveIdx, SURVIVE_WAVES.length)}/${SURVIVE_WAVES.length} · продержись`,
+        `Wave ${Math.min(this.waveIdx, SURVIVE_WAVES.length)}/${SURVIVE_WAVES.length} · hold out`,
+      ),
+      timer: tr(`${Math.ceil(left)}с`, `${Math.ceil(left)}s`),
+      progress: this.clock / T.duration,
+    };
     this.fx.update(dt);
     this.floats.update(dt);
     this.shake.update(dt);
@@ -628,12 +639,9 @@ export class Survive implements Mini {
     const mx = Math.max(16, w * 0.04);
     const topY = this.env.topY + 26;
 
-    // Timer + kills.
-    ctx.textAlign = "left";
+    // Wave/countdown live in the host goal strip; keep the kill counter.
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    const left = Math.max(0, T.duration - this.clock);
-    ctx.fillText(tr(`ВОЛНА ${Math.min(this.waveIdx, SURVIVE_WAVES.length)}/${SURVIVE_WAVES.length} · ДЕРЖИСЬ ${Math.ceil(left)}с`, `WAVE ${Math.min(this.waveIdx, SURVIVE_WAVES.length)}/${SURVIVE_WAVES.length} · HOLD ${Math.ceil(left)}s`), mx, topY);
     ctx.textAlign = "right";
     ctx.fillText(tr(`ЦЕЛЕЙ СНЯТО ${this.kills}`, `TARGETS DOWN ${this.kills}`), w - mx, topY);
 

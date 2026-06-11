@@ -1,4 +1,4 @@
-import { C, sans } from "../mechanics/util";
+import { C, dens, sans } from "../mechanics/util";
 import { button, label, panel } from "./theme";
 import { wrapText } from "./text";
 import { tr } from "./i18n";
@@ -19,7 +19,7 @@ export function stakeLayout(w: number, h: number): { card: Rect; start: Rect } {
   const cardH = 188;
   return {
     card: { x, y: cardY, w: cw, h: cardH },
-    start: { x, y: cardY + cardH + 18, w: cw, h: 54 },
+    start: { x, y: cardY + cardH + 18, w: cw, h: dens(54) },
   };
 }
 

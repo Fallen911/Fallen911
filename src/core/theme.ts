@@ -1,4 +1,4 @@
-import { C, SURF, roundRect } from "../mechanics/util";
+import { C, SURF, fs, roundRect, sans } from "../mechanics/util";
 
 /**
  * v2 design-system primitives, drawn on the canvas. The HTML prototype is the
@@ -130,10 +130,11 @@ export function label(
 ): void {
   ctx.save();
   const weight = opts.weight ?? 500;
-  ctx.font = `${weight} ${opts.size ?? 12}px ${MONO_FAMILY}`;
+  const size = fs(opts.size ?? 12);
+  ctx.font = `${weight} ${size}px ${MONO_FAMILY}`;
   ctx.fillStyle = opts.color ?? C.dim;
   if (opts.align) ctx.textAlign = opts.align;
-  setTracking(ctx, opts.track ?? "0.14em", opts.size ?? 12);
+  setTracking(ctx, opts.track ?? "0.14em", size);
   ctx.fillText(text, x, y);
   ctx.restore();
 }
@@ -170,7 +171,7 @@ export function suspicionBar(
   // Header row: label left, percentage right (recolours by threshold).
   label(ctx, labelText, x, y, { size: 11, color: C.dim, align: "left" });
   const pctColor = value > 0.75 ? C.danger : value > 0.5 ? C.warn : C.dim;
-  ctx.font = `700 13px ${MONO_FAMILY}`;
+  ctx.font = `700 ${fs(13)}px ${MONO_FAMILY}`;
   ctx.fillStyle = pctColor;
   ctx.textAlign = "right";
   setTracking(ctx, "0", 13);
@@ -210,13 +211,85 @@ export function suspicionBar(
     const tx = x + w * frac;
     ctx.fillStyle = "rgba(255,255,255,0.3)";
     ctx.fillRect(tx - 1, barY - 3, 2, barH + 6);
-    ctx.font = `9px ${MONO_FAMILY}`;
+    ctx.font = `${fs(9)}px ${MONO_FAMILY}`;
     ctx.fillStyle = C.dim;
     ctx.textAlign = "center";
     setTracking(ctx, "0", 9);
     ctx.fillText(txt, tx, y);
   }
   ctx.restore();
+}
+
+/** What the goal strip shows: the one task at hand, plus optional pressure. */
+export interface Goal {
+  /** Imperative answer to "what do I do right now". */
+  readonly text: string;
+  /** Countdown / counter shown right, in the warn colour (e.g. "0:38"). */
+  readonly timer?: string;
+  /** 0..1 progress toward the goal; omit to hide the bar. */
+  readonly progress?: number;
+}
+
+/**
+ * The goal strip (v2 UX invariant #3): a panel under the HUD that always
+ * answers "what do I do now" — bold task text, a warn-coloured timer on the
+ * right, and a thin progress bar. Returns its height so callers can stack
+ * content below it.
+ */
+export function goalStrip(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  goal: Goal,
+): number {
+  const padX = 14;
+  const hasBar = goal.progress !== undefined;
+  const h = hasBar ? 52 : 40;
+  panel(ctx, x, y, w, h, { radius: 12 });
+
+  ctx.save();
+  ctx.textBaseline = "middle";
+  const rowY = y + (hasBar ? 20 : h / 2);
+
+  // Timer first so the text knows how much room it has.
+  let textRight = x + w - padX;
+  if (goal.timer) {
+    ctx.font = `700 ${fs(14)}px ${MONO_FAMILY}`;
+    ctx.fillStyle = C.warn;
+    ctx.textAlign = "right";
+    ctx.fillText(goal.timer, x + w - padX, rowY);
+    textRight -= ctx.measureText(goal.timer).width + 12;
+  }
+
+  ctx.font = sans(15, "700");
+  ctx.fillStyle = C.ink;
+  ctx.textAlign = "left";
+  let text = goal.text;
+  const maxW = textRight - (x + padX);
+  if (ctx.measureText(text).width > maxW) {
+    while (text.length > 1 && ctx.measureText(`${text}…`).width > maxW) {
+      text = text.slice(0, -1);
+    }
+    text = `${text.trimEnd()}…`;
+  }
+  ctx.fillText(text, x + padX, rowY);
+  ctx.textBaseline = "alphabetic";
+
+  if (hasBar) {
+    const barY = y + h - 14;
+    roundRect(ctx, x + padX, barY, w - padX * 2, 5, 3);
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fill();
+    const p = Math.max(0, Math.min(1, goal.progress ?? 0));
+    if (p > 0) {
+      roundRect(ctx, x + padX, barY, (w - padX * 2) * p, 5, 3);
+      ctx.fillStyle = C.accent;
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+  return h;
 }
 
 /** A thin labelled meter (SPEED/CONTROL/COMPREHENSION row in the HUD). */

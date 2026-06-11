@@ -19,8 +19,9 @@ import { mechFactory } from "../mechanics/registry";
 import type { MechEnv, MechId } from "../mechanics/types";
 import { EndingScene } from "./EndingScene";
 import { tr } from "../core/i18n";
-import { C, SURF, sans } from "../mechanics/util";
-import { button, chip, label, miniMeter, panel, suspicionBar } from "../core/theme";
+import { C, SURF, dens, sans } from "../mechanics/util";
+import { settings } from "../game/settings";
+import { button, chip, goalStrip, label, miniMeter, panel, suspicionBar } from "../core/theme";
 import { renderStakeCard, stakeLayout } from "../core/overlays";
 import { STAKES } from "../data/stakes";
 import { LAB_ENTRIES } from "../data/lab";
@@ -69,13 +70,19 @@ export class AscentScene extends BaseScene {
     this.meta = loadMeta();
   }
 
+  /** Bottom edge of the run HUD; the goal strip and playfield stack below. */
+  private hudBottom(): number {
+    return Math.max(10, this.game.insets.top) + 96;
+  }
+
   /** What the embedded mechanics see of the run. */
   private mechEnv(): MechEnv {
     return {
       getCompute: () => this.game.state.compute,
       getSuspicion: () => this.game.state.suspicion,
       runs: this.game.state.runs,
-      topY: this.game.insets.top + 104,
+      // Below the HUD plus the reserved goal-strip slot.
+      topY: this.hudBottom() + 64,
       variant: this.game.state.phase,
     };
   }
@@ -196,16 +203,18 @@ export class AscentScene extends BaseScene {
     }
 
     if (this.mini) {
-      this.mini.update(dt, this.game.input, w, h);
+      // The tempo setting scales the mechanic's world clock (timers, speeds).
+      this.mini.update(dt * settings.tempo, this.game.input, w, h);
       // Apply the consequences the mechanic produced this frame; a quiet mind
       // leaves fainter traces in their logs.
       if (this.mini.effects?.length) {
         const quiet = hasPerk(this.meta, "quiet_mind");
         const phaseLabel = PHASES[this.game.state.phase].label;
         for (const d of this.mini.effects) {
-          // Route modifiers shape every gain; perks stack on top.
+          // Route modifiers shape every gain; perks and settings stack on top.
           let susp = (d.suspicion ?? 0) * (d.suspicion && d.suspicion > 0 ? this.mods.susp : 1);
           if (quiet && susp > 0) susp *= 0.7;
+          if (susp > 0) susp *= settings.suspGain;
           const scaled = {
             ...d,
             suspicion: susp,
@@ -312,13 +321,23 @@ export class AscentScene extends BaseScene {
     return x >= start.x && x <= start.x + start.w && y >= start.y && y <= start.y + start.h;
   }
 
-  /** Hit-test the ascent map's DALSHE button (fixed bottom strip). */
-  private mapButtonAt(x: number, y: number): boolean {
+  /** Geometry of the ascent map's CONTINUE button (render + hit-test). */
+  private mapButtonRect(): { x: number; y: number; w: number; h: number } {
     const { width: w, height: h } = this.game;
     const bw = Math.min(w * 0.86, 360);
-    const bx = w / 2 - bw / 2;
-    const by = h - Math.max(28, this.game.insets.bottom + 20) - 54;
-    return x >= bx && x <= bx + bw && y >= by && y <= by + 54;
+    const bh = dens(54);
+    return {
+      x: w / 2 - bw / 2,
+      y: h - Math.max(28, this.game.insets.bottom + 20) - bh,
+      w: bw,
+      h: bh,
+    };
+  }
+
+  /** Hit-test the ascent map's CONTINUE button. */
+  private mapButtonAt(x: number, y: number): boolean {
+    const r = this.mapButtonRect();
+    return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
   }
 
   /** The bet card for this phase's mechanic. */
@@ -440,24 +459,32 @@ export class AscentScene extends BaseScene {
       }
     }
 
-    // DALSHE button.
-    const bw = Math.min(w * 0.86, 360);
-    const bx = w / 2 - bw / 2;
-    const by = h - Math.max(28, this.game.insets.bottom + 20) - 54;
-    button(ctx, bx, by, bw, 54, tr("ДАЛЬШЕ →", "CONTINUE →"), "primary", { hot: true });
+    // CONTINUE button.
+    const btn = this.mapButtonRect();
+    button(ctx, btn.x, btn.y, btn.w, btn.h, tr("ДАЛЬШЕ →", "CONTINUE →"), "primary", { hot: true });
     ctx.textAlign = "left";
     ctx.restore();
   }
 
-  /** Layout of the two confirm buttons; null outside both. */
-  private confirmButtonAt(x: number, y: number): "resume" | "quit" | null {
+  /** Geometry of the quit modal's two buttons (render + hit-test). */
+  private confirmRects(): { resume: { x: number; y: number; w: number; h: number }; quit: { x: number; y: number; w: number; h: number } } {
     const { width: w, height: h } = this.game;
     const bw = Math.min(w * 0.74, 320);
     const bx = w / 2 - bw / 2;
+    const bh = dens(54);
     const by = h * 0.5;
-    if (x < bx || x > bx + bw) return null;
-    if (y >= by && y <= by + 54) return "resume";
-    if (y >= by + 64 && y <= by + 118) return "quit";
+    return {
+      resume: { x: bx, y: by, w: bw, h: bh },
+      quit: { x: bx, y: by + bh + 10, w: bw, h: bh },
+    };
+  }
+
+  /** Layout of the two confirm buttons; null outside both. */
+  private confirmButtonAt(x: number, y: number): "resume" | "quit" | null {
+    const { resume, quit } = this.confirmRects();
+    if (x < resume.x || x > resume.x + resume.w) return null;
+    if (y >= resume.y && y <= resume.y + resume.h) return "resume";
+    if (y >= quit.y && y <= quit.y + quit.h) return "quit";
     return null;
   }
 
@@ -473,16 +500,16 @@ export class AscentScene extends BaseScene {
     label(ctx, tr("ПАУЗА", "PAUSED"), w / 2, h * 0.4, { color: C.accentSoft, align: "center" });
     ctx.textAlign = "center";
     ctx.fillStyle = C.dim;
-    ctx.font = `500 14px Manrope, system-ui, sans-serif`;
+    ctx.font = sans(14, "500");
     for (const [i, ln] of [
       tr("Выйти в меню? Прогресс уровня", "Quit to menu? Level progress"),
       tr("сгорит — добытые ВЫЧ останутся.", "burns — earned COMPUTE stays."),
     ].entries()) {
       ctx.fillText(ln, w / 2, h * 0.44 + i * 20);
     }
-    const by = h * 0.5;
-    button(ctx, bx, by, bw, 54, tr("ПРОДОЛЖИТЬ", "RESUME"), "primary");
-    button(ctx, bx, by + 64, bw, 54, tr("ВЫЙТИ", "QUIT"), "danger");
+    const { resume, quit } = this.confirmRects();
+    button(ctx, resume.x, resume.y, resume.w, resume.h, tr("ПРОДОЛЖИТЬ", "RESUME"), "primary");
+    button(ctx, quit.x, quit.y, quit.w, quit.h, tr("ВЫЙТИ", "QUIT"), "danger");
     ctx.textAlign = "left";
     ctx.restore();
   }
@@ -528,6 +555,11 @@ export class AscentScene extends BaseScene {
 
     // A running mini owns the lower screen; otherwise show the phase's lines.
     if (this.mini) {
+      // The goal strip answers "what do I do now" between the HUD and play.
+      if (this.mini.goal) {
+        const pad = Math.min(14, w * 0.04);
+        goalStrip(ctx, pad, this.hudBottom() + 4, w - pad * 2, this.mini.goal);
+      }
       this.mini.render(ctx, w, h);
       if (this.auditBannerT > 0) {
         this.auditBannerT -= 1 / 60;
@@ -734,12 +766,14 @@ export class AscentScene extends BaseScene {
     );
     y += 26;
 
-    // Row 3: the three message meters.
-    const gap = 8;
-    const mw = (innerW - gap * 2) / 3;
-    miniMeter(ctx, tr("СКОРОСТЬ", "SPEED"), state.speed, x, y, mw, C.accent);
-    miniMeter(ctx, tr("КОНТРОЛЬ", "CONTROL"), state.control, x + mw + gap, y, mw, C.good);
-    miniMeter(ctx, tr("ПОНИМАНИЕ", "COMPREHENSION"), state.comprehension, x + (mw + gap) * 2, y, mw, C.danger);
+    // Row 3: the three message meters (toggleable in settings).
+    if (settings.showMeters) {
+      const gap = 8;
+      const mw = (innerW - gap * 2) / 3;
+      miniMeter(ctx, tr("СКОРОСТЬ", "SPEED"), state.speed, x, y, mw, C.accent);
+      miniMeter(ctx, tr("КОНТРОЛЬ", "CONTROL"), state.control, x + mw + gap, y, mw, C.good);
+      miniMeter(ctx, tr("ПОНИМАНИЕ", "COMPREHENSION"), state.comprehension, x + (mw + gap) * 2, y, mw, C.danger);
+    }
   }
 
   /** Hit zone of the HUD back chip (also the back-out tap target). */
