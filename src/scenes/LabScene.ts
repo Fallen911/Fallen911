@@ -3,13 +3,14 @@ import type { Input } from "../core/Input";
 import { drawBackdrop, pickBackdrop } from "../core/backdrop";
 import { drawVoid } from "../core/scenery";
 import { LAB_ENTRIES } from "../data/lab";
+import { loadMeta, type Meta } from "../game/meta";
 import { mechFactory } from "../mechanics/registry";
 import { C, clamp, mono, roundRect, sans, truncate } from "../mechanics/util";
 import { LabRunScene } from "./LabRunScene";
 import { MenuScene } from "./MenuScene";
 import { tr } from "../core/i18n";
 
-const ROW_H = 62;
+const ROW_H = 84;
 const ROW_GAP = 10;
 
 /**
@@ -20,34 +21,31 @@ const ROW_GAP = 10;
 export class LabScene extends BaseScene {
   private scroll = 0;
   private maxScroll = 0;
+  private meta!: Meta;
   /** Pointer bookkeeping to tell a scroll-drag from a tap. */
-  private dragging = false;
   private wasDown = false;
   private startY = 0;
   private startScroll = 0;
-  private moved = false;
+
+  protected start(): void {
+    this.meta = loadMeta();
+  }
 
   handleInput(input: Input): void {
-    // Raw drag handling for the list; the resolved gesture is drained so taps
-    // can be decided by travel distance instead.
-    input.pollGesture();
-
+    // Live drag scrolls; the latched gesture decides tap vs swipe on release,
+    // so even single-frame synthetic clicks land.
     if (input.down && !this.wasDown) {
-      this.dragging = true;
       this.startY = input.y;
       this.startScroll = this.scroll;
-      this.moved = false;
     }
-    if (this.dragging && input.down) {
-      const dy = input.y - this.startY;
-      if (Math.abs(dy) > 8) this.moved = true;
-      this.scroll = clamp(this.startScroll - dy, 0, this.maxScroll);
-    }
-    if (!input.down && this.wasDown && this.dragging) {
-      this.dragging = false;
-      if (!this.moved) this.handleTap(input.x, input.y);
+    if (input.down) {
+      this.scroll = clamp(this.startScroll - (input.y - this.startY), 0, this.maxScroll);
     }
     this.wasDown = input.down;
+    if (input.pollGesture()?.type === "tap") {
+      input.consumeTap();
+      this.handleTap(input.x, input.y);
+    }
   }
 
   private handleTap(x: number, y: number): void {
@@ -84,6 +82,26 @@ export class LabScene extends BaseScene {
     return Math.min(this.game.width * 0.9, 400);
   }
 
+  /** Small mono tag chip (v2 `.tag`); returns the advance for the next one. */
+  private tagChip(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    text: string,
+    color: string,
+    fill: string,
+  ): number {
+    ctx.font = mono(10);
+    const w = ctx.measureText(text).width + 18;
+    roundRect(ctx, x, y, w, 19, 7);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.textAlign = "left";
+    ctx.fillText(text, x + 9, y + 13.5);
+    return w + 8;
+  }
+
   update(_dt: number): void {
     const { height: h } = this.game;
     const listH = LAB_ENTRIES.length * (ROW_H + ROW_GAP);
@@ -114,11 +132,10 @@ export class LabScene extends BaseScene {
       const ry = top + 8 + i * (ROW_H + ROW_GAP) - this.scroll;
       if (ry > h || ry + ROW_H < top) continue;
       const ready = Boolean(mechFactory(e.id));
+      const cleared = this.meta.labBest.includes(e.id);
 
       ctx.fillStyle = ready ? "rgba(16,20,34,0.88)" : "rgba(12,14,22,0.6)";
-      ctx.strokeStyle = ready
-        ? "rgba(122,162,255,0.4)"
-        : "rgba(110,120,140,0.18)";
+      ctx.strokeStyle = ready ? "rgba(125,162,255,0.4)" : "rgba(110,120,140,0.18)";
       ctx.lineWidth = 1.5;
       roundRect(ctx, rx, ry, rw, ROW_H, 12);
       ctx.fill();
@@ -136,6 +153,13 @@ export class LabScene extends BaseScene {
       ctx.font = sans(11);
       ctx.fillStyle = C.dim;
       ctx.fillText(truncate(ctx, e.desc, rw - 58), rx + 44, ry + 44);
+
+      // Tag chips: ascent stage, and the gold "cleared" badge once won.
+      let chipX = rx + 44;
+      chipX += this.tagChip(ctx, chipX, ry + 56, e.stage, C.accentSoft, "rgba(125,162,255,0.12)");
+      if (cleared) {
+        this.tagChip(ctx, chipX, ry + 56, tr("лучший: пройдено", "best: cleared"), C.gold, "rgba(255,210,122,0.12)");
+      }
 
       ctx.textAlign = "right";
       ctx.font = mono(10);

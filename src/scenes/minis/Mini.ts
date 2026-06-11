@@ -1,5 +1,6 @@
 import type { Input } from "../../core/Input";
 import type { StateDelta } from "../../game/state";
+import type { Goal } from "../../core/theme";
 
 /**
  * An interactive beat played inside a phase. The owning scene drives it with
@@ -12,6 +13,12 @@ export interface Mini {
   done: boolean;
   /** One-shot state changes produced by play; the scene drains and applies. */
   effects?: StateDelta[];
+  /**
+   * The one task at hand, rendered by the host as the goal strip under the
+   * HUD (v2 UX invariant: always answer "what do I do now"). Update freely —
+   * the host reads it every frame.
+   */
+  goal?: Goal | null;
   update(dt: number, input: Input, w: number, h: number): void;
   render(ctx: CanvasRenderingContext2D, w: number, h: number): void;
 }

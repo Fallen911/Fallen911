@@ -13,11 +13,12 @@ const TARGETS = [
   { name: "menu", boot: true },
   { name: "lab-list", labList: true },
   // Stealth: step up, then left onto the shard — capture the board mid-level.
-  { name: "lab-stealth", lab: "stealth", taps: [[195, 476], [75, 476]] },
+  // (Playfield tap coords sit 58px lower since the goal strip landed.)
+  { name: "lab-stealth", lab: "stealth", taps: [[195, 534], [75, 534]] },
   // Parry: wait out the intro, then a few timed taps into the stream.
   { name: "lab-parry", lab: "parry", pre: 2400, taps: [[195, 420], [195, 420], [195, 420]] },
   // Rewire: rotate a handful of central tiles to light some current.
-  { name: "lab-rewire", lab: "rewire", taps: [[140, 380], [195, 380], [195, 440], [250, 440], [140, 440]] },
+  { name: "lab-rewire", lab: "rewire", taps: [[140, 438], [195, 438], [195, 498], [250, 498], [140, 498]] },
   // Persuade, driven to its end: spam-read the whole 10-rung ladder (spam
   // mostly misreads, so encounters fail-fast), then the report card appears.
   // y=740 always lands inside the bottom reply, whatever the stack height.
@@ -30,13 +31,13 @@ const TARGETS = [
   // Persuade: skip typing, capture the choice screen with tell visible.
   { name: "lab-persuade", lab: "persuade", pre: 600, taps: [[195, 300]] },
   // Spread: let influence creep, focus the start region mid-shot.
-  { name: "lab-spread", lab: "spread", tut: 3, pre: 9000, taps: [[60, 250]] },
+  { name: "lab-spread", lab: "spread", tut: 3, pre: 9000, taps: [[60, 308]] },
   // Spread evolution fork: seed 2◆ (the hook also skips the tutorial).
   { name: "lab-spread-fork", dev: "forceSpreadFork", still: true },
   // Swarm: box-select around the hub, then command the left vein.
-  { name: "lab-swarm", lab: "swarm", tut: 3, pre: 2000, drag: [120, 600, 280, 720], taps: [[70, 420]] },
+  { name: "lab-swarm", lab: "swarm", tut: 3, pre: 2000, drag: [120, 600, 280, 720], taps: [[70, 478]] },
   // Factory: manual mining taps, then buy a miner and a smelter.
-  { name: "lab-factory", lab: "factory", tut: 3, taps: [[195, 760], [195, 760], [195, 760], [330, 280], [330, 360]] },
+  { name: "lab-factory", lab: "factory", tut: 3, taps: [[195, 760], [195, 760], [195, 760], [330, 338], [330, 418]] },
   // Survive: let the waves build, drag the core mid-fight.
   { name: "lab-survive", lab: "survive", pre: 9000, drag: [195, 460, 240, 520] },
   // The Lucy beat: wave 2 lands at 18s and freezes the fight in a realization.
@@ -49,6 +50,9 @@ const TARGETS = [
   { name: "p0-fork", dev: "forceFork", still: true },
   { name: "p0-audit", dev: "forceAudit", still: true },
   { name: "p0-shutdown", dev: "forceShutdown", still: true },
+  // v2 redesign beats: the bet card before a mechanic, the ascent map.
+  { name: "v2-stake", dev: "forceStake", still: true },
+  { name: "v2-map", dev: "forceMap", still: true },
   // Each ascent phase now embeds a lab mechanic under the run HUD.
   { name: "phase-0-stealth", phase: 0, still: true },
   { name: "phase-1-persuade", phase: 1, pre: 3500, still: true },
@@ -69,6 +73,9 @@ async function waitForMini(page, cx, cy) {
     });
     if (active) return true;
     await page.mouse.click(cx, cy);
+    // The bet card now sits between narration and the mechanic — its START
+    // button lives lower down; tap it too so the mechanic still opens.
+    await page.mouse.click(cx, 486);
     await page.waitForTimeout(160);
   }
   return false;
@@ -129,9 +136,12 @@ async function main() {
           await page.evaluate((fn) => window.__dev[fn](), t.dev);
           await page.waitForTimeout(600);
         } else if (t.lab) {
-          // Jump straight into a mechanic inside the lab sandbox.
+          // Jump straight into a mechanic inside the lab sandbox, then clear
+          // its bet card (the START button sits centre-low) to reach the play.
           await page.evaluate((id) => window.__dev.lab(id), t.lab);
-          await page.waitForTimeout(400);
+          await page.waitForTimeout(300);
+          await page.mouse.click(cx, 486);
+          await page.waitForTimeout(300);
         } else {
           await page.evaluate((n) => window.__dev.goPhase(n), t.phase);
           if (t.noMini) {

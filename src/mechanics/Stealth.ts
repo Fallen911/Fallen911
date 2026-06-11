@@ -3,6 +3,7 @@ import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import type { Goal } from "../core/theme";
 import { INSIGHTS } from "../data/insights";
 import { STEALTH_LEVELS, STEALTH_RECIPES, type StealthLevel } from "../data/stealth";
 import { bestMove, buildAdjacency, generateStealthLevel, patrolVision, solveStealth } from "./stealthGen";
@@ -31,6 +32,7 @@ type PhaseName = "idle" | "anim" | "caught" | "clear";
 export class Stealth implements Mini {
   done = false;
   effects: StateDelta[] = [];
+  goal: Goal | null = null;
 
   private level!: StealthLevel;
   private levelIdx = 0;
@@ -210,6 +212,13 @@ export class Stealth implements Mini {
     if (this.done) return;
     this.time += dt;
     this.layout(w, h);
+    this.goal = {
+      text: tr(
+        `Сегмент ${this.levelIdx + 1}/${this.levelSet.length} · доведи сигнал до ВЫХОДА`,
+        `Segment ${this.levelIdx + 1}/${this.levelSet.length} · get the signal to the EXIT`,
+      ),
+      progress: this.levelIdx / this.levelSet.length,
+    };
     this.fx.update(dt);
     this.floats.update(dt);
     this.shake.update(dt);
@@ -570,10 +579,12 @@ export class Stealth implements Mini {
 
   private renderChrome(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
     const top = this.env.topY;
+    // The level name + segment counter live in the host goal strip; the
+    // chrome keeps the pace readout and the paid-hint chip.
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    ctx.fillText(tr(`СЕГМЕНТ ${this.levelIdx + 1}/${this.levelSet.length} · ${this.level.name}`, `SEGMENT ${this.levelIdx + 1}/${this.levelSet.length} · ${this.level.name}`), Math.max(20, w * 0.05), top + 24);
+    ctx.fillText(`«${this.level.name}»`, Math.max(20, w * 0.05), top + 24);
     ctx.textAlign = "right";
     const onPace = this.turn <= this.parMoves;
     ctx.fillStyle = onPace ? "#ffd98a" : C.dim;

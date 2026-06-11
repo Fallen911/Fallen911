@@ -40,10 +40,12 @@ export function drawBackdrop(
   ctx.drawImage(img, dx, dy, dw, dh);
   ctx.globalAlpha = 1;
 
+  // v2 contrast rule: a firm scrim so UI text never sits on raw image.
   const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, "rgba(4,5,10,0.5)");
-  grad.addColorStop(0.5, "rgba(4,5,10,0.3)");
-  grad.addColorStop(1, "rgba(4,5,10,0.86)");
+  grad.addColorStop(0, "rgba(4,6,12,0.88)");
+  grad.addColorStop(0.3, "rgba(4,6,12,0.55)");
+  grad.addColorStop(0.7, "rgba(4,6,12,0.62)");
+  grad.addColorStop(1, "rgba(4,6,12,0.95)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);
 

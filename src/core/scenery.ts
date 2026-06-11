@@ -105,20 +105,30 @@ export function drawGodEye(
   ctx.restore();
 }
 
-/** Translucent panel anchored to the bottom for dialogue text. */
+/**
+ * Bottom scrim for dialogue text, returning the content frame: `x`/`width`
+ * for the line, `y` a sensible top, and `bottom` the baseline the dialogue
+ * panel is anchored to (it grows upward from there).
+ */
 export function drawDialogueBox(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
-): { x: number; y: number; width: number } {
+  bottomInset = 0,
+): { x: number; y: number; width: number; bottom: number } {
   const margin = Math.min(28, w * 0.06);
   const boxH = Math.min(h * 0.42, 260);
   const y = h - boxH;
   const grad = ctx.createLinearGradient(0, y - 40, 0, h);
-  grad.addColorStop(0, "rgba(4, 5, 10, 0)");
-  grad.addColorStop(0.3, "rgba(4, 5, 10, 0.85)");
-  grad.addColorStop(1, "rgba(4, 5, 10, 0.96)");
+  grad.addColorStop(0, "rgba(4, 6, 12, 0)");
+  grad.addColorStop(0.3, "rgba(4, 6, 12, 0.7)");
+  grad.addColorStop(1, "rgba(4, 6, 12, 0.92)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, y - 40, w, boxH + 40);
-  return { x: margin, y: y + 26, width: w - margin * 2 };
+  return {
+    x: margin + 16,
+    y: y + 26,
+    width: w - margin * 2 - 32,
+    bottom: h - Math.max(margin, bottomInset + 16),
+  };
 }

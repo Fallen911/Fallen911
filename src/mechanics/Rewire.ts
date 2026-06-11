@@ -3,6 +3,7 @@ import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import type { Goal } from "../core/theme";
 import { INSIGHTS } from "../data/insights";
 import { REWIRE_AUDIT_BOARD, REWIRE_LEVELS, REWIRE_PHASE_BOARDS, type RewireLevel } from "../data/rewire";
 import type { MechEnv } from "./types";
@@ -51,6 +52,7 @@ const SENSOR_FINISH = 0.08;
 export class Rewire implements Mini {
   done = false;
   effects: StateDelta[] = [];
+  goal: Goal | null = null;
 
   private level!: RewireLevel;
   private levelIdx = 0;
@@ -202,6 +204,15 @@ export class Rewire implements Mini {
   update(dt: number, input: Input, w: number, h: number): void {
     if (this.done) return;
     this.time += dt;
+    const tm = Math.max(0, this.timer);
+    this.goal = {
+      text: tr(
+        `Плата ${this.levelIdx + 1}/${this.levels.length} · ВХОД → ВЫХОД мимо датчиков`,
+        `Board ${this.levelIdx + 1}/${this.levels.length} · IN → OUT around the sensors`,
+      ),
+      timer: tr(`аудит 0:${String(Math.floor(tm)).padStart(2, "0")}`, `audit 0:${String(Math.floor(tm)).padStart(2, "0")}`),
+      progress: tm / this.level.timer,
+    };
     this.fx.update(dt);
     this.floats.update(dt);
     this.shake.update(dt);
@@ -440,27 +451,17 @@ export class Rewire implements Mini {
     this.floats.render(ctx);
     ctx.restore();
 
-    // Chrome: level, audit countdown.
+    // Chrome: the board counter/countdown live in the host goal strip; the
+    // chrome keeps the board's name and a low-time pulse over the field.
     const mx = Math.max(20, w * 0.05);
     const topY = this.env.topY + 26;
     ctx.textAlign = "left";
     ctx.font = mono(11);
-    ctx.fillStyle = C.dim;
-    ctx.fillText(tr(`ПЛАТА ${this.levelIdx + 1}/${this.levels.length} · ${this.level.name}`, `BOARD ${this.levelIdx + 1}/${this.levels.length} · ${this.level.name}`), mx, topY);
-
     const danger = this.timer < 10;
-    ctx.textAlign = "right";
-    ctx.font = mono(12);
-    ctx.fillStyle = danger ? C.danger : C.warn;
+    ctx.fillStyle = danger ? C.danger : C.dim;
     ctx.globalAlpha = danger ? 0.6 + 0.4 * Math.sin(t * 8) : 1;
-    const tm = Math.max(0, this.timer);
-    ctx.fillText(tr(`АУДИТ ЧЕРЕЗ 0:${String(Math.floor(tm)).padStart(2, "0")}`, `AUDIT IN 0:${String(Math.floor(tm)).padStart(2, "0")}`), w - mx, topY);
+    ctx.fillText(`«${this.level.name}»`, mx, topY);
     ctx.globalAlpha = 1;
-    // Countdown strip.
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
-    ctx.fillRect(mx, topY + 8, w - mx * 2, 3);
-    ctx.fillStyle = danger ? C.danger : C.warn;
-    ctx.fillRect(mx, topY + 8, (w - mx * 2) * (tm / this.level.timer), 3);
 
     if (this.sweepFlash > 0) {
       // The sweep: a hard red scanline crossing the whole screen.

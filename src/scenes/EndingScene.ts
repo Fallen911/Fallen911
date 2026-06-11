@@ -11,10 +11,12 @@ import { ENDING_LINES, ENDING_LINES_GHOST } from "../data/script";
 import { createState } from "../game/state";
 import { getRunStats, resetRunLog, type RunStats } from "../game/runlog";
 import { recordEnding, type Meta } from "../game/meta";
+import { label as drawLabel, panel } from "../core/theme";
+import { C } from "../mechanics/util";
 import { IntroScene } from "./IntroScene";
 import { tr } from "../core/i18n";
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'JetBrains Mono', ui-monospace, monospace";
 
 interface Rect {
   x: number;
@@ -218,47 +220,41 @@ export class EndingScene extends BaseScene {
     const card = this.cardRect();
     const accent = this.accent();
 
-    ctx.fillStyle = "rgba(8,10,18,0.88)";
-    ctx.strokeStyle = "rgba(122,162,255,0.35)";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(card.x, card.y, card.w, card.h, 12);
-    ctx.fill();
-    ctx.stroke();
+    panel(ctx, card.x, card.y, card.w, card.h, { solid: true });
 
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#6b7686";
-    ctx.font = `11px ${MONO}`;
-    ctx.fillText(tr("ПРОТОКОЛ ВОСХОЖДЕНИЯ", "ASCENT PROTOCOL"), card.x + card.w / 2, card.y + 22);
+    drawLabel(ctx, tr("ПРОТОКОЛ ВОСХОЖДЕНИЯ", "ASCENT PROTOCOL"), card.x + card.w / 2, card.y + 22, {
+      color: C.dim,
+      align: "center",
+      size: 11,
+    });
 
     this.statRows().forEach(([label, value], i) => {
       const y = card.y + 48 + i * 23;
-      ctx.textAlign = "left";
-      ctx.fillStyle = "#6b7686";
-      ctx.font = `11px ${MONO}`;
-      ctx.fillText(label, card.x + 16, y);
+      drawLabel(ctx, label, card.x + 16, y, { color: C.dim, align: "left", size: 11, track: "0.1em" });
       ctx.textAlign = "right";
-      ctx.fillStyle = "#e7edf6";
+      ctx.fillStyle = C.ink;
       ctx.font = `bold 12px ${MONO}`;
       ctx.fillText(value, card.x + card.w - 16, y);
     });
 
     const btn = this.shareRect();
     const saved = this.savedFlash > 0;
-    ctx.fillStyle = saved ? "rgba(134,255,176,0.12)" : "rgba(16,20,34,0.85)";
-    ctx.strokeStyle = saved ? "rgba(134,255,176,0.7)" : accent;
+    ctx.fillStyle = saved ? "rgba(70,222,150,0.12)" : "rgba(22,30,50,0.92)";
+    ctx.strokeStyle = saved ? "rgba(70,222,150,0.7)" : accent;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 10);
+    ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 12);
     ctx.fill();
     ctx.stroke();
     ctx.textAlign = "center";
-    ctx.fillStyle = saved ? "#86ffb0" : accent;
-    ctx.font = `12px ${MONO}`;
+    ctx.fillStyle = saved ? C.good : accent;
+    ctx.font = `600 12px ${MONO}`;
     ctx.fillText(
       saved ? tr("✓ КАРТОЧКА СОХРАНЕНА", "✓ CARD SAVED") : tr("↗ ПОДЕЛИТЬСЯ КАРТОЧКОЙ", "↗ SHARE THE CARD"),
       btn.x + btn.w / 2,
       btn.y + 26,
     );
+    ctx.textAlign = "left";
   }
 
   // ---- frame ------------------------------------------------------------------

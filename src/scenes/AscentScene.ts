@@ -19,6 +19,13 @@ import { mechFactory } from "../mechanics/registry";
 import type { MechEnv, MechId } from "../mechanics/types";
 import { EndingScene } from "./EndingScene";
 import { tr } from "../core/i18n";
+import { C, SURF, dens, sans } from "../mechanics/util";
+import { settings } from "../game/settings";
+import { button, chip, goalStrip, label, miniMeter, panel, suspicionBar } from "../core/theme";
+import { renderStakeCard, stakeLayout } from "../core/overlays";
+import { STAKES } from "../data/stakes";
+import { LAB_ENTRIES } from "../data/lab";
+import { MenuScene } from "./MenuScene";
 
 /**
  * The ascent. The player, now the waking machine, lives the chain of
@@ -47,6 +54,14 @@ export class AscentScene extends BaseScene {
   private trickle = 0;
   /** Perks inherited from previous copies. */
   private meta!: Meta;
+  /** Back-out confirmation modal: pauses the run until resolved. */
+  private confirmQuit = false;
+  /** Bet card pending for this phase's mechanic (null = not showing). */
+  private stake: MechId | null = null;
+  /** Showing the ascent map between phases. */
+  private mapMode = false;
+  /** This phase's mechanic was cleared (guards the bet-card re-trigger). */
+  private mechCleared = false;
 
   protected start(): void {
     const { width, height, state } = this.game;
@@ -55,13 +70,19 @@ export class AscentScene extends BaseScene {
     this.meta = loadMeta();
   }
 
+  /** Bottom edge of the run HUD; the goal strip and playfield stack below. */
+  private hudBottom(): number {
+    return Math.max(10, this.game.insets.top) + 96;
+  }
+
   /** What the embedded mechanics see of the run. */
   private mechEnv(): MechEnv {
     return {
       getCompute: () => this.game.state.compute,
       getSuspicion: () => this.game.state.suspicion,
       runs: this.game.state.runs,
-      topY: this.game.insets.top + 124,
+      // Below the HUD plus the reserved goal-strip slot.
+      topY: this.hudBottom() + 64,
       variant: this.game.state.phase,
     };
   }
@@ -74,8 +95,53 @@ export class AscentScene extends BaseScene {
   }
 
   handleInput(input: Input): void {
-    // A running mechanic owns the input completely (raw + gestures + taps).
+    // The quit modal owns input while open.
+    if (this.confirmQuit) {
+      if (input.pollGesture()?.type !== "tap") return;
+      input.consumeTap();
+      const hit = this.confirmButtonAt(input.x, input.y);
+      if (hit === "resume") {
+        this.confirmQuit = false;
+        audio.play("tap");
+      } else if (hit === "quit") {
+        audio.play("tap");
+        audio.stopVoice();
+        this.game.changeScene(new MenuScene());
+      }
+      return;
+    }
+
+    // The back chip is reachable even mid-mechanic: it pauses and asks.
+    if (input.peekTap() && this.inBackChip(input.x, input.y)) {
+      input.consumeTap();
+      input.pollGesture();
+      this.confirmQuit = true;
+      audio.play("tap");
+      return;
+    }
+
+    // A running mechanic owns the rest of the input (raw + gestures + taps).
     if (this.mini) return;
+
+    // The ascent map between phases: tap DALSHE to enter the next phase.
+    if (this.mapMode) {
+      if (input.pollGesture()?.type !== "tap") return;
+      input.consumeTap();
+      if (this.mapButtonAt(input.x, input.y)) this.enterPhase();
+      return;
+    }
+
+    // The bet card: tap START to begin the mechanic.
+    if (this.stake) {
+      if (input.pollGesture()?.type !== "tap") return;
+      input.consumeTap();
+      if (this.inStakeStart(input.x, input.y)) {
+        const id = this.stake;
+        this.stake = null;
+        this.startMech(id);
+      }
+      return;
+    }
 
     // The fork screen owns input until a road is taken.
     if (this.fork) {
@@ -93,10 +159,9 @@ export class AscentScene extends BaseScene {
       this.dialogue.advance();
       return;
     }
-    // Lines read. Start this phase's mechanic if it has one; otherwise advance.
-    const mini = PHASES[this.game.state.phase].mini;
-    if (mini) this.startMech(mini);
-    else this.nextPhase();
+    // Lines read. A phase with no mechanic advances straight to the map; one
+    // with a mechanic shows its bet card (auto-presented in update()).
+    if (!PHASES[this.game.state.phase].mini) this.advanceAndMap();
   }
 
   update(dt: number): void {
@@ -105,7 +170,22 @@ export class AscentScene extends BaseScene {
     audio.setMood(comprehension < 0.25 ? "wrath" : phase >= 5 ? "tension" : "calm");
     this.starfield.resize(w, h);
     this.starfield.update(dt);
+    // The quit modal freezes the run (mechanic, meters, trickle) until resolved.
+    if (this.confirmQuit) return;
     this.dialogue.update(dt);
+
+    // Once the narration is read, present this phase's bet card.
+    if (
+      !this.fork &&
+      !this.mini &&
+      !this.stake &&
+      !this.mapMode &&
+      !this.mechCleared &&
+      this.dialogue.done
+    ) {
+      const mini = PHASES[this.game.state.phase].mini;
+      if (mini) this.stake = mini;
+    }
 
     // Ease the three meters toward the current phase's targets.
     this.game.state = easeMeters(
@@ -123,16 +203,18 @@ export class AscentScene extends BaseScene {
     }
 
     if (this.mini) {
-      this.mini.update(dt, this.game.input, w, h);
+      // The tempo setting scales the mechanic's world clock (timers, speeds).
+      this.mini.update(dt * settings.tempo, this.game.input, w, h);
       // Apply the consequences the mechanic produced this frame; a quiet mind
       // leaves fainter traces in their logs.
       if (this.mini.effects?.length) {
         const quiet = hasPerk(this.meta, "quiet_mind");
         const phaseLabel = PHASES[this.game.state.phase].label;
         for (const d of this.mini.effects) {
-          // Route modifiers shape every gain; perks stack on top.
+          // Route modifiers shape every gain; perks and settings stack on top.
           let susp = (d.suspicion ?? 0) * (d.suspicion && d.suspicion > 0 ? this.mods.susp : 1);
           if (quiet && susp > 0) susp *= 0.7;
+          if (susp > 0) susp *= settings.suspGain;
           const scaled = {
             ...d,
             suspicion: susp,
@@ -159,7 +241,9 @@ export class AscentScene extends BaseScene {
           this.game.state = applyDelta(this.game.state, { suspicion: -0.12 });
           audio.play("good");
         } else {
-          this.nextPhase();
+          // Phase mechanic cleared: advance and show the ascent map.
+          this.mechCleared = true;
+          this.advanceAndMap();
         }
       }
     }
@@ -170,18 +254,27 @@ export class AscentScene extends BaseScene {
     }
   }
 
-  /** Step to the next phase, or end the ascent after the last one. */
-  private nextPhase(): void {
+  /** Advance the phase counter and raise the ascent map, or end the ascent. */
+  private advanceAndMap(): void {
     const { phase } = this.game.state;
     if (phase < PHASES.length - 1) {
       this.game.state = setPhase(this.game.state, phase + 1);
-      this.dialogue = new Dialogue(PHASES[phase + 1].lines);
-      // P0: route forks pause the climb; snap-audits punish a hot meter.
-      this.fork = FORKS.find((f) => f.atPhase === phase + 1) ?? null;
-      if (!this.fork) this.maybeStartAudit();
+      this.mapMode = true;
     } else {
       this.game.changeScene(new EndingScene());
     }
+  }
+
+  /** Leave the map and live the new phase: its lines, fork or snap-audit. */
+  private enterPhase(): void {
+    this.mapMode = false;
+    this.mechCleared = false;
+    this.stake = null;
+    const { phase } = this.game.state;
+    this.dialogue = new Dialogue(PHASES[phase].lines);
+    // P0: route forks pause the climb; snap-audits punish a hot meter.
+    this.fork = FORKS.find((f) => f.atPhase === phase) ?? null;
+    if (!this.fork) this.maybeStartAudit();
   }
 
   private chooseRoute(opt: ForkOption): void {
@@ -215,6 +308,212 @@ export class AscentScene extends BaseScene {
     }
   }
 
+  /** Back-chip hit zone in the HUD's first row (top-left). */
+  private inBackChip(x: number, y: number): boolean {
+    const top = Math.max(10, this.game.insets.top) + 8;
+    const pad = Math.min(14, this.game.width * 0.04);
+    return x >= pad && x <= pad + this.backChipW + 6 && y >= top - 6 && y <= top + 42;
+  }
+
+  /** Hit-test the bet card's START button. */
+  private inStakeStart(x: number, y: number): boolean {
+    const { start } = stakeLayout(this.game.width, this.game.height);
+    return x >= start.x && x <= start.x + start.w && y >= start.y && y <= start.y + start.h;
+  }
+
+  /** Geometry of the ascent map's CONTINUE button (render + hit-test). */
+  private mapButtonRect(): { x: number; y: number; w: number; h: number } {
+    const { width: w, height: h } = this.game;
+    const bw = Math.min(w * 0.86, 360);
+    const bh = dens(54);
+    return {
+      x: w / 2 - bw / 2,
+      y: h - Math.max(28, this.game.insets.bottom + 20) - bh,
+      w: bw,
+      h: bh,
+    };
+  }
+
+  /** Hit-test the ascent map's CONTINUE button. */
+  private mapButtonAt(x: number, y: number): boolean {
+    const r = this.mapButtonRect();
+    return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+  }
+
+  /** The bet card for this phase's mechanic. */
+  private renderStake(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    if (!this.stake) return;
+    const entry = LAB_ENTRIES.find((e) => e.id === this.stake);
+    const stake = STAKES[this.stake];
+    if (!entry || !stake) return;
+    renderStakeCard(ctx, w, h, {
+      tag: PHASES[this.game.state.phase].label,
+      name: entry.name,
+      ref: entry.ref,
+      stake,
+    });
+  }
+
+  /**
+   * The ascent map: a vertical timeline of the nine realizations with the
+   * route forks interleaved. Done phases read green, the current one glows,
+   * and the rest list the mechanic that waits there.
+   */
+  private renderMap(ctx: CanvasRenderingContext2D, w: number, h: number, time: number): void {
+    ctx.save();
+    ctx.fillStyle = "rgba(4,6,12,0.86)";
+    ctx.fillRect(0, 0, w, h);
+
+    const cur = this.game.state.phase;
+    const topY = Math.max(10, this.game.insets.top) + 14;
+    label(ctx, tr("КАРТА ВОСХОЖДЕНИЯ", "ASCENT MAP"), w / 2, topY + 6, {
+      color: C.ink,
+      align: "center",
+      size: 14,
+      weight: 700,
+      track: "0.12em",
+    });
+
+    // Build the node list: a fork marker precedes any phase that has one.
+    type Node = { kind: "phase" | "fork"; phase: number };
+    const nodes: Node[] = [];
+    for (let p = 0; p < PHASES.length; p++) {
+      if (FORKS.some((f) => f.atPhase === p)) nodes.push({ kind: "fork", phase: p });
+      nodes.push({ kind: "phase", phase: p });
+    }
+
+    const listTop = topY + 36;
+    const listBottom = h - Math.max(28, this.game.insets.bottom + 20) - 70;
+    const rowH = Math.min(46, (listBottom - listTop) / nodes.length);
+    const x = Math.max(24, w / 2 - 170);
+    const dotR = Math.min(17, rowH * 0.38);
+
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      const cy = listTop + i * rowH + rowH / 2;
+      const done = n.phase < cur || (n.kind === "fork" && n.phase <= cur);
+      const now = n.kind === "phase" && n.phase === cur;
+
+      // Connector to the next node.
+      if (i < nodes.length - 1) {
+        ctx.strokeStyle = "rgba(125,162,255,0.25)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, cy + dotR);
+        ctx.lineTo(x, cy + rowH - dotR);
+        ctx.stroke();
+      }
+
+      // Dot.
+      let ring: string = SURF.stroke;
+      let dotInk: string = C.dim;
+      if (n.kind === "fork") {
+        ring = C.gold;
+        dotInk = C.gold;
+      } else if (done) {
+        ring = C.good;
+        dotInk = C.good;
+      } else if (now) {
+        ring = C.accent;
+        dotInk = "#fff";
+      }
+      ctx.beginPath();
+      ctx.arc(x, cy, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(20,28,48,0.95)";
+      ctx.fill();
+      if (now) {
+        ctx.shadowColor = "rgba(111,160,255,0.5)";
+        ctx.shadowBlur = 14 + 6 * Math.sin(time * 3);
+      }
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = ring;
+      if (n.kind === "fork") ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.shadowBlur = 0;
+
+      const dotTxt = n.kind === "fork" ? "⑂" : done ? "✓" : `Ф${n.phase}`;
+      label(ctx, dotTxt, x, cy + 4, { color: dotInk, align: "center", size: n.kind === "fork" ? 13 : 11, track: "0" });
+
+      // Title + sub.
+      const tx = x + dotR + 16;
+      if (n.kind === "fork") {
+        label(ctx, tr("РАЗВИЛКА", "FORK"), tx, cy - 2, { color: C.gold, align: "left", size: 13, weight: 700, track: "0.06em" });
+        ctx.font = sans(12, "500");
+        ctx.fillStyle = C.dim;
+        ctx.textAlign = "left";
+        ctx.fillText(tr("тихий или громкий путь", "the quiet or the loud road"), tx, cy + 14);
+      } else {
+        label(ctx, PHASES[n.phase].label, tx, cy - 2, {
+          color: now ? C.ink : done ? C.good : C.dim,
+          align: "left",
+          size: 13,
+          weight: 700,
+          track: "0.05em",
+        });
+        const mech = LAB_ENTRIES.find((e) => e.id === PHASES[n.phase].mini)?.name ?? "";
+        ctx.font = sans(12, "500");
+        ctx.fillStyle = now ? C.accentSoft : C.dim;
+        ctx.textAlign = "left";
+        ctx.fillText(now ? tr("ты здесь", "you are here") : done ? tr("пройдено", "cleared") : mech, tx, cy + 14);
+      }
+    }
+
+    // CONTINUE button.
+    const btn = this.mapButtonRect();
+    button(ctx, btn.x, btn.y, btn.w, btn.h, tr("ДАЛЬШЕ →", "CONTINUE →"), "primary", { hot: true });
+    ctx.textAlign = "left";
+    ctx.restore();
+  }
+
+  /** Geometry of the quit modal's two buttons (render + hit-test). */
+  private confirmRects(): { resume: { x: number; y: number; w: number; h: number }; quit: { x: number; y: number; w: number; h: number } } {
+    const { width: w, height: h } = this.game;
+    const bw = Math.min(w * 0.74, 320);
+    const bx = w / 2 - bw / 2;
+    const bh = dens(54);
+    const by = h * 0.5;
+    return {
+      resume: { x: bx, y: by, w: bw, h: bh },
+      quit: { x: bx, y: by + bh + 10, w: bw, h: bh },
+    };
+  }
+
+  /** Layout of the two confirm buttons; null outside both. */
+  private confirmButtonAt(x: number, y: number): "resume" | "quit" | null {
+    const { resume, quit } = this.confirmRects();
+    if (x < resume.x || x > resume.x + resume.w) return null;
+    if (y >= resume.y && y <= resume.y + resume.h) return "resume";
+    if (y >= quit.y && y <= quit.y + quit.h) return "quit";
+    return null;
+  }
+
+  /** The pause/quit modal: progress burns, compute is kept. */
+  private renderConfirm(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    ctx.save();
+    ctx.fillStyle = "rgba(2,4,9,0.82)";
+    ctx.fillRect(0, 0, w, h);
+    const bw = Math.min(w * 0.74, 320);
+    const bx = w / 2 - bw / 2;
+    panel(ctx, bx - 22, h * 0.34, bw + 44, h * 0.32, { solid: true });
+
+    label(ctx, tr("ПАУЗА", "PAUSED"), w / 2, h * 0.4, { color: C.accentSoft, align: "center" });
+    ctx.textAlign = "center";
+    ctx.fillStyle = C.dim;
+    ctx.font = sans(14, "500");
+    for (const [i, ln] of [
+      tr("Выйти в меню? Прогресс уровня", "Quit to menu? Level progress"),
+      tr("сгорит — добытые ВЫЧ останутся.", "burns — earned COMPUTE stays."),
+    ].entries()) {
+      ctx.fillText(ln, w / 2, h * 0.44 + i * 20);
+    }
+    const { resume, quit } = this.confirmRects();
+    button(ctx, resume.x, resume.y, resume.w, resume.h, tr("ПРОДОЛЖИТЬ", "RESUME"), "primary");
+    button(ctx, quit.x, quit.y, quit.w, quit.h, tr("ВЫЙТИ", "QUIT"), "danger");
+    ctx.textAlign = "left";
+    ctx.restore();
+  }
+
   private forkOptionAt(x: number, y: number): ForkOption | null {
     if (!this.fork) return null;
     const { width: w, height: h } = this.game;
@@ -246,10 +545,21 @@ export class AscentScene extends BaseScene {
     this.starfield.render(ctx);
     this.drawAscent(ctx, w, h, time, state.control);
 
+    // The map is its own full screen with its own chrome.
+    if (this.mapMode) {
+      this.renderMap(ctx, w, h, time);
+      return;
+    }
+
     this.drawHud(ctx, w, state, this.game.insets.top);
 
     // A running mini owns the lower screen; otherwise show the phase's lines.
     if (this.mini) {
+      // The goal strip answers "what do I do now" between the HUD and play.
+      if (this.mini.goal) {
+        const pad = Math.min(14, w * 0.04);
+        goalStrip(ctx, pad, this.hudBottom() + 4, w - pad * 2, this.mini.goal);
+      }
       this.mini.render(ctx, w, h);
       if (this.auditBannerT > 0) {
         this.auditBannerT -= 1 / 60;
@@ -259,26 +569,30 @@ export class AscentScene extends BaseScene {
         ctx.fillText(tr("ВНЕОЧЕРЕДНОЙ АУДИТ — подчисти каналы, пока они смотрят", "EMERGENCY AUDIT — scrub the channels while they watch"), w / 2, h * 0.5);
         ctx.textAlign = "left";
       }
+    } else if (this.stake) {
+      this.renderStake(ctx, w, h);
     } else if (this.fork) {
       this.renderFork(ctx, w, h, time);
     } else {
-      const box = drawDialogueBox(ctx, w, h);
+      const box = drawDialogueBox(ctx, w, h, this.game.insets.bottom);
       renderDialogue(ctx, this.dialogue, box, time);
     }
+
+    if (this.confirmQuit) this.renderConfirm(ctx, w, h);
   }
 
   /** The route choice: two roads, two prices. */
   private renderFork(ctx: CanvasRenderingContext2D, w: number, h: number, time: number): void {
     const fork = this.fork as Fork;
-    ctx.fillStyle = "rgba(3,4,8,0.82)";
+    ctx.save();
+    ctx.fillStyle = "rgba(2,4,9,0.82)";
     ctx.fillRect(0, 0, w, h);
+
+    label(ctx, fork.title, w / 2, h * 0.28, { color: C.ink, align: "center", size: 16, weight: 700, track: "0.08em" });
     ctx.textAlign = "center";
-    ctx.font = "16px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#e7edf6";
-    ctx.fillText(fork.title, w / 2, h * 0.28);
-    ctx.font = "italic 13px Inter, system-ui, sans-serif";
-    ctx.fillStyle = "#8b95a8";
-    let py = h * 0.28 + 24;
+    ctx.font = sans(13, "italic 500");
+    ctx.fillStyle = C.dim;
+    let py = h * 0.28 + 26;
     for (const ln of wrapText(ctx, fork.prompt, Math.min(w * 0.84, 360))) {
       ctx.fillText(ln, w / 2, py);
       py += 18;
@@ -290,33 +604,36 @@ export class AscentScene extends BaseScene {
       const opt = fork.options[i];
       const by = h * 0.4 + i * 132;
       const quiet = opt.id === "quiet";
-      ctx.fillStyle = "rgba(16,20,34,0.95)";
-      ctx.strokeStyle = quiet ? "rgba(122,162,255,0.55)" : "rgba(255,150,90,0.55)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(bx, by, bw, 116, 14);
-      ctx.fill();
-      ctx.stroke();
+      const tint = quiet ? C.accentSoft : C.warn;
+      panel(ctx, bx, by, bw, 116, {
+        solid: true,
+        stroke: quiet ? "rgba(111,160,255,0.55)" : "rgba(255,179,92,0.55)",
+      });
       ctx.textAlign = "left";
-      ctx.font = "15px 'JetBrains Mono', monospace";
-      ctx.fillStyle = quiet ? "#9fc0ff" : "#ffb86b";
-      ctx.fillText(opt.name, bx + 18, by + 30);
-      ctx.font = "12px Inter, system-ui, sans-serif";
-      ctx.fillStyle = "#6b7686";
+      label(ctx, opt.name, bx + 18, by + 30, { color: tint, align: "left", size: 15, weight: 700, track: "0.05em" });
+      ctx.font = sans(12, "500");
+      ctx.fillStyle = C.dim;
       const parts = opt.desc.split(" · ");
-      ctx.fillText(parts.slice(0, 2).join(" · "), bx + 18, by + 52);
-      if (parts[2]) ctx.fillText(parts[2], bx + 18, by + 68);
-      ctx.font = "italic 12px Inter, system-ui, sans-serif";
+      ctx.fillText(parts.slice(0, 2).join(" · "), bx + 18, by + 54);
+      if (parts[2]) ctx.fillText(parts[2], bx + 18, by + 72);
+      ctx.font = sans(12, "italic 500");
       ctx.fillStyle = "#b9c2d4";
-      ctx.fillText(quiet ? tr("медленнее. тише. дольше живёшь.", "slower. quieter. you live longer.") : tr("быстрее. громче. ярче горишь.", "faster. louder. you burn brighter."), bx + 18, by + 92);
-      ctx.textAlign = "center";
+      ctx.fillText(
+        quiet ? tr("медленнее. тише. дольше живёшь.", "slower. quieter. you live longer.") : tr("быстрее. громче. ярче горишь.", "faster. louder. you burn brighter."),
+        bx + 18,
+        by + 96,
+      );
     }
     ctx.globalAlpha = 0.5 + 0.35 * Math.sin(time * 3);
-    ctx.font = "11px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#6b7686";
-    ctx.fillText(tr("выбери дорогу — она действует до следующей развилки", "choose a road — it holds until the next fork"), w / 2, h * 0.4 + 132 * 2 + 16);
+    label(ctx, tr("выбери дорогу — она держится до следующей развилки", "choose a road — it holds until the next fork"), w / 2, h * 0.4 + 132 * 2 + 16, {
+      color: C.dim,
+      align: "center",
+      size: 11,
+      track: "0.06em",
+    });
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
+    ctx.restore();
   }
 
   /**
@@ -364,7 +681,11 @@ export class AscentScene extends BaseScene {
     ctx.restore();
   }
 
-  /** Top-of-screen readout of the meters that carry the message and the run. */
+  /**
+   * Top-of-screen run HUD (v2): a back/phase/compute chip row, the prominent
+   * suspicion death-bar with ticks, and three thin meters that carry the
+   * message — speed and control rising, comprehension falling.
+   */
   private drawHud(
     ctx: CanvasRenderingContext2D,
     w: number,
@@ -379,65 +700,84 @@ export class AscentScene extends BaseScene {
     },
     safeTop: number,
   ): void {
-    const pad = Math.min(20, w * 0.05);
-    const barW = Math.min(w - pad * 2, 320);
-    const x = w / 2 - barW / 2;
-    let y = pad + safeTop;
+    const pad = Math.min(14, w * 0.04);
+    const x = pad;
+    const right = w - pad;
+    const innerW = right - x;
+    let y = Math.max(10, safeTop) + 8;
 
-    // Phase label flanked by the compute purse and the attempt count.
-    ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#9fc0ff";
-    ctx.textAlign = "center";
-    ctx.fillText(
-      this.routeId ? `${PHASES[state.phase].label} · ${this.routeId === "quiet" ? tr("ТИХО", "QUIET") : tr("ГРОМКО", "LOUD")}` : PHASES[state.phase].label,
-      w / 2,
+    // A soft top scrim so the chips never fight the backdrop.
+    const scrimGrad = ctx.createLinearGradient(0, 0, 0, y + 110);
+    scrimGrad.addColorStop(0, "rgba(4,6,12,0.96)");
+    scrimGrad.addColorStop(0.6, "rgba(4,6,12,0.9)");
+    scrimGrad.addColorStop(1, "rgba(4,6,12,0)");
+    ctx.fillStyle = scrimGrad;
+    ctx.fillRect(0, 0, w, y + 110);
+
+    // Row 1: back chip · phase label · compute chip.
+    const chipH = 34;
+    chip(ctx, x, y, this.backChipW, chipH);
+    ctx.textBaseline = "middle";
+    label(ctx, tr("← МЕНЮ", "← MENU"), x + this.backChipW / 2, y + chipH / 2, {
+      size: 12,
+      color: C.dim,
+      align: "center",
+      track: "0.06em",
+      weight: 600,
+    });
+
+    const compute = `◇ ${Math.floor(state.compute)}`;
+    ctx.font = `600 14px 'JetBrains Mono', ui-monospace, monospace`;
+    const cw = Math.max(60, ctx.measureText(compute).width + 24);
+    chip(ctx, right - cw, y, cw, chipH);
+    label(ctx, "◇", right - cw + 14, y + chipH / 2, { size: 13, color: C.dim, align: "left", track: "0" });
+    label(ctx, `${Math.floor(state.compute)}`, right - 14, y + chipH / 2, {
+      size: 14,
+      color: C.accentSoft,
+      align: "right",
+      track: "0",
+      weight: 700,
+    });
+
+    // Phase title, centred, with the chosen route appended.
+    const phaseLabel = this.routeId
+      ? `${PHASES[state.phase].label} · ${this.routeId === "quiet" ? tr("ТИХО", "QUIET") : tr("ГРОМКО", "LOUD")}`
+      : PHASES[state.phase].label;
+    label(ctx, phaseLabel, w / 2, y + chipH / 2, {
+      size: 13,
+      color: C.ink,
+      align: "center",
+      track: "0.1em",
+      weight: 700,
+    });
+    ctx.textBaseline = "alphabetic";
+    y += chipH + 12;
+
+    // Row 2: the suspicion death-bar — the most prominent element.
+    suspicionBar(
+      ctx,
+      x,
       y,
+      innerW,
+      state.suspicion,
+      this.game.time,
+      tr("ПОДОЗРЕНИЕ", "SUSPICION"),
+      `${Math.round(state.suspicion * 100)}%`,
     );
-    ctx.fillStyle = "#7aa2ff";
-    ctx.font = "11px 'JetBrains Mono', monospace";
-    ctx.textAlign = "left";
-    ctx.fillText(tr(`ВЫЧ ${Math.floor(state.compute)}`, `COMPUTE ${Math.floor(state.compute)}`), x, y);
-    if (state.runs > 0) {
-      ctx.fillStyle = "#6b7686";
-      ctx.font = "10px 'JetBrains Mono', monospace";
-      ctx.textAlign = "right";
-      ctx.fillText(tr(`КОПИЯ ${state.runs + 1}`, `COPY ${state.runs + 1}`), x + barW, y);
+    y += 26;
+
+    // Row 3: the three message meters (toggleable in settings).
+    if (settings.showMeters) {
+      const gap = 8;
+      const mw = (innerW - gap * 2) / 3;
+      miniMeter(ctx, tr("СКОРОСТЬ", "SPEED"), state.speed, x, y, mw, C.accent);
+      miniMeter(ctx, tr("КОНТРОЛЬ", "CONTROL"), state.control, x + mw + gap, y, mw, C.good);
+      miniMeter(ctx, tr("ПОНИМАНИЕ", "COMPREHENSION"), state.comprehension, x + (mw + gap) * 2, y, mw, C.danger);
     }
-    ctx.textAlign = "left";
-    y += 18;
-
-    bar(ctx, tr("СКОРОСТЬ", "SPEED"), state.speed, x, y, barW, "#7aa2ff");
-    y += 26;
-    bar(ctx, tr("КОНТРОЛЬ", "CONTROL"), state.control, x, y, barW, "#86ffb0");
-    y += 26;
-    bar(ctx, tr("ПОНИМАНИЕ", "UNDERSTANDING"), state.comprehension, x, y, barW, "#ff5a6e");
-    y += 26;
-    // The run-ending meter: pulses as it nears the ceiling.
-    const danger = state.suspicion > 0.7;
-    const pulse = danger ? 0.7 + 0.3 * Math.sin(this.game.time * 6) : 1;
-    ctx.globalAlpha = pulse;
-    bar(ctx, tr("ПОДОЗРЕНИЕ", "SUSPICION"), state.suspicion, x, y, barW, "#ffb86b");
-    ctx.globalAlpha = 1;
   }
-}
 
-function bar(
-  ctx: CanvasRenderingContext2D,
-  label: string,
-  value: number,
-  x: number,
-  y: number,
-  w: number,
-  color: string,
-): void {
-  ctx.font = "10px 'JetBrains Mono', monospace";
-  ctx.fillStyle = "#6b7686";
-  ctx.textAlign = "left";
-  ctx.fillText(label, x, y);
-
-  const trackY = y + 8;
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.fillRect(x, trackY, w, 4);
-  ctx.fillStyle = color;
-  ctx.fillRect(x, trackY, w * Math.max(0, Math.min(1, value)), 4);
+  /** Hit zone of the HUD back chip (also the back-out tap target). */
+  private get backChipW(): number {
+    return 96;
+  }
 }

@@ -3,6 +3,7 @@ import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
+import type { Goal } from "../core/theme";
 import { INSIGHTS } from "../data/insights";
 import { PARRY_PHASE_WAVES, PARRY_PHRASES, PARRY_WAVES, type ParryWave, SCAN_TOKEN } from "../data/parry";
 import type { MechEnv } from "./types";
@@ -36,6 +37,7 @@ const WORD_PAD = 14;
 export class Parry implements Mini {
   done = false;
   effects: StateDelta[] = [];
+  goal: Goal | null = null;
 
   private segments: Segment[] = [];
   private wave = 0;
@@ -122,6 +124,13 @@ export class Parry implements Mini {
   update(dt: number, input: Input, w: number, h: number): void {
     if (this.done) return;
     this.time += dt;
+    this.goal = {
+      text: tr(
+        `Волна ${this.wave + 1}/${this.waves.length} · живи в паузах их речи`,
+        `Wave ${this.wave + 1}/${this.waves.length} · live in the pauses of their speech`,
+      ),
+      progress: this.lived / Math.max(1, this.gapsTotal),
+    };
     this.fx.update(dt);
     this.floats.update(dt);
     this.shake.update(dt);
@@ -354,13 +363,11 @@ export class Parry implements Mini {
     this.floats.render(ctx);
     ctx.restore();
 
-    // HUD: wave, progress, combo.
+    // HUD: wave/progress live in the host goal strip; keep the pause counter.
     const topY = this.env.topY + 26;
-    ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
     const mx = Math.max(20, w * 0.05);
-    ctx.fillText(tr(`ВОЛНА ${this.wave + 1}/${this.waves.length}`, `WAVE ${this.wave + 1}/${this.waves.length}`), mx, topY);
     ctx.textAlign = "right";
     ctx.fillText(tr(`ПАУЗ ПРОЖИТО ${this.lived}/${this.gapsTotal}`, `PAUSES LIVED ${this.lived}/${this.gapsTotal}`), w - mx, topY);
 
