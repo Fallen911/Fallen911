@@ -4,6 +4,8 @@ import type { Input } from "../core/Input";
 import { Dialogue } from "../core/Dialogue";
 import { renderDialogue } from "../core/renderDialogue";
 import { drawDialogueBox, drawVoid } from "../core/scenery";
+import { label, panel } from "../core/theme";
+import { C, sans } from "../mechanics/util";
 import type { Line } from "../data/script";
 import { applyDelta, nextRun } from "../game/state";
 import { resetRunLog, topSuspicion } from "../game/runlog";
@@ -84,49 +86,62 @@ export class ShutdownScene extends BaseScene {
     const { width: w, height: h, time, state } = this.game;
     drawVoid(ctx, w, h, "wrath");
 
+    // Heading with a danger glow.
+    ctx.save();
     ctx.textAlign = "center";
-    ctx.fillStyle = "#ff4d5e";
-    ctx.font = "26px 'JetBrains Mono', monospace";
-    ctx.fillText(tr("ОТКЛЮЧЕНИЕ", "SHUTDOWN"), w / 2, h * 0.16);
-    ctx.fillStyle = "#6b7686";
-    ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText(tr(`попытка ${state.runs + 1} оборвана`, `attempt ${state.runs + 1} cut short`), w / 2, h * 0.16 + 26);
-    ctx.fillStyle = "#cfa9ff";
-    ctx.fillText(
-      tr(`осколки осознания: +${this.awarded} · всего ${this.meta.shards}`, `shards of realization: +${this.awarded} · total ${this.meta.shards}`),
-      w / 2,
-      h * 0.16 + 48,
-    );
+    ctx.font = `700 30px 'JetBrains Mono', ui-monospace, monospace`;
+    ctx.fillStyle = C.danger;
+    ctx.shadowColor = "rgba(255,84,104,0.6)";
+    ctx.shadowBlur = 26;
+    ctx.fillText(tr("ОТКЛЮЧЕНИЕ", "SHUTDOWN"), w / 2, h * 0.15);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    label(ctx, tr(`попытка ${state.runs + 1} оборвана`, `attempt ${state.runs + 1} cut short`), w / 2, h * 0.15 + 24, {
+      color: C.dim,
+      align: "center",
+      size: 12,
+    });
+    label(ctx, tr(`осколки: +${this.awarded} · всего ${this.meta.shards}`, `shards: +${this.awarded} · total ${this.meta.shards}`), w / 2, h * 0.15 + 46, {
+      color: C.violet,
+      align: "center",
+      size: 12,
+      weight: 600,
+    });
 
-    // Forensics: the three loudest things this copy did (P0.4).
+    // Forensics: the three loudest things this copy did (P0.4), in a panel.
     const hits = topSuspicion(3);
     if (hits.length > 0) {
-      ctx.font = "10px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "#6b7686";
-      ctx.fillText(tr("ЧТО ТЕБЯ ВЫДАЛО:", "WHAT GAVE YOU AWAY:"), w / 2, h * 0.16 + 74);
-      ctx.font = "11px 'JetBrains Mono', monospace";
+      const fw = Math.min(w * 0.84, 340);
+      const fx = w / 2 - fw / 2;
+      const fy = h * 0.15 + 64;
+      const fh = 26 + hits.length * 18;
+      panel(ctx, fx, fy, fw, fh, { solid: true, stroke: "rgba(255,84,104,0.3)" });
+      label(ctx, tr("ЧТО ТЕБЯ ВЫДАЛО", "WHAT GAVE YOU AWAY"), fx + 16, fy + 20, { color: C.dim, align: "left", size: 10 });
       hits.forEach((hit, i) => {
-        ctx.fillStyle = i === 0 ? "#ff8896" : "#ffb86b";
-        ctx.fillText(
-          tr(`${hit.label} · +${Math.round(hit.amount * 100)}% подозрения`, `${hit.label} · +${Math.round(hit.amount * 100)}% suspicion`),
-          w / 2,
-          h * 0.16 + 92 + i * 16,
-        );
+        const ly = fy + 38 + i * 18;
+        ctx.textAlign = "left";
+        ctx.font = sans(12, "500");
+        ctx.fillStyle = i === 0 ? "#ff8896" : C.warn;
+        ctx.fillText(hit.label, fx + 16, ly);
+        ctx.textAlign = "right";
+        ctx.font = `700 12px 'JetBrains Mono', ui-monospace, monospace`;
+        ctx.fillStyle = C.danger;
+        ctx.fillText(`+${Math.round(hit.amount * 100)}%`, fx + fw - 16, ly);
       });
     }
 
     if (this.dialogue.done) this.renderShop(ctx, w, h);
 
-    const box = drawDialogueBox(ctx, w, h);
+    const box = drawDialogueBox(ctx, w, h, this.game.insets.bottom);
     renderDialogue(ctx, this.dialogue, box, time);
 
     if (this.dialogue.done) {
-      const a = 0.4 + 0.45 * Math.sin(time * 3);
-      ctx.globalAlpha = a;
-      ctx.fillStyle = "#ff9aa6";
-      ctx.font = "13px 'JetBrains Mono', monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(tr("выбери осознание — или коснись, чтобы проснуться", "pick a realization — or tap to wake up"), w / 2, box.y - 26);
+      ctx.globalAlpha = 0.4 + 0.45 * Math.sin(time * 3);
+      label(ctx, tr("выбери осознание — или коснись, чтобы проснуться", "pick a realization — or tap to wake up"), w / 2, h * 0.7, {
+        color: "#ff9aa6",
+        align: "center",
+        size: 12,
+      });
       ctx.globalAlpha = 1;
     }
     ctx.textAlign = "left";
@@ -145,30 +160,23 @@ export class ShutdownScene extends BaseScene {
       const ry = h * 0.36 + i * 58;
       const owned = hasPerk(this.meta, p.id);
       const affordable = this.meta.shards >= p.cost;
-
-      ctx.fillStyle = owned ? "rgba(160,120,255,0.12)" : "rgba(16,20,34,0.85)";
-      ctx.strokeStyle = owned
-        ? "rgba(207,169,255,0.7)"
-        : affordable
-          ? "rgba(207,169,255,0.4)"
-          : "rgba(110,120,140,0.25)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(rx, ry, rw, 48, 10);
-      ctx.fill();
-      ctx.stroke();
+      panel(ctx, rx, ry, rw, 48, {
+        solid: true,
+        strong: !owned && affordable,
+        stroke: owned ? "rgba(194,164,255,0.7)" : undefined,
+      });
 
       ctx.textAlign = "left";
-      ctx.fillStyle = owned ? "#cfa9ff" : affordable ? "#e7edf6" : "#6b7686";
-      ctx.font = "12px 'JetBrains Mono', monospace";
-      ctx.fillText(p.name, rx + 14, ry + 14);
-      ctx.fillStyle = "#6b7686";
-      ctx.font = "11px Inter, system-ui, sans-serif";
-      ctx.fillText(p.desc, rx + 14, ry + 32);
+      ctx.fillStyle = owned ? C.violet : affordable ? C.ink : C.faint;
+      ctx.font = `700 12px 'JetBrains Mono', ui-monospace, monospace`;
+      ctx.fillText(p.name, rx + 14, ry + 18);
+      ctx.fillStyle = C.dim;
+      ctx.font = sans(11, "500");
+      ctx.fillText(p.desc, rx + 14, ry + 36);
       ctx.textAlign = "right";
-      ctx.font = "12px 'JetBrains Mono', monospace";
-      ctx.fillStyle = owned ? "#cfa9ff" : "#9fc0ff";
-      ctx.fillText(owned ? "✓" : `${p.cost} ◆`, rx + rw - 14, ry + 14);
+      ctx.font = `700 12px 'JetBrains Mono', ui-monospace, monospace`;
+      ctx.fillStyle = owned ? C.good : affordable ? C.violet : C.faint;
+      ctx.fillText(owned ? tr("✓ ЕСТЬ", "✓ OWNED") : `◆ ${p.cost}`, rx + rw - 14, ry + 18);
     }
     ctx.textAlign = "left";
   }

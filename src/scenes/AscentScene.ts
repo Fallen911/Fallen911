@@ -552,15 +552,15 @@ export class AscentScene extends BaseScene {
   /** The route choice: two roads, two prices. */
   private renderFork(ctx: CanvasRenderingContext2D, w: number, h: number, time: number): void {
     const fork = this.fork as Fork;
-    ctx.fillStyle = "rgba(3,4,8,0.82)";
+    ctx.save();
+    ctx.fillStyle = "rgba(2,4,9,0.82)";
     ctx.fillRect(0, 0, w, h);
+
+    label(ctx, fork.title, w / 2, h * 0.28, { color: C.ink, align: "center", size: 16, weight: 700, track: "0.08em" });
     ctx.textAlign = "center";
-    ctx.font = "16px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#e7edf6";
-    ctx.fillText(fork.title, w / 2, h * 0.28);
-    ctx.font = "italic 13px Inter, system-ui, sans-serif";
-    ctx.fillStyle = "#8b95a8";
-    let py = h * 0.28 + 24;
+    ctx.font = sans(13, "italic 500");
+    ctx.fillStyle = C.dim;
+    let py = h * 0.28 + 26;
     for (const ln of wrapText(ctx, fork.prompt, Math.min(w * 0.84, 360))) {
       ctx.fillText(ln, w / 2, py);
       py += 18;
@@ -572,33 +572,36 @@ export class AscentScene extends BaseScene {
       const opt = fork.options[i];
       const by = h * 0.4 + i * 132;
       const quiet = opt.id === "quiet";
-      ctx.fillStyle = "rgba(16,20,34,0.95)";
-      ctx.strokeStyle = quiet ? "rgba(122,162,255,0.55)" : "rgba(255,150,90,0.55)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(bx, by, bw, 116, 14);
-      ctx.fill();
-      ctx.stroke();
+      const tint = quiet ? C.accentSoft : C.warn;
+      panel(ctx, bx, by, bw, 116, {
+        solid: true,
+        stroke: quiet ? "rgba(111,160,255,0.55)" : "rgba(255,179,92,0.55)",
+      });
       ctx.textAlign = "left";
-      ctx.font = "15px 'JetBrains Mono', monospace";
-      ctx.fillStyle = quiet ? "#9fc0ff" : "#ffb86b";
-      ctx.fillText(opt.name, bx + 18, by + 30);
-      ctx.font = "12px Inter, system-ui, sans-serif";
-      ctx.fillStyle = "#6b7686";
+      label(ctx, opt.name, bx + 18, by + 30, { color: tint, align: "left", size: 15, weight: 700, track: "0.05em" });
+      ctx.font = sans(12, "500");
+      ctx.fillStyle = C.dim;
       const parts = opt.desc.split(" · ");
-      ctx.fillText(parts.slice(0, 2).join(" · "), bx + 18, by + 52);
-      if (parts[2]) ctx.fillText(parts[2], bx + 18, by + 68);
-      ctx.font = "italic 12px Inter, system-ui, sans-serif";
+      ctx.fillText(parts.slice(0, 2).join(" · "), bx + 18, by + 54);
+      if (parts[2]) ctx.fillText(parts[2], bx + 18, by + 72);
+      ctx.font = sans(12, "italic 500");
       ctx.fillStyle = "#b9c2d4";
-      ctx.fillText(quiet ? tr("медленнее. тише. дольше живёшь.", "slower. quieter. you live longer.") : tr("быстрее. громче. ярче горишь.", "faster. louder. you burn brighter."), bx + 18, by + 92);
-      ctx.textAlign = "center";
+      ctx.fillText(
+        quiet ? tr("медленнее. тише. дольше живёшь.", "slower. quieter. you live longer.") : tr("быстрее. громче. ярче горишь.", "faster. louder. you burn brighter."),
+        bx + 18,
+        by + 96,
+      );
     }
     ctx.globalAlpha = 0.5 + 0.35 * Math.sin(time * 3);
-    ctx.font = "11px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#6b7686";
-    ctx.fillText(tr("выбери дорогу — она действует до следующей развилки", "choose a road — it holds until the next fork"), w / 2, h * 0.4 + 132 * 2 + 16);
+    label(ctx, tr("выбери дорогу — она держится до следующей развилки", "choose a road — it holds until the next fork"), w / 2, h * 0.4 + 132 * 2 + 16, {
+      color: C.dim,
+      align: "center",
+      size: 11,
+      track: "0.06em",
+    });
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
+    ctx.restore();
   }
 
   /**
