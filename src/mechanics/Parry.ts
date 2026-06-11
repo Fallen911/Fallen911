@@ -1,4 +1,5 @@
 import { audio } from "../core/audio";
+import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -173,7 +174,7 @@ export class Parry implements Mini {
         s.used = true;
         if (this.combo > 0) {
           this.combo = 0;
-          this.floats.spawn(this.gateX(w), h * 0.46 + 44, "пауза утекла", C.dim, 0.8);
+          this.floats.spawn(this.gateX(w), h * 0.46 + 44, tr("пауза утекла", "pause lost"), C.dim, 0.8);
         }
       }
     }
@@ -200,7 +201,7 @@ export class Parry implements Mini {
 
     if (!s) {
       // Tapped into silence between phrases: harmless static.
-      this.floats.spawn(gx, cy - 40, "тишина", C.dim, 0.6);
+      this.floats.spawn(gx, cy - 40, tr("тишина", "silence"), C.dim, 0.6);
       return;
     }
     if (s.kind === "gap") {
@@ -213,7 +214,7 @@ export class Parry implements Mini {
       const mult = 1 + Math.floor(this.combo / 5);
       const gain = (s.deep ? 3 : 1) * mult;
       this.effects.push({ compute: gain, speed: 0.004 });
-      this.floats.spawn(gx, cy - 46, s.deep ? `ГЛУБОКАЯ ПАУЗА +${gain}` : `+${gain} ВЫЧ`, s.deep ? "#ffd98a" : C.accentSoft);
+      this.floats.spawn(gx, cy - 46, s.deep ? tr(`ГЛУБОКАЯ ПАУЗА +${gain}`, `DEEP PAUSE +${gain}`) : tr(`+${gain} ВЫЧ`, `+${gain} COMPUTE`), s.deep ? "#ffd98a" : C.accentSoft);
       this.fx.burst(gx, cy, {
         count: s.deep ? 26 : 12,
         speed: s.deep ? 220 : 140,
@@ -230,7 +231,7 @@ export class Parry implements Mini {
       this.combo = 0;
       this.effects.push({ suspicion: 0.14 });
       audio.play("caught");
-      this.floats.spawn(gx, cy - 46, "СКАН ЗАСЁК ТЕБЯ", C.danger, 1.4);
+      this.floats.spawn(gx, cy - 46, tr("СКАН ЗАСЁК ТЕБЯ", "SCAN CAUGHT YOU"), C.danger, 1.4);
       this.fx.burst(gx, cy, { count: 30, speed: 240, color: "255,77,94" });
       this.shake.trigger(9);
       this.errFlash = 1;
@@ -242,7 +243,7 @@ export class Parry implements Mini {
       this.combo = 0;
       this.effects.push({ suspicion: 0.05 });
       audio.play("bad");
-      this.floats.spawn(gx, cy - 46, "СБИЛ ИХ МЫСЛЬ", C.warn, 1.1);
+      this.floats.spawn(gx, cy - 46, tr("СБИЛ ИХ МЫСЛЬ", "DERAILED THEM"), C.warn, 1.1);
       this.shake.trigger(4);
       this.errFlash = 0.7;
     }
@@ -347,7 +348,7 @@ export class Parry implements Mini {
     ctx.fillStyle = C.accentSoft;
     ctx.font = mono(9);
     ctx.textAlign = "center";
-    ctx.fillText("СЕЙЧАС", gx, cy - 80);
+    ctx.fillText(tr("СЕЙЧАС", "NOW"), gx, cy - 80);
 
     this.fx.render(ctx);
     this.floats.render(ctx);
@@ -359,9 +360,9 @@ export class Parry implements Mini {
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
     const mx = Math.max(20, w * 0.05);
-    ctx.fillText(`ВОЛНА ${this.wave + 1}/${this.waves.length}`, mx, topY);
+    ctx.fillText(tr(`ВОЛНА ${this.wave + 1}/${this.waves.length}`, `WAVE ${this.wave + 1}/${this.waves.length}`), mx, topY);
     ctx.textAlign = "right";
-    ctx.fillText(`ПАУЗ ПРОЖИТО ${this.lived}/${this.gapsTotal}`, w - mx, topY);
+    ctx.fillText(tr(`ПАУЗ ПРОЖИТО ${this.lived}/${this.gapsTotal}`, `PAUSES LIVED ${this.lived}/${this.gapsTotal}`), w - mx, topY);
 
     if (this.combo >= 2) {
       const mult = 1 + Math.floor(this.combo / 5);
@@ -374,7 +375,7 @@ export class Parry implements Mini {
       ctx.shadowBlur = 0;
       if (mult > 1) {
         ctx.font = mono(10);
-        ctx.fillText(`множитель ${mult}`, w / 2, cy + 128);
+        ctx.fillText(tr(`множитель ${mult}`, `multiplier ${mult}`), w / 2, cy + 128);
       }
     }
 
@@ -387,7 +388,7 @@ export class Parry implements Mini {
       ctx.textAlign = "center";
       ctx.font = mono(20);
       ctx.fillStyle = C.ink;
-      ctx.fillText(`ВОЛНА ${this.wave + 1}`, w / 2, h * 0.42);
+      ctx.fillText(tr(`ВОЛНА ${this.wave + 1}`, `WAVE ${this.wave + 1}`), w / 2, h * 0.42);
       ctx.font = mono(12);
       ctx.fillStyle = C.dim;
       ctx.fillText(this.waves[this.wave].label, w / 2, h * 0.42 + 26);
@@ -402,8 +403,8 @@ export class Parry implements Mini {
     drawHint(
       ctx,
       this.wave === 0
-        ? "тапай, когда ЗАЗОР между словами в луче"
-        : "слова — их. паузы — твои. красное не трогай",
+        ? tr("тапай, когда ЗАЗОР между словами в луче", "tap when a GAP between words hits the beam")
+        : tr("слова — их. паузы — твои. красное не трогай", "their words. your pauses. don't touch red"),
       w / 2,
       h - 44,
       t,

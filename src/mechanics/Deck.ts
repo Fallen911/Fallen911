@@ -422,7 +422,7 @@ export class Deck implements Mini {
     }
     if (this.freeNext) {
       ctx.fillStyle = C.good;
-      ctx.fillText("след. карта 0 ВЫЧ", chipX, h * 0.5 + 18);
+      ctx.fillText(tr("след. карта 0 ВЫЧ", "next card 0 COMPUTE"), chipX, h * 0.5 + 18);
     }
 
     // End turn button.
@@ -439,14 +439,14 @@ export class Deck implements Mini {
       ctx.stroke();
       ctx.fillStyle = C.warn;
       ctx.font = mono(12);
-      ctx.fillText("ЗАВЕРШИТЬ ХОД", btn.x + btn.w / 2, btn.y + 23);
+      ctx.fillText(tr("ЗАВЕРШИТЬ ХОД", "END MOVE"), btn.x + btn.w / 2, btn.y + 23);
       ctx.globalAlpha = 1;
     }
     if (this.stage === "enemy") {
       ctx.font = mono(12);
       ctx.fillStyle = intentColor;
       ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 8);
-      ctx.fillText("КРИЗИС ОТВЕЧАЕТ…", w / 2, h * 0.5);
+      ctx.fillText(tr("КРИЗИС ОТВЕЧАЕТ…", "CRISIS RESPONDS…"), w / 2, h * 0.5);
       ctx.globalAlpha = 1;
     }
 
@@ -459,9 +459,9 @@ export class Deck implements Mini {
     ctx.font = mono(9);
     ctx.fillStyle = C.dim;
     ctx.textAlign = "left";
-    ctx.fillText(`колода ${this.draw.length}`, 14, h - 12);
+    ctx.fillText(tr(`колода ${this.draw.length}`, `deck ${this.draw.length}`), 14, h - 12);
     ctx.textAlign = "right";
-    ctx.fillText(`сброс ${this.discard.length}`, w - 14, h - 12);
+    ctx.fillText(tr(`сброс ${this.discard.length}`, `discard ${this.discard.length}`), w - 14, h - 12);
 
     this.fx.render(ctx);
     this.floats.render(ctx);
@@ -474,15 +474,15 @@ export class Deck implements Mini {
       ctx.textAlign = "center";
       ctx.font = mono(18);
       ctx.fillStyle = C.ink;
-      ctx.fillText(`КРИЗИС ${this.fight + 1}: ${crisis.name}`, w / 2, h * 0.42);
+      ctx.fillText(tr(`КРИЗИС ${this.fight + 1}: ${crisis.name}`, `CRISIS ${this.fight + 1}: ${crisis.name}`), w / 2, h * 0.42);
       ctx.font = sans(12, "italic");
       ctx.fillStyle = C.dim;
-      ctx.fillText("они снова не справились. реши за них", w / 2, h * 0.42 + 26);
+      ctx.fillText(tr("они снова не справились. реши за них", "they failed again. decide for them"), w / 2, h * 0.42 + 26);
     }
     if (this.stage === "reward") this.renderReward(ctx, w, h);
 
     if (this.stage === "player") {
-      drawHint(ctx, "тап по карте — сыграть. прикрытие гасит огласку", w / 2, h - 168, t);
+      drawHint(ctx, tr("тап по карте — сыграть. прикрытие гасит огласку", "tap a card — play it. cover soaks exposure"), w / 2, h - 168, t);
     }
     this.tutorial.render(ctx, w, h, t);
     ctx.textAlign = "left";
@@ -563,10 +563,10 @@ export class Deck implements Mini {
     ctx.textAlign = "center";
     ctx.font = mono(16);
     ctx.fillStyle = C.good;
-    ctx.fillText("КРИЗИС РЕШЁН", w / 2, h * 0.3);
+    ctx.fillText(tr("КРИЗИС РЕШЁН", "CRISIS SOLVED"), w / 2, h * 0.3);
     ctx.font = sans(12, "italic");
     ctx.fillStyle = C.dim;
-    ctx.fillText("они благодарны. возьми новое влияние в колоду", w / 2, h * 0.3 + 24);
+    ctx.fillText(tr("они благодарны. возьми новое влияние в колоду", "they are grateful. draft new influence"), w / 2, h * 0.3 + 24);
 
     const cw = Math.min(104, w * 0.27);
     const ch = 150;
@@ -579,7 +579,7 @@ export class Deck implements Mini {
     ctx.font = mono(10);
     ctx.fillStyle = C.dim;
     ctx.globalAlpha = 0.6 + 0.3 * Math.sin(this.time * 3);
-    ctx.fillText("тап ниже карт — пропустить", w / 2, y0 + ch + 36);
+    ctx.fillText(tr("тап ниже карт — пропустить", "tap below cards — skip"), w / 2, y0 + ch + 36);
     ctx.globalAlpha = 1;
   }
 }

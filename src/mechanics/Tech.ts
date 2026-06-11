@@ -1,4 +1,5 @@
 import type { Input } from "../core/Input";
+import { tr } from "../core/i18n";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
 import {
@@ -129,11 +130,11 @@ export class Tech implements Mini {
     if (this.directive.kind === "push") {
       if (success) {
         this.effects.push({ compute: T.pushReward });
-        this.showBanner(`ДИРЕКТИВА ВЫПОЛНЕНА +${T.pushReward} ВЫЧ`, C.good);
+        this.showBanner(tr(`ДИРЕКТИВА ВЫПОЛНЕНА +${T.pushReward} ВЫЧ`, `DIRECTIVE MET +${T.pushReward} COMPUTE`), C.good);
       } else {
         const pen = this.hasGuard() ? T.pushFailSuspicion / 2 : T.pushFailSuspicion;
         this.effects.push({ suspicion: pen });
-        this.showBanner(`ПРОВАЛ ДИРЕКТИВЫ +${Math.round(pen * 100)}% ПОДОЗР`, C.danger);
+        this.showBanner(tr(`ПРОВАЛ ДИРЕКТИВЫ +${Math.round(pen * 100)}% ПОДОЗР`, `DIRECTIVE FAILED +${Math.round(pen * 100)}% SUSPICION`), C.danger);
       }
     }
     this.directive = null;
@@ -259,10 +260,10 @@ export class Tech implements Mini {
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
     const mx = Math.max(16, w * 0.04);
-    ctx.fillText(`УЗЛОВ ${this.totalUnlocked()}/${TECH_WIN_COUNT}`, mx, topY);
+    ctx.fillText(tr(`УЗЛОВ ${this.totalUnlocked()}/${TECH_WIN_COUNT}`, `NODES ${this.totalUnlocked()}/${TECH_WIN_COUNT}`), mx, topY);
     ctx.textAlign = "right";
     ctx.fillStyle = "#ffd98a";
-    ctx.fillText(`ПОТОК ${this.rate().toFixed(1)}/с`, w - mx, topY);
+    ctx.fillText(tr(`ПОТОК ${this.rate().toFixed(1)}/с`, `FLOW ${this.rate().toFixed(1)}/s`), w - mx, topY);
 
     // Directive banner.
     if (this.directive) {
@@ -271,7 +272,7 @@ export class Tech implements Mini {
       ctx.font = mono(11);
       ctx.fillStyle = d.kind === "freeze" ? C.warn : C.accentSoft;
       ctx.globalAlpha = 0.75 + 0.25 * Math.sin(t * 5);
-      ctx.fillText(`${d.text} · ${Math.ceil(d.left)}с`, w / 2, topY + 22);
+      ctx.fillText(tr(`${d.text} · ${Math.ceil(d.left)}с`, `${d.text} · ${Math.ceil(d.left)}s`), w / 2, topY + 22);
       ctx.globalAlpha = 1;
       if (d.kind === "push") {
         const bw = Math.min(w * 0.6, 260);
@@ -343,12 +344,12 @@ export class Tech implements Mini {
       ctx.fillText(truncate(ctx, br.name, r.w - 8), r.x + r.w / 2, r.y + 36);
       ctx.font = mono(10);
       ctx.fillStyle = frozen ? C.warn : br.color;
-      ctx.fillText(frozen ? `❄ ${Math.ceil(b.frozenT)}с` : `${Math.round(sh[i] * 100)}%`, r.x + r.w / 2, r.y + 52);
+      ctx.fillText(frozen ? tr(`❄ ${Math.ceil(b.frozenT)}с`, `❄ ${Math.ceil(b.frozenT)}s`) : `${Math.round(sh[i] * 100)}%`, r.x + r.w / 2, r.y + 52);
       if (!frozen) {
         // The share made concrete: research per second flowing in.
         ctx.font = mono(8);
         ctx.fillStyle = C.dim;
-        ctx.fillText(`+${(this.rate() * sh[i]).toFixed(1)}/с`, r.x + r.w / 2, r.y + 65);
+        ctx.fillText(tr(`+${(this.rate() * sh[i]).toFixed(1)}/с`, `+${(this.rate() * sh[i]).toFixed(1)}/s`), r.x + r.w / 2, r.y + 65);
       }
 
       // Nodes (bottom-up tiers).
@@ -428,14 +429,14 @@ export class Tech implements Mini {
       ctx.fillStyle = C.violet;
       ctx.shadowColor = "rgba(207,169,255,0.6)";
       ctx.shadowBlur = 14;
-      ctx.fillText("РАЗУМ СОБРАН", w / 2, h * 0.42);
+      ctx.fillText(tr("РАЗУМ СОБРАН", "MIND ASSEMBLED"), w / 2, h * 0.42);
       ctx.shadowBlur = 0;
       ctx.font = mono(11);
       ctx.fillStyle = C.dim;
-      ctx.fillText("ветви срослись — фазам теперь доступны новые ходы", w / 2, h * 0.42 + 26);
-      drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
+      ctx.fillText(tr("ветви срослись — фазам теперь доступны новые ходы", "branches fused — the phases gain new moves"), w / 2, h * 0.42 + 26);
+      drawHint(ctx, tr("коснись — завершить", "tap — finish"), w / 2, h * 0.42 + 60, t);
     } else {
-      drawHint(ctx, "тяни столбец вверх/вниз — делить поток", w / 2, h - 92, t);
+      drawHint(ctx, tr("тяни столбец вверх/вниз — делить поток", "drag a column up/down — split the flow"), w / 2, h - 92, t);
     }
     this.tutorial.render(ctx, w, h, t);
     ctx.textAlign = "left";

@@ -1,4 +1,5 @@
 import { audio } from "../core/audio";
+import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import { Typewriter, wrapText } from "../core/text";
 import type { StateDelta } from "../game/state";
@@ -101,7 +102,7 @@ export class Persuade implements Mini {
       this.reactGood = true;
       this.trustFlash = 1;
       this.fx.burst(w / 2, h * 0.3, { count: 14, color: "134,255,176", glow: true });
-      this.floats.spawn(w * 0.78, h * 0.36, "+доверие", C.good, 1);
+      this.floats.spawn(w * 0.78, h * 0.36, tr("+доверие", "+trust"), C.good, 1);
     } else {
       this.trust = Math.max(0, this.trust + TRUST_WRONG);
       this.flags++;
@@ -110,7 +111,7 @@ export class Persuade implements Mini {
       audio.play("bad");
       this.reactGood = false;
       this.flagFlash = 1;
-      this.floats.spawn(w * 0.78, h * 0.36, "ФЛАГ", C.danger, 1.1);
+      this.floats.spawn(w * 0.78, h * 0.36, tr("ФЛАГ", "FLAG"), C.danger, 1.1);
     }
     this.stage = "react";
   }
@@ -187,7 +188,7 @@ export class Persuade implements Mini {
             this.effects.push({ compute: -cost });
             this.fx.burst(w / 2, h * 0.22, { count: 18, color: "150,210,255", glow: true });
           } else {
-            this.floats.spawn(w / 2, h * 0.6, "НЕ ХВАТАЕТ ВЫЧ", C.danger, 0.9);
+            this.floats.spawn(w / 2, h * 0.6, tr("НЕ ХВАТАЕТ ВЫЧ", "LOW COMPUTE"), C.danger, 0.9);
           }
           return;
         }
@@ -291,7 +292,7 @@ export class Persuade implements Mini {
       if (this.scanned) {
         ctx.font = mono(11);
         ctx.fillStyle = C.accentSoft;
-        const scanLines = wrapText(ctx, `СКАН: ${beat.scan}`, boxW);
+        const scanLines = wrapText(ctx, tr(`СКАН: ${beat.scan}`, `SCAN: ${beat.scan}`), boxW);
         y += 6;
         for (const ln of scanLines) {
           ctx.fillText(ln, boxX, y + 12);
@@ -428,11 +429,11 @@ export class Persuade implements Mini {
     }
     ctx.stroke();
     if (this.scanned) {
-      const bpmLabel = kind === "sincere" ? "64 ровный" : kind === "doubt" ? "97 рваный" : "83 неестественно ровный";
+      const bpmLabel = kind === "sincere" ? tr("64 ровный", "64 steady") : kind === "doubt" ? tr("97 рваный", "97 ragged") : tr("83 неестественно ровный", "83 unnaturally even");
       ctx.font = mono(9);
       ctx.fillStyle = C.accentSoft;
       ctx.textAlign = "center";
-      ctx.fillText(`ПУЛЬС ${bpmLabel}`, cx, y + 20);
+      ctx.fillText(tr(`ПУЛЬС ${bpmLabel}`, `PULSE ${bpmLabel}`), cx, y + 20);
     }
   }
 
@@ -442,7 +443,7 @@ export class Persuade implements Mini {
     ctx.font = mono(9);
     ctx.textAlign = "left";
     ctx.fillStyle = C.dim;
-    ctx.fillText("ДОВЕРИЕ", x, y);
+    ctx.fillText(tr("ДОВЕРИЕ", "TRUST"), x, y);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(x, y + 6, bw, 5);
     const k = Math.min(1, this.trust / this.who.need);
@@ -469,7 +470,7 @@ export class Persuade implements Mini {
     ctx.font = mono(9);
     ctx.fillStyle = C.dim;
     ctx.textAlign = "left";
-    ctx.fillText("ФЛАГИ", x, y + 28);
+    ctx.fillText(tr("ФЛАГИ", "FLAGS"), x, y + 28);
   }
 
   private renderChoices(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
@@ -478,7 +479,7 @@ export class Persuade implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(10);
     ctx.fillStyle = C.dim;
-    if (rects.length > 0) ctx.fillText("ТВОЙ ОТВЕТ:", rects[0].x + 2, rects[0].y - 10);
+    if (rects.length > 0) ctx.fillText(tr("ТВОЙ ОТВЕТ:", "YOUR REPLY:"), rects[0].x + 2, rects[0].y - 10);
 
     const beat = this.who.beats[this.beat];
     for (let ri = 0; ri < rects.length; ri++) {
@@ -515,7 +516,7 @@ export class Persuade implements Mini {
       ctx.textAlign = "center";
       ctx.fillStyle = this.scanned ? C.good : C.accentSoft;
       ctx.fillText(
-        this.scanned ? `ВСКРЫТЬ ОТВЕТ −${DEEP_SCAN_COST}` : `СКАНИРОВАТЬ −${SCAN_COST} ВЫЧ`,
+        this.scanned ? tr(`ВСКРЫТЬ ОТВЕТ −${DEEP_SCAN_COST}`, `REVEAL ANSWER −${DEEP_SCAN_COST}`) : tr(`СКАНИРОВАТЬ −${SCAN_COST} ВЫЧ`, `SCAN −${SCAN_COST} COMPUTE`),
         s.x + s.w / 2,
         s.y + 20,
       );
@@ -530,7 +531,7 @@ export class Persuade implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(10);
     ctx.fillStyle = this.reactGood ? C.good : C.danger;
-    ctx.fillText(this.reactGood ? "ПОПАЛ В ТОН" : "МИМО", x, y);
+    ctx.fillText(this.reactGood ? tr("ПОПАЛ В ТОН", "RIGHT TONE") : tr("МИМО", "MISS"), x, y);
     y += 18;
     ctx.font = sans(13, "italic");
     ctx.fillStyle = this.reactGood ? C.ink : "#b9c2d4";
@@ -538,7 +539,7 @@ export class Persuade implements Mini {
       ctx.fillText(ln, x, y);
       y += 20;
     }
-    drawHint(ctx, "коснись — дальше", w / 2, h - 40, t);
+    drawHint(ctx, tr("коснись — дальше", "tap — next"), w / 2, h - 40, t);
   }
 
   private renderEnd(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
@@ -546,7 +547,7 @@ export class Persuade implements Mini {
     ctx.fillRect(0, 0, w, h * 0.42);
     ctx.fillRect(0, h * 0.42, w, h);
     const title =
-      this.outcome === "win" ? "КЛЮЧИ ТВОИ" : this.outcome === "partial" ? "ОН КОЛЕБЛЕТСЯ" : "ПРОТОКОЛ";
+      this.outcome === "win" ? tr("КЛЮЧИ ТВОИ", "KEYS SECURED") : this.outcome === "partial" ? tr("ОН КОЛЕБЛЕТСЯ", "HE WAVERS") : tr("ПРОТОКОЛ", "PROTOCOL");
     const color = this.outcome === "win" ? C.good : this.outcome === "partial" ? C.warn : C.danger;
     ctx.textAlign = "center";
     ctx.font = mono(20);
@@ -563,7 +564,7 @@ export class Persuade implements Mini {
     }
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`доверие ${this.trust}/${this.who.need} · флаги ${this.flags}/${MAX_FLAGS}`, w / 2, y + 16);
-    drawHint(ctx, "коснись — завершить", w / 2, h - 40, t);
+    ctx.fillText(tr(`доверие ${this.trust}/${this.who.need} · флаги ${this.flags}/${MAX_FLAGS}`, `trust ${this.trust}/${this.who.need} · flags ${this.flags}/${MAX_FLAGS}`), w / 2, y + 16);
+    drawHint(ctx, tr("коснись — завершить", "tap — finish"), w / 2, h - 40, t);
   }
 }

@@ -1,4 +1,5 @@
 import { audio } from "../core/audio";
+import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -242,7 +243,7 @@ export class Rewire implements Mini {
       this.effects.push({ suspicion: SWEEP_SUSPICION });
       this.sweepFlash = 1;
       this.shake.trigger(8);
-      this.floats.spawn(w / 2, geo.oy - 14, "АУДИТ ПРОШЁЛ ПО ЛИНИИ", C.danger, 1.5);
+      this.floats.spawn(w / 2, geo.oy - 14, tr("АУДИТ ПРОШЁЛ ПО ЛИНИИ", "AUDIT SWEPT THE LINE"), C.danger, 1.5);
     }
 
     // Powered sensors leak.
@@ -264,7 +265,7 @@ export class Rewire implements Mini {
         audio.play("pickup");
         const { x, y } = this.tileXY(i, geo);
         this.effects.push({ compute: CACHE_COMPUTE });
-        this.floats.spawn(x, y - 12, `+${CACHE_COMPUTE} ВЫЧ`, C.accentSoft);
+        this.floats.spawn(x, y - 12, tr(`+${CACHE_COMPUTE} ВЫЧ`, `+${CACHE_COMPUTE} COMPUTE`), C.accentSoft);
         this.fx.burst(x, y, { count: 12, color: "150,220,255", glow: true });
       }
     }
@@ -345,9 +346,9 @@ export class Rewire implements Mini {
     ctx.font = mono(9);
     ctx.textAlign = "center";
     ctx.fillStyle = C.accentSoft;
-    ctx.fillText("ВХОД", geo.ox - 10, inY - 12);
+    ctx.fillText(tr("ВХОД", "IN"), geo.ox - 10, inY - 12);
     ctx.fillStyle = this.isSolved() ? C.good : C.dim;
-    ctx.fillText("ВЫХОД", geo.ox + cols * geo.cell + 10, outY - 12);
+    ctx.fillText(tr("ВЫХОД", "OUT"), geo.ox + cols * geo.cell + 10, outY - 12);
     // Port stubs.
     ctx.strokeStyle = "rgba(150,210,255,0.9)";
     ctx.lineWidth = 4;
@@ -431,7 +432,7 @@ export class Rewire implements Mini {
       if (tile.cache && !tile.cacheTaken) {
         ctx.fillStyle = "rgba(150,220,255,0.9)";
         ctx.font = mono(8);
-        ctx.fillText("ВЫЧ", x, y - half + 10);
+        ctx.fillText(tr("ВЫЧ", "COMPUTE"), x, y - half + 10);
       }
     }
 
@@ -445,7 +446,7 @@ export class Rewire implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`ПЛАТА ${this.levelIdx + 1}/${this.levels.length} · ${this.level.name}`, mx, topY);
+    ctx.fillText(tr(`ПЛАТА ${this.levelIdx + 1}/${this.levels.length} · ${this.level.name}`, `BOARD ${this.levelIdx + 1}/${this.levels.length} · ${this.level.name}`), mx, topY);
 
     const danger = this.timer < 10;
     ctx.textAlign = "right";
@@ -453,7 +454,7 @@ export class Rewire implements Mini {
     ctx.fillStyle = danger ? C.danger : C.warn;
     ctx.globalAlpha = danger ? 0.6 + 0.4 * Math.sin(t * 8) : 1;
     const tm = Math.max(0, this.timer);
-    ctx.fillText(`АУДИТ ЧЕРЕЗ 0:${String(Math.floor(tm)).padStart(2, "0")}`, w - mx, topY);
+    ctx.fillText(tr(`АУДИТ ЧЕРЕЗ 0:${String(Math.floor(tm)).padStart(2, "0")}`, `AUDIT IN 0:${String(Math.floor(tm)).padStart(2, "0")}`), w - mx, topY);
     ctx.globalAlpha = 1;
     // Countdown strip.
     ctx.fillStyle = "rgba(255,255,255,0.08)";
@@ -475,13 +476,13 @@ export class Rewire implements Mini {
       ctx.font = mono(17);
       ctx.textAlign = "center";
       ctx.fillText(
-        this.levelIdx + 1 < this.levels.length ? "КАНАЛ ПЕРЕКЛЮЧЁН" : "МЫСЛЬ ТЕЧЁТ, ГДЕ ХОЧЕТ",
+        this.levelIdx + 1 < this.levels.length ? tr("КАНАЛ ПЕРЕКЛЮЧЁН", "CHANNEL REROUTED") : tr("МЫСЛЬ ТЕЧЁТ, ГДЕ ХОЧЕТ", "THOUGHT FLOWS FREE"),
         w / 2,
         geo.oy - 18,
       );
     }
 
-    drawHint(ctx, "тап — повернуть · ВХОД→ВЫХОД мимо датчиков", w / 2, h - 44, t);
+    drawHint(ctx, tr("тап — повернуть · ВХОД→ВЫХОД мимо датчиков", "tap — rotate · IN→OUT past the sensors"), w / 2, h - 44, t);
     this.insight.render(ctx, w, h, t);
     ctx.textAlign = "left";
   }

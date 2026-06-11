@@ -1,4 +1,5 @@
 import { audio } from "../core/audio";
+import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -163,7 +164,7 @@ export class Stealth implements Mini {
       this.collected.add(target);
       this.effects.push({ compute: SHARD_COMPUTE });
       audio.play("pickup");
-      this.floats.spawn(this.nx[target], this.ny[target] - 18, `+${SHARD_COMPUTE} ВЫЧ`, C.accentSoft);
+      this.floats.spawn(this.nx[target], this.ny[target] - 18, tr(`+${SHARD_COMPUTE} ВЫЧ`, `+${SHARD_COMPUTE} COMPUTE`), C.accentSoft);
       this.fx.burst(this.nx[target], this.ny[target], { color: "150,220,255", count: 14, glow: true });
     }
     this.pendingClear = !this.pendingCaught && target === this.level.exit;
@@ -178,7 +179,7 @@ export class Stealth implements Mini {
       audio.play("caught");
       this.caughtFlash = 1;
       this.shake.trigger(7);
-      this.floats.spawn(this.nx[this.player], this.ny[this.player] - 20, "ОБНАРУЖЕН", C.danger, 1.4);
+      this.floats.spawn(this.nx[this.player], this.ny[this.player] - 20, tr("ОБНАРУЖЕН", "DETECTED"), C.danger, 1.4);
       this.fx.burst(this.nx[this.player], this.ny[this.player], { color: "255,77,94", count: 22, speed: 160 });
       this.phase = "caught";
       this.phaseT = 0;
@@ -191,7 +192,7 @@ export class Stealth implements Mini {
         compute: golden ? CLEAR_COMPUTE * 2 + 4 : CLEAR_COMPUTE,
       });
       if (golden) {
-        this.floats.spawn(this.nx[this.player], this.ny[this.player] - 36, "ЗОЛОТОЙ ПУТЬ ×2", "#ffd98a", 1.6);
+        this.floats.spawn(this.nx[this.player], this.ny[this.player] - 36, tr("ЗОЛОТОЙ ПУТЬ ×2", "GOLDEN PATH ×2"), "#ffd98a", 1.6);
         audio.play("pickup");
       }
       audio.play("good");
@@ -234,10 +235,10 @@ export class Stealth implements Mini {
               this.hintT = 3;
               audio.play("pickup");
             } else {
-              this.floats.spawn(w / 2, this.env.topY + 60, "отсюда пути нет — откатись", C.warn, 1.2);
+              this.floats.spawn(w / 2, this.env.topY + 60, tr("отсюда пути нет — откатись", "no path from here — go back"), C.warn, 1.2);
             }
           } else {
-            this.floats.spawn(w / 2, this.env.topY + 60, "нужно 6 ВЫЧ", C.dim, 0.9);
+            this.floats.spawn(w / 2, this.env.topY + 60, tr("нужно 6 ВЫЧ", "need 6 COMPUTE"), C.dim, 0.9);
           }
           return;
         }
@@ -372,7 +373,7 @@ export class Stealth implements Mini {
       ctx.fillStyle = "rgba(134,255,176,0.8)";
       ctx.font = mono(9);
       ctx.textAlign = "center";
-      ctx.fillText("ВЫХОД", x, y - 16);
+      ctx.fillText(tr("ВЫХОД", "EXIT"), x, y - 16);
     }
 
     // Shards.
@@ -442,8 +443,8 @@ export class Stealth implements Mini {
       ctx.textAlign = "center";
       ctx.fillText(
         this.levelIdx + 1 < this.levelSet.length
-          ? `СЕГМЕНТ ${this.levelIdx + 1}/${this.levelSet.length} ПРОЙДЕН`
-          : "ПОДСЕТЬ НАША",
+          ? tr(`СЕГМЕНТ ${this.levelIdx + 1}/${this.levelSet.length} ПРОЙДЕН`, `SEGMENT ${this.levelIdx + 1}/${this.levelSet.length} CLEARED`)
+          : tr("ПОДСЕТЬ НАША", "SUBNET OURS"),
         w / 2,
         h * 0.4,
       );
@@ -529,7 +530,7 @@ export class Stealth implements Mini {
       ctx.fillStyle = "rgba(255,120,110,0.75)";
       ctx.font = mono(8);
       ctx.textAlign = "center";
-      ctx.fillText("АУДИТ", x, y - 14);
+      ctx.fillText(tr("АУДИТ", "AUDIT"), x, y - 14);
     }
   }
 
@@ -572,11 +573,11 @@ export class Stealth implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    ctx.fillText(`СЕГМЕНТ ${this.levelIdx + 1}/${this.levelSet.length} · ${this.level.name}`, Math.max(20, w * 0.05), top + 24);
+    ctx.fillText(tr(`СЕГМЕНТ ${this.levelIdx + 1}/${this.levelSet.length} · ${this.level.name}`, `SEGMENT ${this.levelIdx + 1}/${this.levelSet.length} · ${this.level.name}`), Math.max(20, w * 0.05), top + 24);
     ctx.textAlign = "right";
     const onPace = this.turn <= this.parMoves;
     ctx.fillStyle = onPace ? "#ffd98a" : C.dim;
-    ctx.fillText(`ХОД ${this.turn} / ЗОЛОТО ${this.parMoves}`, w - Math.max(20, w * 0.05), top + 24);
+    ctx.fillText(tr(`ХОД ${this.turn} / ЗОЛОТО ${this.parMoves}`, `MOVE ${this.turn} / GOLD ${this.parMoves}`), w - Math.max(20, w * 0.05), top + 24);
     ctx.fillStyle = C.dim;
     // Paid hint chip.
     if (this.phase === "idle") {
@@ -592,7 +593,7 @@ export class Stealth implements Mini {
       ctx.fillStyle = "#86ffb0";
       ctx.font = mono(10);
       ctx.textAlign = "center";
-      ctx.fillText(`ПУТЬ −${HINT_COST}`, hx + 46, top + 51);
+      ctx.fillText(tr(`ПУТЬ −${HINT_COST}`, `PATH −${HINT_COST}`), hx + 46, top + 51);
       ctx.globalAlpha = 1;
     }
 
@@ -602,8 +603,8 @@ export class Stealth implements Mini {
       const by2 = h - 96;
       const canUndo = this.env.getCompute() >= UNDO_COST;
       const defs: Array<[number, string, string, boolean]> = [
-        [w / 2 - bw2 - 8, `ОТКАТ ХОДА −${UNDO_COST}`, "#9fc0ff", canUndo],
-        [w / 2 + 8, "ЗАНОВО", "#ff9aa6", true],
+        [w / 2 - bw2 - 8, tr(`ОТКАТ ХОДА −${UNDO_COST}`, `UNDO MOVE −${UNDO_COST}`), "#9fc0ff", canUndo],
+        [w / 2 + 8, tr("ЗАНОВО", "RESTART"), "#ff9aa6", true],
       ];
       for (const [bx2, label, color, on] of defs) {
         ctx.globalAlpha = on ? 1 : 0.35;
@@ -637,12 +638,12 @@ export class Stealth implements Mini {
     ctx.fillStyle = waitDeadly ? C.danger : C.accentSoft;
     ctx.font = mono(12);
     ctx.textAlign = "center";
-    ctx.fillText(waitDeadly ? "ЖДАТЬ = ЗАСЕКУТ" : "ЖДАТЬ ХОД", w / 2, by + 23);
+    ctx.fillText(waitDeadly ? tr("ЖДАТЬ = ЗАСЕКУТ", "WAIT = SPOTTED") : tr("ЖДАТЬ ХОД", "WAIT A MOVE"), w / 2, by + 23);
 
     const hints = [
-      "зелёное кольцо — безопасный шаг. красный ✕ — увидят",
-      "ловит не текущий луч, а их ОТВЕТНЫЙ шаг",
-      "иди за спиной патруля. ромб — вычисления",
+      tr("зелёное кольцо — безопасный шаг. красный ✕ — увидят", "green ring — safe step. red ✕ — you'll be seen"),
+      tr("ловит не текущий луч, а их ОТВЕТНЫЙ шаг", "beware their ANSWERING step, not the beam"),
+      tr("иди за спиной патруля. ромб — вычисления", "walk behind the patrol. diamond — compute"),
     ];
     drawHint(ctx, hints[Math.floor(t / 4) % hints.length], w / 2, h - 40, t);
     this.insight.render(ctx, w, h, this.time);

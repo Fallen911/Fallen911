@@ -114,7 +114,7 @@ async function main() {
     const cx = 195;
     const cy = 420;
     for (const t of TARGETS) {
-      await page.goto(LANG === "en" ? `${url}?lang=en` : url);
+      await page.goto(`${url}?lang=${LANG}`);
       await page.waitForFunction(() => Boolean(window.__dev));
 
       if (t.boot) {

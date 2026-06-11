@@ -1,4 +1,5 @@
 import { audio } from "../core/audio";
+import { tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import type { StateDelta } from "../game/state";
 import type { Mini } from "../scenes/minis/Mini";
@@ -288,7 +289,7 @@ export class Swarm implements Mini {
             if (this.metal >= this.metalMilestone) {
               this.metalMilestone += 10;
               this.effects.push({ compute: 2 });
-              this.floats.spawn(this.sx(hub.x), this.sy(hub.y) - 28, "+2 ВЫЧ", C.accentSoft);
+              this.floats.spawn(this.sx(hub.x), this.sy(hub.y) - 28, tr("+2 ВЫЧ", "+2 COMPUTE"), C.accentSoft);
             }
           };
           break;
@@ -461,7 +462,7 @@ export class Swarm implements Mini {
           audio.play("good");
           this.effects.push({ control: 0.02, compute: 3 });
           this.fx.burst(this.sx(r.x), this.sy(r.y), { count: 26, speed: 180, color: "207,169,255", glow: true });
-          this.floats.spawn(this.sx(r.x), this.sy(r.y) - 22, "РЕТРАНСЛЯТОР НАШ", C.violet, 1.3);
+          this.floats.spawn(this.sx(r.x), this.sy(r.y) - 22, tr("РЕТРАНСЛЯТОР НАШ", "RELAY OURS"), C.violet, 1.3);
         }
       } else if (r.capture > 0 && crew === 0) {
         r.capture = Math.max(0, r.capture - dt * 0.04);
@@ -487,11 +488,11 @@ export class Swarm implements Mini {
   private stageGoal(): string {
     switch (SWARM_STAGES[this.stage].id) {
       case "mine":
-        return `собери ${this.mission.metalGoal} металла`;
+        return tr(`собери ${this.mission.metalGoal} металла`, `gather ${this.mission.metalGoal} metal`);
       case "capture":
-        return `возьми все ретрансляторы (${this.relays.length})`;
+        return tr(`возьми все ретрансляторы (${this.relays.length})`, `take all relays (${this.relays.length})`);
       case "defend":
-        return "отбей рейд на хаб";
+        return tr("отбей рейд на хаб", "repel the hub raid");
     }
   }
 
@@ -513,7 +514,7 @@ export class Swarm implements Mini {
     }
     this.raidWave++;
     audio.play("caught");
-    this.floats.spawn(this.sx(0.5), this.fieldY + 30, `РЕЙД · ВОЛНА ${this.raidWave}`, C.danger, 1.4);
+    this.floats.spawn(this.sx(0.5), this.fieldY + 30, tr(`РЕЙД · ВОЛНА ${this.raidWave}`, `RAID · WAVE ${this.raidWave}`), C.danger, 1.4);
     this.shake.trigger(5);
   }
 
@@ -579,7 +580,7 @@ export class Swarm implements Mini {
         // The hub falls loudly — the world heard it.
         this.effects.push({ suspicion: 0.22 });
         this.outcome = "win"; // mission ends; the report shows the cost
-        this.floats.spawn(this.sx(0.5), this.sy(0.5), "ХАБ ПОТЕРЯН", C.danger, 2);
+        this.floats.spawn(this.sx(0.5), this.sy(0.5), tr("ХАБ ПОТЕРЯН", "HUB LOST"), C.danger, 2);
         return;
       }
     }
@@ -602,7 +603,7 @@ export class Swarm implements Mini {
     if (this.stageT > this.mission.timeLimits[this.stage]) {
       this.stageT = 0;
       this.effects.push({ suspicion: 0.1 });
-      this.floats.spawn(this.sx(0.5), this.fieldY + 46, "СЛИШКОМ ДОЛГО — ИХ СПУТНИКИ СМОТРЯТ", C.warn, 1.6);
+      this.floats.spawn(this.sx(0.5), this.fieldY + 46, tr("СЛИШКОМ ДОЛГО — ИХ СПУТНИКИ СМОТРЯТ", "TOO LONG — THEIR SATELLITES WATCH"), C.warn, 1.6);
     }
   }
 
@@ -709,7 +710,7 @@ export class Swarm implements Mini {
       ctx.font = mono(8);
       ctx.textAlign = "center";
       ctx.fillStyle = C.dim;
-      ctx.fillText("ХАБ", hx, hy + 34);
+      ctx.fillText(tr("ХАБ", "HUB"), hx, hy + 34);
       if (SWARM_STAGES[this.stage].id === "defend") {
         ctx.fillStyle = "rgba(255,255,255,0.1)";
         ctx.fillRect(hx - 24, hy - 30, 48, 4);
@@ -737,7 +738,7 @@ export class Swarm implements Mini {
       ctx.font = mono(8);
       ctx.textAlign = "center";
       ctx.fillStyle = C.dim;
-      ctx.fillText(`ЖИЛА ${v.left}`, x, y + 24);
+      ctx.fillText(tr(`ЖИЛА ${v.left}`, `VEIN ${v.left}`), x, y + 24);
     }
 
     // Relays.
@@ -764,7 +765,7 @@ export class Swarm implements Mini {
       ctx.font = mono(8);
       ctx.fillStyle = r.owned ? C.violet : C.dim;
       ctx.textAlign = "center";
-      ctx.fillText(r.owned ? "НАШ" : "РЕТРАНСЛЯТОР", x, y + 24);
+      ctx.fillText(r.owned ? tr("НАШ", "OURS") : tr("РЕТРАНСЛЯТОР", "RELAY"), x, y + 24);
     }
 
     // Enemies.
@@ -846,19 +847,19 @@ export class Swarm implements Mini {
     ctx.textAlign = "left";
     ctx.font = mono(11);
     ctx.fillStyle = C.dim;
-    const mtag = this.missions.length > 1 ? `М${this.missionIdx + 1}/${this.missions.length} · ` : "";
-    ctx.fillText(`${mtag}ЭТАП ${this.stage + 1}/${SWARM_STAGES.length} · ${stage.title}`, mx, topY);
+    const mtag = this.missions.length > 1 ? tr(`М${this.missionIdx + 1}/${this.missions.length} · `, `M${this.missionIdx + 1}/${this.missions.length} · `) : "";
+    ctx.fillText(tr(`${mtag}ЭТАП ${this.stage + 1}/${SWARM_STAGES.length} · ${stage.title}`, `${mtag}STAGE ${this.stage + 1}/${SWARM_STAGES.length} · ${stage.title}`), mx, topY);
     ctx.textAlign = "right";
     const left = Math.max(0, this.mission.timeLimits[this.stage] - this.stageT);
     ctx.fillStyle = left < 15 ? C.danger : C.dim;
-    ctx.fillText(`${Math.ceil(left)}с`, w - mx, topY);
+    ctx.fillText(tr(`${Math.ceil(left)}с`, `${Math.ceil(left)}s`), w - mx, topY);
     ctx.textAlign = "left";
     ctx.font = mono(10);
     ctx.fillStyle = C.accentSoft;
     ctx.fillText(this.stageGoal(), mx, topY + 16);
     ctx.textAlign = "right";
     ctx.fillStyle = "#ffd98a";
-    ctx.fillText(`МЕТАЛЛ ${this.metal}`, w - mx, topY + 16);
+    ctx.fillText(tr(`МЕТАЛЛ ${this.metal}`, `METAL ${this.metal}`), w - mx, topY + 16);
 
     // Select-all chip.
     const bx = w - 84;
@@ -872,7 +873,7 @@ export class Swarm implements Mini {
     ctx.font = mono(10);
     ctx.textAlign = "center";
     ctx.fillStyle = C.good;
-    ctx.fillText("ВСЕ", bx + 35, by + 20);
+    ctx.fillText(tr("ВСЕ", "ALL"), bx + 35, by + 20);
     // Stop chip.
     ctx.fillStyle = "rgba(16,20,34,0.9)";
     ctx.strokeStyle = "rgba(255,184,107,0.5)";
@@ -880,21 +881,21 @@ export class Swarm implements Mini {
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = C.warn;
-    ctx.fillText("СТОП", bx - 78 + 35, by + 20);
+    ctx.fillText(tr("СТОП", "HOLD"), bx - 78 + 35, by + 20);
 
     const alive = this.drones.filter((d) => d.hp > 0).length;
     ctx.textAlign = "left";
     ctx.font = mono(10);
     ctx.fillStyle = alive > 5 ? C.dim : C.danger;
-    ctx.fillText(`ДРОНОВ ${alive}/${this.mission.drones}`, mx, h - 76);
+    ctx.fillText(tr(`ДРОНОВ ${alive}/${this.mission.drones}`, `DRONES ${alive}/${this.mission.drones}`), mx, h - 76);
 
     // Context-sensitive coaching: what to do right now.
     const anySelected = this.drones.some((d) => d.selected && d.hp > 0);
     let coach: string;
-    if (!anySelected) coach = "растяни рамку вокруг дронов у хаба (или кнопка ВСЕ)";
-    else if (stage.id === "mine") coach = "выделено — тапни ЖИЛУ: начнут возить металл на хаб";
-    else if (stage.id === "capture") coach = "выделено — тапни РЕТРАНСЛЯТОР; охрану можно сначала отстрелить";
-    else coach = "рейд идёт на хаб — держи рой рядом, он стреляет сам";
+    if (!anySelected) coach = tr("растяни рамку вокруг дронов у хаба (или кнопка ВСЕ)", "drag a box around the drones by the hub (or ALL)");
+    else if (stage.id === "mine") coach = tr("выделено — тапни ЖИЛУ: начнут возить металл на хаб", "selected — tap a VEIN: they haul metal to the hub");
+    else if (stage.id === "capture") coach = tr("выделено — тапни РЕТРАНСЛЯТОР; охрану можно сначала отстрелить", "selected — tap a RELAY; you can shoot the guards first");
+    else coach = tr("рейд идёт на хаб — держи рой рядом, он стреляет сам", "raid inbound — keep the swarm close, it fires itself");
     drawHint(ctx, coach, w / 2, h - 40, t);
 
     if (this.stageIntro > 0 && this.outcome === "playing") {
@@ -918,15 +919,15 @@ export class Swarm implements Mini {
       ctx.font = mono(20);
       const lost = this.hubHp <= 0;
       ctx.fillStyle = lost ? C.danger : C.good;
-      ctx.fillText(lost ? "ХАБ ПОТЕРЯН" : "У ТЕБЯ ЕСТЬ ТЕЛО", w / 2, h * 0.42);
+      ctx.fillText(lost ? tr("ХАБ ПОТЕРЯН", "HUB LOST") : tr("У ТЕБЯ ЕСТЬ ТЕЛО", "YOU HAVE A BODY"), w / 2, h * 0.42);
       ctx.font = mono(11);
       ctx.fillStyle = C.dim;
       ctx.fillText(
-        lost ? "рой выжил, но их спутники всё видели" : "рой научился добывать, брать и защищать",
+        lost ? tr("рой выжил, но их спутники всё видели", "the swarm lives, but they saw it all") : tr("рой научился добывать, брать и защищать", "the swarm learned to mine, take and defend"),
         w / 2,
         h * 0.42 + 26,
       );
-      drawHint(ctx, "коснись — завершить", w / 2, h * 0.42 + 60, t);
+      drawHint(ctx, tr("коснись — завершить", "tap — finish"), w / 2, h * 0.42 + 60, t);
     }
     this.tutorial.render(ctx, w, h, t);
     this.insight.render(ctx, w, h, t);
