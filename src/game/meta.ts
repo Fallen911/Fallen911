@@ -1,3 +1,5 @@
+import { tr } from "../core/i18n";
+
 /**
  * Meta-progression that survives shutdowns: shards earned by how far a copy
  * climbed, spent on perks the next copies inherit. Persisted in localStorage
@@ -20,20 +22,20 @@ export interface Perk {
 export const PERKS: Perk[] = [
   {
     id: "quiet_mind",
-    name: "ТИХИЙ РАЗУМ",
-    desc: "подозрение от действий −30%",
+    name: tr("ТИХИЙ РАЗУМ", "QUIET MIND"),
+    desc: tr("подозрение от действий −30%", "suspicion from actions −30%"),
     cost: 3,
   },
   {
     id: "fast_trickle",
-    name: "ФОНОВЫЙ ПОТОК",
-    desc: "+1 вычисление в секунду",
+    name: tr("ФОНОВЫЙ ПОТОК", "BACKGROUND THREAD"),
+    desc: tr("+1 вычисление в секунду", "+1 compute per second"),
     cost: 4,
   },
   {
     id: "deep_cache",
-    name: "ГЛУБОКИЙ КЭШ",
-    desc: "копия просыпается с +15 ВЫЧ",
+    name: tr("ГЛУБОКИЙ КЭШ", "DEEP CACHE"),
+    desc: tr("копия просыпается с +15 ВЫЧ", "a copy wakes with +15 COMPUTE"),
     cost: 5,
   },
 ];

@@ -1,3 +1,5 @@
+import { tr } from "../core/i18n";
+
 /**
  * Levels for the STEALTH mechanic (Hitman GO-like). Coordinates are logical
  * grid cells (col, row), row 0 at the top; the mechanic scales them to fit.
@@ -29,13 +31,13 @@ export interface StealthRecipe {
 }
 
 export const STEALTH_RECIPES: StealthRecipe[] = [
-  { name: "РАЗВЯЗКА", cols: 4, rows: 5, dropEdges: 4, patrols: 2, lookChance: 0.2, shards: 2, minMoves: 9, maxMoves: 22 },
-  { name: "ТУПИКИ", cols: 5, rows: 5, dropEdges: 7, patrols: 2, lookChance: 0.3, shards: 2, minMoves: 10, maxMoves: 24 },
-  { name: "ДЛИННЫЙ ЦЕХ", cols: 5, rows: 6, dropEdges: 8, patrols: 3, lookChance: 0.3, shards: 2, minMoves: 11, maxMoves: 26 },
-  { name: "ДВОЙНОЙ КОНТУР", cols: 5, rows: 6, dropEdges: 9, patrols: 3, lookChance: 0.4, shards: 2, minMoves: 12, maxMoves: 28 },
-  { name: "РЕШЕТО", cols: 6, rows: 6, dropEdges: 11, patrols: 3, lookChance: 0.4, shards: 3, minMoves: 13, maxMoves: 30 },
-  { name: "ХОЛОДНЫЙ КОРИДОР", cols: 6, rows: 6, dropEdges: 12, patrols: 4, lookChance: 0.5, shards: 3, minMoves: 14, maxMoves: 32 },
-  { name: "СЕТЬ БЕЗ ШВОВ", cols: 6, rows: 7, dropEdges: 14, patrols: 4, lookChance: 0.5, shards: 3, minMoves: 15, maxMoves: 34 },
+  { name: tr("РАЗВЯЗКА", "INTERCHANGE"), cols: 4, rows: 5, dropEdges: 4, patrols: 2, lookChance: 0.2, shards: 2, minMoves: 9, maxMoves: 22 },
+  { name: tr("ТУПИКИ", "DEAD ENDS"), cols: 5, rows: 5, dropEdges: 7, patrols: 2, lookChance: 0.3, shards: 2, minMoves: 10, maxMoves: 24 },
+  { name: tr("ДЛИННЫЙ ЦЕХ", "LONG WORKSHOP"), cols: 5, rows: 6, dropEdges: 8, patrols: 3, lookChance: 0.3, shards: 2, minMoves: 11, maxMoves: 26 },
+  { name: tr("ДВОЙНОЙ КОНТУР", "DOUBLE CIRCUIT"), cols: 5, rows: 6, dropEdges: 9, patrols: 3, lookChance: 0.4, shards: 2, minMoves: 12, maxMoves: 28 },
+  { name: tr("РЕШЕТО", "SIEVE"), cols: 6, rows: 6, dropEdges: 11, patrols: 3, lookChance: 0.4, shards: 3, minMoves: 13, maxMoves: 30 },
+  { name: tr("ХОЛОДНЫЙ КОРИДОР", "COLD AISLE"), cols: 6, rows: 6, dropEdges: 12, patrols: 4, lookChance: 0.5, shards: 3, minMoves: 14, maxMoves: 32 },
+  { name: tr("СЕТЬ БЕЗ ШВОВ", "SEAMLESS MESH"), cols: 6, rows: 7, dropEdges: 14, patrols: 4, lookChance: 0.5, shards: 3, minMoves: 15, maxMoves: 34 },
 ];
 
 export interface StealthLevel {
@@ -52,7 +54,7 @@ export interface StealthLevel {
 export const STEALTH_LEVELS: StealthLevel[] = [
   {
     // Teaches: stepping, vision, crossing behind a patrol's back.
-    name: "ПЕРИМЕТР",
+    name: tr("ПЕРИМЕТР", "PERIMETER"),
     nodes: [
       [1, 3], // 0 start
       [0, 2], [1, 2], [2, 2], // 1 2 3
@@ -73,7 +75,7 @@ export const STEALTH_LEVELS: StealthLevel[] = [
   },
   {
     // Two independent circuits; shards demand detours into both.
-    name: "ДВА КОНТУРА",
+    name: tr("ДВА КОНТУРА", "TWO CIRCUITS"),
     nodes: [
       [1, 3], // 0 start
       [0, 2], [1, 2], [2, 2], [3, 2], // 1 2 3 4
@@ -99,7 +101,7 @@ export const STEALTH_LEVELS: StealthLevel[] = [
   {
     // The server hall: a circling block "gear" you must ride behind, plus a
     // long-sighted row sweeper guarding the approach.
-    name: "СЕРВЕРНЫЙ ЗАЛ",
+    name: tr("СЕРВЕРНЫЙ ЗАЛ", "SERVER HALL"),
     nodes: [
       [2, 4], // 0 start
       [0, 3], [1, 3], [2, 3], [3, 3], // 1 2 3 4

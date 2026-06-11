@@ -1,6 +1,7 @@
 import type { Input } from "../../core/Input";
 import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
+import { tr } from "../../core/i18n";
 
 /**
  * Ф7 mini — Expand. The planet is too small. Each tap sets another node on the
@@ -84,7 +85,7 @@ export class Expand implements Mini {
     ctx.textAlign = "center";
     ctx.fillStyle = "#6b7686";
     ctx.font = "10px 'JetBrains Mono', monospace";
-    ctx.fillText("СФЕРА ДАЙСОНА", w / 2, y - 10);
+    ctx.fillText(tr("СФЕРА ДАЙСОНА", "DYSON SPHERE"), w / 2, y - 10);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(x, y, barW, 5);
     ctx.fillStyle = "#ffd27a";
@@ -96,8 +97,8 @@ export class Expand implements Mini {
     ctx.font = "12px 'JetBrains Mono', monospace";
     ctx.fillText(
       this.rejectT > 0
-        ? "не хватает вычислений — поток копится сам"
-        : `узел: −${Expand.COST} ВЫЧ — сомкни сферу вокруг звезды`,
+        ? tr("не хватает вычислений — поток копится сам", "not enough compute — the flow accrues on its own")
+        : tr(`узел: −${Expand.COST} ВЫЧ — сомкни сферу вокруг звезды`, `node: −${Expand.COST} COMPUTE — close the sphere around the star`),
       w / 2,
       y + 28,
     );

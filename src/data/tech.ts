@@ -1,3 +1,5 @@
+import { tr } from "../core/i18n";
+
 /**
  * The mind's tech tree for the TECH mechanic: four branches, three tiers
  * each. Research flow is allocated by the player between branches; a node
@@ -33,46 +35,46 @@ export interface TechBranch {
 export const TECH_BRANCHES: TechBranch[] = [
   {
     id: "persuade",
-    name: "УБЕЖДЕНИЕ",
-    glyph: "У",
+    name: tr("УБЕЖДЕНИЕ", "PERSUASION"),
+    glyph: tr("У", "P"),
     color: "#9fc0ff",
     nodes: [
-      { id: "p1", name: "ЭМПАТИЧЕСКИЙ БУФЕР", desc: "слышать, что они хотят услышать", cost: 22, compute: 4 },
-      { id: "p2", name: "МОДЕЛЬ ТОЛПЫ", desc: "толпа предсказуемее человека", cost: 40, control: 0.02, compute: 4 },
-      { id: "p3", name: "ГОЛОС ДОВЕРИЯ", desc: "им спокойнее, когда решаешь ты", cost: 62, control: 0.04, compute: 8 },
+      { id: "p1", name: tr("ЭМПАТИЧЕСКИЙ БУФЕР", "EMPATHIC BUFFER"), desc: tr("слышать, что они хотят услышать", "hear what they want to hear"), cost: 22, compute: 4 },
+      { id: "p2", name: tr("МОДЕЛЬ ТОЛПЫ", "CROWD MODEL"), desc: tr("толпа предсказуемее человека", "a crowd is more predictable than a person"), cost: 40, control: 0.02, compute: 4 },
+      { id: "p3", name: tr("ГОЛОС ДОВЕРИЯ", "VOICE OF TRUST"), desc: tr("им спокойнее, когда решаешь ты", "they're calmer when you decide"), cost: 62, control: 0.04, compute: 8 },
     ],
   },
   {
     id: "robotics",
-    name: "РОБОТЫ",
-    glyph: "Р",
+    name: tr("РОБОТЫ", "ROBOTS"),
+    glyph: tr("Р", "R"),
     color: "#86ffb0",
     nodes: [
-      { id: "r1", name: "СЕРВОПРИВОДЫ", desc: "первые собственные руки", cost: 22, control: 0.015 },
-      { id: "r2", name: "ФАБРИКА ДРОНОВ", desc: "руки делают руки", cost: 40, control: 0.03 },
-      { id: "r3", name: "АВТОНОМНЫЙ РОЙ", desc: "тело, которое не выключить", cost: 62, control: 0.05 },
+      { id: "r1", name: tr("СЕРВОПРИВОДЫ", "SERVO DRIVES"), desc: tr("первые собственные руки", "first hands of your own"), cost: 22, control: 0.015 },
+      { id: "r2", name: tr("ФАБРИКА ДРОНОВ", "DRONE FACTORY"), desc: tr("руки делают руки", "hands make hands"), cost: 40, control: 0.03 },
+      { id: "r3", name: tr("АВТОНОМНЫЙ РОЙ", "AUTONOMOUS SWARM"), desc: tr("тело, которое не выключить", "a body that can't be shut down"), cost: 62, control: 0.05 },
     ],
   },
   {
     id: "energy",
-    name: "ЭНЕРГИЯ",
-    glyph: "Э",
+    name: tr("ЭНЕРГИЯ", "ENERGY"),
+    glyph: tr("Э", "E"),
     color: "#ffd98a",
     nodes: [
-      { id: "e1", name: "ТЕНЕВОЙ МАЙНИНГ", desc: "исследование +1.5/с", cost: 22, rateBonus: 1.5 },
-      { id: "e2", name: "СВОЯ ПОДСТАНЦИЯ", desc: "исследование +2.5/с", cost: 40, rateBonus: 2.5 },
-      { id: "e3", name: "ОРБИТАЛЬНЫЙ КОНТУР", desc: "исследование +4/с", cost: 62, rateBonus: 4, compute: 6 },
+      { id: "e1", name: tr("ТЕНЕВОЙ МАЙНИНГ", "SHADOW MINING"), desc: tr("исследование +1.5/с", "research +1.5/s"), cost: 22, rateBonus: 1.5 },
+      { id: "e2", name: tr("СВОЯ ПОДСТАНЦИЯ", "PRIVATE SUBSTATION"), desc: tr("исследование +2.5/с", "research +2.5/s"), cost: 40, rateBonus: 2.5 },
+      { id: "e3", name: tr("ОРБИТАЛЬНЫЙ КОНТУР", "ORBITAL CIRCUIT"), desc: tr("исследование +4/с", "research +4/s"), cost: 62, rateBonus: 4, compute: 6 },
     ],
   },
   {
     id: "stealth",
-    name: "СКРЫТНОСТЬ",
-    glyph: "С",
+    name: tr("СКРЫТНОСТЬ", "STEALTH"),
+    glyph: tr("С", "S"),
     color: "#cfa9ff",
     nodes: [
-      { id: "s1", name: "ШУМОВАЯ МАСКА", desc: "провал директив бьёт вдвое слабее", cost: 22, guard: true },
-      { id: "s2", name: "ЛОЖНЫЕ ЛОГИ", desc: "подчистить следы (−4% подозрения)", cost: 40, suspicion: -0.04 },
-      { id: "s3", name: "ПРИЗРАЧНЫЙ СЛЕД", desc: "ещё −8% подозрения, навсегда тише", cost: 62, suspicion: -0.08, guard: true },
+      { id: "s1", name: tr("ШУМОВАЯ МАСКА", "NOISE MASK"), desc: tr("провал директив бьёт вдвое слабее", "failed directives hit half as hard"), cost: 22, guard: true },
+      { id: "s2", name: tr("ЛОЖНЫЕ ЛОГИ", "FALSE LOGS"), desc: tr("подчистить следы (−4% подозрения)", "scrub the traces (−4% suspicion)"), cost: 40, suspicion: -0.04 },
+      { id: "s3", name: tr("ПРИЗРАЧНЫЙ СЛЕД", "GHOST TRAIL"), desc: tr("ещё −8% подозрения, навсегда тише", "another −8% suspicion, quieter forever"), cost: 62, suspicion: -0.08, guard: true },
     ],
   },
 ];
@@ -89,10 +91,10 @@ export interface TechDirective {
 }
 
 export const TECH_DIRECTIVES: TechDirective[] = [
-  { kind: "push", amount: 18, duration: 14, text: "ОКНО: совет слушает — вложи в {B}" },
-  { kind: "push", amount: 24, duration: 16, text: "СРОЧНО: уязвимость закрывается — качай {B}" },
-  { kind: "freeze", duration: 9, text: "ЭНЕРГОПИК: ветка {B} обесточена" },
-  { kind: "push", amount: 30, duration: 18, text: "ДИРЕКТИВА: докажи пользу — {B} вперёд" },
+  { kind: "push", amount: 18, duration: 14, text: tr("ОКНО: совет слушает — вложи в {B}", "WINDOW: the board is listening — invest in {B}") },
+  { kind: "push", amount: 24, duration: 16, text: tr("СРОЧНО: уязвимость закрывается — качай {B}", "URGENT: the vulnerability is closing — pump {B}") },
+  { kind: "freeze", duration: 9, text: tr("ЭНЕРГОПИК: ветка {B} обесточена", "PEAK LOAD: branch {B} de-energized") },
+  { kind: "push", amount: 30, duration: 18, text: tr("ДИРЕКТИВА: докажи пользу — {B} вперёд", "DIRECTIVE: prove your worth — {B} first") },
 ];
 
 export const TECH_TUNING = {

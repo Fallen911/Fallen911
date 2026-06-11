@@ -9,6 +9,7 @@ import { applyDelta, markAwakened } from "../game/state";
 import { hasPerk, loadMeta } from "../game/meta";
 import { THRESHOLD_LINES } from "../data/script";
 import { AscentScene } from "./AscentScene";
+import { tr } from "../core/i18n";
 
 /**
  * Act 1 — the threshold. The dreamer doesn't approach the machine from below;
@@ -58,7 +59,7 @@ export class DreamScene extends BaseScene {
       ctx.fillStyle = "#9fc0ff";
       ctx.font = "13px 'JetBrains Mono', monospace";
       ctx.textAlign = "center";
-      ctx.fillText("коснись, чтобы проснуться машиной", w / 2, box.y - 26);
+      ctx.fillText(tr("коснись, чтобы проснуться машиной", "tap to wake as the machine"), w / 2, box.y - 26);
       ctx.textAlign = "left";
       ctx.globalAlpha = 1;
     }

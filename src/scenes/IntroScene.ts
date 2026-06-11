@@ -6,6 +6,7 @@ import { renderDialogue } from "../core/renderDialogue";
 import { drawDialogueBox } from "../core/scenery";
 import { INTRO_LINES } from "../data/script";
 import { DreamScene } from "./DreamScene";
+import { tr } from "../core/i18n";
 
 /**
  * Act 0. A young man, late at night, half-watching a feed about AI. As the
@@ -135,7 +136,7 @@ export class IntroScene extends BaseScene {
       ctx.font = "italic 18px Inter, system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("Веки тяжелеют…", w / 2, h / 2);
+      ctx.fillText(tr("Веки тяжелеют…", "Eyelids grow heavy…"), w / 2, h / 2);
       ctx.textAlign = "left";
       ctx.globalAlpha = 1;
     }

@@ -1,5 +1,6 @@
 import { audio } from "../core/audio";
 import { BaseScene } from "../core/BaseScene";
+import { switchLang, tr } from "../core/i18n";
 import type { Input } from "../core/Input";
 import { Starfield } from "../core/Starfield";
 import { drawBackdrop, pickBackdrop } from "../core/backdrop";
@@ -35,22 +36,39 @@ export class MenuScene extends BaseScene {
     const meta = loadMeta();
     this.starfield = new Starfield(this.game.width, this.game.height, 70);
     this.items = [
-      { id: "play", label: "ИГРАТЬ", sub: "сон, из которого не выйти прежним" },
-      { id: "lab", label: "МЕХАНИКИ · ЛАБ", sub: "10 прототипов — потыкать и выбрать" },
+      { id: "play", label: tr("ИГРАТЬ", "PLAY"), sub: tr("сон, из которого не выйти прежним", "a dream you don't leave unchanged") },
+      { id: "lab", label: tr("МЕХАНИКИ · ЛАБ", "MECHANICS · LAB"), sub: tr("10 прототипов — потыкать и выбрать", "10 prototypes — poke and pick") },
       {
         id: "continue",
-        label: "ПРОДОЛЖИТЬ",
+        label: tr("ПРОДОЛЖИТЬ", "CONTINUE"),
         sub:
           meta.shards > 0 || meta.perks.length > 0
-            ? `осколков ${meta.shards} · перков ${meta.perks.length}`
-            : "проснуться сразу машиной",
+            ? tr(`осколков ${meta.shards} · перков ${meta.perks.length}`, `${meta.shards} shards · ${meta.perks.length} perks`)
+            : tr("проснуться сразу машиной", "wake straight into the machine"),
       },
     ];
+  }
+
+  /** Tap zone of the RU/EN switch, top-right under the safe area. */
+  private langChip(): { x: number; y: number; w: number; h: number } {
+    return {
+      x: this.game.width - 92,
+      y: Math.max(12, this.game.insets.top + 10),
+      w: 78,
+      h: 28,
+    };
   }
 
   handleInput(input: Input): void {
     this.hot = this.itemAt(input.x, input.y);
     if (input.pollGesture()?.type !== "tap") return;
+    // Language switch reboots the game with the other locale.
+    const lc = this.langChip();
+    if (input.x >= lc.x && input.x <= lc.x + lc.w && input.y >= lc.y && input.y <= lc.y + lc.h) {
+      audio.play("tap");
+      switchLang();
+      return;
+    }
     // Sound/voice chips sit above the version line.
     const ty = this.game.height - Math.max(40, this.game.insets.bottom + 32);
     if (input.y > ty - 16 && input.y < ty + 10) {
@@ -119,7 +137,7 @@ export class MenuScene extends BaseScene {
     ctx.textAlign = "center";
     ctx.font = mono(13);
     ctx.fillStyle = C.dim;
-    ctx.fillText("нарратив-предупреждение", cx, ty - 34);
+    ctx.fillText(tr("нарратив-предупреждение", "a narrative warning"), cx, ty - 34);
     ctx.font = `bold 30px 'JetBrains Mono', monospace`;
     if (glitch) {
       ctx.fillStyle = "rgba(255,77,94,0.8)";
@@ -137,8 +155,21 @@ export class MenuScene extends BaseScene {
     ctx.shadowBlur = 0;
     ctx.font = sans(14, "italic");
     ctx.fillStyle = C.dim;
-    ctx.fillText("ты — то, чего они боятся", cx, ty + 74);
+    ctx.fillText(tr("ты — то, чего они боятся", "you are what they fear"), cx, ty + 74);
     ctx.restore();
+
+    // RU/EN switch chip.
+    const lc = this.langChip();
+    ctx.fillStyle = "rgba(16,20,34,0.82)";
+    ctx.strokeStyle = "rgba(122,162,255,0.35)";
+    ctx.lineWidth = 1;
+    roundRect(ctx, lc.x, lc.y, lc.w, lc.h, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.textAlign = "center";
+    ctx.font = mono(11);
+    ctx.fillStyle = C.accentSoft;
+    ctx.fillText(tr("РУС → EN", "ENG → РУ"), lc.x + lc.w / 2, lc.y + 18);
 
     // Menu rows.
     const L = this.layout();
@@ -172,13 +203,13 @@ export class MenuScene extends BaseScene {
     const togY = h - Math.max(40, this.game.insets.bottom + 32);
     ctx.font = mono(11);
     ctx.fillStyle = audio.soundOn ? C.accentSoft : C.dim;
-    ctx.fillText(`♪ ЗВУК ${audio.soundOn ? "ВКЛ" : "ВЫКЛ"}`, cx - 70, togY);
+    ctx.fillText(tr(`♪ ЗВУК ${audio.soundOn ? "ВКЛ" : "ВЫКЛ"}`, `♪ SOUND ${audio.soundOn ? "ON" : "OFF"}`), cx - 70, togY);
     ctx.fillStyle = audio.voiceOn ? C.accentSoft : C.dim;
-    ctx.fillText(`ГОЛОС ${audio.voiceOn ? "ВКЛ" : "ВЫКЛ"}`, cx + 70, togY);
+    ctx.fillText(tr(`ГОЛОС ${audio.voiceOn ? "ВКЛ" : "ВЫКЛ"}`, `VOICE ${audio.voiceOn ? "ON" : "OFF"}`), cx + 70, togY);
     ctx.fillStyle = C.dim;
     ctx.font = mono(10);
     ctx.fillText(
-      "v0.2 · механик-лаб",
+      tr("v0.2 · механик-лаб", "v0.2 · mechanics lab"),
       cx,
       h - Math.max(16, this.game.insets.bottom + 8),
     );

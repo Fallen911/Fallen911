@@ -1,6 +1,7 @@
 import type { Input } from "../../core/Input";
 import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
+import { tr } from "../../core/i18n";
 
 // Target anchors as fractions of the viewport, so the screenshot harness can
 // aim taps at them deterministically.
@@ -116,7 +117,7 @@ export class Embody implements Mini {
     ctx.textAlign = "center";
     ctx.fillStyle = "#6b7686";
     ctx.font = "10px 'JetBrains Mono', monospace";
-    ctx.fillText("ТЕЛО", w / 2, y - 10);
+    ctx.fillText(tr("ТЕЛО", "BODY"), w / 2, y - 10);
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(x, y, barW, 5);
     ctx.fillStyle = "#86ffb0";
@@ -126,7 +127,7 @@ export class Embody implements Mini {
     ctx.globalAlpha = a;
     ctx.fillStyle = "#9fc0ff";
     ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillText("дотянись до мира — собери тело", w / 2, y + 28);
+    ctx.fillText(tr("дотянись до мира — собери тело", "reach into the world — assemble a body"), w / 2, y + 28);
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }

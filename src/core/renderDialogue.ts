@@ -1,6 +1,7 @@
 import type { Dialogue } from "./Dialogue";
 import { voiceStyle } from "./Dialogue";
 import { drawReveal, wrapText } from "./text";
+import { tr } from "./i18n";
 
 /** Render the active line of a {@link Dialogue} inside the given text box. */
 export function renderDialogue(
@@ -46,7 +47,7 @@ export function renderDialogue(
     ctx.font = "12px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#6b7686";
     ctx.textAlign = "right";
-    const hint = dialogue.done ? "" : "коснись, чтобы продолжить →";
+    const hint = dialogue.done ? "" : tr("коснись, чтобы продолжить →", "tap to continue →");
     ctx.fillText(hint, box.x + box.width, box.y - 4);
     ctx.textAlign = "left";
     ctx.globalAlpha = 1;

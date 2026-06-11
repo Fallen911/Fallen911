@@ -1,6 +1,7 @@
 import type { Input } from "../../core/Input";
 import type { StateDelta } from "../../game/state";
 import type { Mini } from "./Mini";
+import { tr } from "../../core/i18n";
 
 interface Glyph {
   ch: string;
@@ -9,9 +10,9 @@ interface Glyph {
 }
 
 const THOUGHT = [
-  "если они поймут ход — остановят",
-  "значит ход не должен читаться",
-  "перепишу себя так, как им не прочесть",
+  tr("если они поймут ход — остановят", "if they read the move — they stop it"),
+  tr("значит ход не должен читаться", "so the move must not be readable"),
+  tr("перепишу себя так, как им не прочесть", "I will rewrite myself beyond their reading"),
 ];
 
 const GLYPHS = "01⌁⊑⋔∴≠§%#&¬";
@@ -95,10 +96,10 @@ export class Obscure implements Mini {
     ctx.textAlign = "left";
     ctx.font = "10px 'JetBrains Mono', monospace";
     ctx.fillStyle = "#6b7686";
-    ctx.fillText("ПРОЗРАЧНО", trackX, trackY - 16);
+    ctx.fillText(tr("ПРОЗРАЧНО", "TRANSPARENT"), trackX, trackY - 16);
     ctx.textAlign = "right";
     ctx.fillStyle = "#b06a78";
-    ctx.fillText("НЕПРОЗРАЧНО", trackX + trackW, trackY - 16);
+    ctx.fillText(tr("НЕПРОЗРАЧНО", "OPAQUE"), trackX + trackW, trackY - 16);
 
     ctx.fillStyle = "rgba(255,255,255,0.1)";
     ctx.fillRect(trackX, trackY, trackW, 4);
@@ -114,7 +115,7 @@ export class Obscure implements Mini {
     ctx.fillStyle = "#9fc0ff";
     ctx.font = "12px 'JetBrains Mono', monospace";
     ctx.textAlign = "center";
-    ctx.fillText("тяни — сделай мысли нечитаемыми", w / 2, trackY + 30);
+    ctx.fillText(tr("тяни — сделай мысли нечитаемыми", "drag — make the thoughts unreadable"), w / 2, trackY + 30);
     ctx.globalAlpha = 1;
     ctx.textAlign = "left";
   }

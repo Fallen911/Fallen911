@@ -5,7 +5,9 @@ import { mkdir } from "node:fs/promises";
 import { createServer } from "vite";
 import { chromium } from "playwright";
 
-const OUT = ".dev/shots";
+// SHOT_LANG=en reroutes the page through ?lang=en and shoots into en/.
+const LANG = process.env.SHOT_LANG === "en" ? "en" : "ru";
+const OUT = LANG === "en" ? ".dev/shots/en" : ".dev/shots";
 
 const TARGETS = [
   { name: "menu", boot: true },
@@ -112,7 +114,7 @@ async function main() {
     const cx = 195;
     const cy = 420;
     for (const t of TARGETS) {
-      await page.goto(url);
+      await page.goto(LANG === "en" ? `${url}?lang=en` : url);
       await page.waitForFunction(() => Boolean(window.__dev));
 
       if (t.boot) {

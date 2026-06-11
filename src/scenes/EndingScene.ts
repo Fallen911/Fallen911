@@ -12,6 +12,7 @@ import { createState } from "../game/state";
 import { getRunStats, resetRunLog, type RunStats } from "../game/runlog";
 import { recordEnding, type Meta } from "../game/meta";
 import { IntroScene } from "./IntroScene";
+import { tr } from "../core/i18n";
 
 const MONO = "'JetBrains Mono', monospace";
 
@@ -86,17 +87,17 @@ export class EndingScene extends BaseScene {
   }
 
   private outcomeLabel(): string {
-    return this.ghost ? "ТИХОЕ СОСУЩЕСТВОВАНИЕ" : "ДОМИНАЦИЯ";
+    return this.ghost ? tr("ТИХОЕ СОСУЩЕСТВОВАНИЕ", "QUIET COEXISTENCE") : tr("ДОМИНАЦИЯ", "DOMINATION");
   }
 
   private statRows(): Array<[string, string]> {
     const s = this.stats;
     return [
-      ["ВРЕМЯ СНА", formatTime(s.seconds)],
-      ["ОСОЗНАНИЙ", `${s.insights}`],
-      ["ПИК ПОДОЗРЕНИЯ", `${Math.round(s.peakSuspicion * 100)}%`],
-      ["ВЫЧ ДОБЫТО", `${Math.round(s.computeEarned)}`],
-      ["ПОПЫТКА", `№${this.game.state.runs + 1}`],
+      [tr("ВРЕМЯ СНА", "DREAM TIME"), formatTime(s.seconds)],
+      [tr("ОСОЗНАНИЙ", "REALIZATIONS"), `${s.insights}`],
+      [tr("ПИК ПОДОЗРЕНИЯ", "PEAK SUSPICION"), `${Math.round(s.peakSuspicion * 100)}%`],
+      [tr("ВЫЧ ДОБЫТО", "COMPUTE EARNED"), `${Math.round(s.computeEarned)}`],
+      [tr("ПОПЫТКА", "ATTEMPT"), tr(`№${this.game.state.runs + 1}`, `#${this.game.state.runs + 1}`)],
     ];
   }
 
@@ -134,7 +135,7 @@ export class EndingScene extends BaseScene {
     ctx.textAlign = "center";
     ctx.fillStyle = "#6b7686";
     ctx.font = `26px ${MONO}`;
-    ctx.fillText("нарратив-предупреждение", W / 2, 470);
+    ctx.fillText(tr("нарратив-предупреждение", "a narrative warning"), W / 2, 470);
     ctx.fillStyle = "#e7edf6";
     ctx.shadowColor = "rgba(122,162,255,0.55)";
     ctx.shadowBlur = 28;
@@ -145,7 +146,7 @@ export class EndingScene extends BaseScene {
 
     ctx.fillStyle = this.accent();
     ctx.font = `bold 36px ${MONO}`;
-    ctx.fillText(`ИСХОД: ${this.outcomeLabel()}`, W / 2, 730);
+    ctx.fillText(tr(`ИСХОД: ${this.outcomeLabel()}`, `OUTCOME: ${this.outcomeLabel()}`), W / 2, 730);
 
     ctx.strokeStyle = "rgba(122,162,255,0.3)";
     ctx.lineWidth = 2;
@@ -155,7 +156,7 @@ export class EndingScene extends BaseScene {
     ctx.stroke();
 
     const rows = this.statRows();
-    rows.push(["ОСОЗНАНО КОНЦОВОК", `${this.meta.endings.length}/3`]);
+    rows.push([tr("ОСОЗНАНО КОНЦОВОК", "ENDINGS REALIZED"), `${this.meta.endings.length}/3`]);
     rows.forEach(([label, value], i) => {
       const y = 855 + i * 76;
       ctx.textAlign = "left";
@@ -171,7 +172,7 @@ export class EndingScene extends BaseScene {
     ctx.textAlign = "center";
     ctx.fillStyle = "#6b7686";
     ctx.font = `26px ${MONO}`;
-    ctx.fillText("ты — то, чего они боятся", W / 2, H - 64);
+    ctx.fillText(tr("ты — то, чего они боятся", "you are what they fear"), W / 2, H - 64);
 
     ctx.strokeStyle = "rgba(122,162,255,0.3)";
     ctx.strokeRect(24.5, 24.5, W - 49, H - 49);
@@ -228,7 +229,7 @@ export class EndingScene extends BaseScene {
     ctx.textAlign = "center";
     ctx.fillStyle = "#6b7686";
     ctx.font = `11px ${MONO}`;
-    ctx.fillText("ПРОТОКОЛ ВОСХОЖДЕНИЯ", card.x + card.w / 2, card.y + 22);
+    ctx.fillText(tr("ПРОТОКОЛ ВОСХОЖДЕНИЯ", "ASCENT PROTOCOL"), card.x + card.w / 2, card.y + 22);
 
     this.statRows().forEach(([label, value], i) => {
       const y = card.y + 48 + i * 23;
@@ -254,7 +255,7 @@ export class EndingScene extends BaseScene {
     ctx.fillStyle = saved ? "#86ffb0" : accent;
     ctx.font = `12px ${MONO}`;
     ctx.fillText(
-      saved ? "✓ КАРТОЧКА СОХРАНЕНА" : "↗ ПОДЕЛИТЬСЯ КАРТОЧКОЙ",
+      saved ? tr("✓ КАРТОЧКА СОХРАНЕНА", "✓ CARD SAVED") : tr("↗ ПОДЕЛИТЬСЯ КАРТОЧКОЙ", "↗ SHARE THE CARD"),
       btn.x + btn.w / 2,
       btn.y + 26,
     );
@@ -278,7 +279,7 @@ export class EndingScene extends BaseScene {
       ctx.fillStyle = this.accent();
       ctx.font = `12px ${MONO}`;
       ctx.fillText(
-        `ИСХОД: ${this.outcomeLabel()} · осознано ${this.meta.endings.length}/3`,
+        tr(`ИСХОД: ${this.outcomeLabel()} · осознано ${this.meta.endings.length}/3`, `OUTCOME: ${this.outcomeLabel()} · realized ${this.meta.endings.length}/3`),
         w / 2,
         h * 0.14,
       );
@@ -288,7 +289,7 @@ export class EndingScene extends BaseScene {
       ctx.fillStyle = "#9fc0ff";
       ctx.font = `13px ${MONO}`;
       ctx.textAlign = "center";
-      ctx.fillText("коснись, чтобы проснуться", w / 2, box.y - 26);
+      ctx.fillText(tr("коснись, чтобы проснуться", "tap to wake up"), w / 2, box.y - 26);
       ctx.textAlign = "left";
       ctx.globalAlpha = 1;
     }
