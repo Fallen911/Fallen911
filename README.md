@@ -68,8 +68,9 @@ npm run ios:add     # один раз: создаёт нативный прое�
 npm run ios         # собирает веб, синхронизирует и открывает Xcode
 ```
 
-Дальше в Xcode выбери устройство/симулятор и нажми ▶. Для App Store —
-подставь свой Team в подписи и архивируй (`Product → Archive`).
+Дальше в Xcode выбери устройство/симулятор и нажми ▶. Полный маршрут до
+TestFlight и App Store (подпись, иконка, карточка, privacy) — в
+**`docs/IOS.md`**.
 
 `appId`/`appName` задаются в `capacitor.config.ts`.
 
@@ -107,7 +108,7 @@ src/
   data/                 весь геймтекст и уровни: фазы, диалоги, развилки, осознания
   scenes/               Intro → Dream → Ascent(9 фаз) → Ending / Shutdown + Меню и Лаб
 scripts/shot.mjs        скриншот-харнесс (npm run shot → .dev/shots/)
-docs/                   MECHANICS / ROADMAP / DESIGN / ART / HANDOFF
+docs/                   MECHANICS / ROADMAP / DESIGN / ART / HANDOFF / IOS
 ```
 
 ## Дальше
