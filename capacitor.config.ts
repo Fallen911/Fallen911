@@ -6,7 +6,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * Assets are bundled, so the game runs fully offline on device.
  */
 const config: CapacitorConfig = {
-  appId: "com.fallen911.wearealreadydead",
+  appId: "com.semensurnov.waad",
   appName: "We Are Already Dead",
   webDir: "dist",
   backgroundColor: "#05060a",

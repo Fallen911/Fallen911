@@ -26,14 +26,14 @@ npm run ios
 ## 2. Подпись (Signing & Capabilities)
 
 1. В левой панели Xcode кликни верхний синий значок **App** → в центре **TARGETS → App** (не PROJECT).
-2. Вкладка **Signing & Capabilities** → галка **Automatically manage signing** → **Team** = твоя команда.
-3. **Bundle Identifier** уже задан: `com.fallen911.wearealreadydead` (из `capacitor.config.ts`). Если Apple скажет «занят» — добавь суффикс, но тогда тот же ID используй и в App Store Connect.
+2. Вкладка **Signing & Capabilities** → галка **Automatically manage signing** → **Team** = твоя команда (в проекте уже прописана `2J3P3H2XJV`).
+3. **Bundle Identifier** уже задан: `com.semensurnov.waad` (в `capacitor.config.ts` и в `project.pbxproj`). Если Apple скажет «занят» — добавь суффикс, но тогда тот же ID используй и в App Store Connect.
 
 Готово, когда под Team нет красного и написано «Xcode Managed Profile».
 
 ## 3. Иконка
 
-**App → App → Assets → AppIcon** → перетащи `public/icons/icon-1024.png` из Finder в слот 1024×1024. Если слотов много — в правой панели переключи на **Single Size**, остальные размеры Xcode нарежет сам.
+Уже стоит: **App → App → Assets → AppIcon** — `icon-1024.png` (копия `public/icons/icon-1024.png`) в единственном слоте 1024×1024, остальные размеры Xcode нарежет сам. Чтобы сменить — перетащи новый PNG 1024×1024 без альфы в этот слот.
 
 ## 4. Прогон на своём iPhone
 
@@ -46,7 +46,7 @@ npm run ios
 
 ## 5. Один ключ в Info.plist (избавляет от вопроса про шифрование)
 
-В Xcode открой **App → App → Info.plist** → «+» → ключ
+Уже добавлен в **App → App → Info.plist**: ключ
 `ITSAppUsesNonExemptEncryption` = **NO**.
 Игра своей криптографии не использует; с этим ключом App Store Connect перестаёт спрашивать про экспорт шифрования на каждом билде.
 
