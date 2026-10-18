@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - claude/new-repo-project-shvn1o
+      - main
     paths:
       - "ios/**"
       - "capacitor.config.ts"
@@ -16,8 +16,8 @@ jobs:
     # macos-15 ships Xcode 16 by default; Capacitor 8 requires Xcode 16+.
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22 # Capacitor CLI 8 requires Node >= 22
           cache: npm
