@@ -59,14 +59,29 @@ insetProbe.style.cssText =
   "padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);";
 document.body.appendChild(insetProbe);
 
+/** Running inside the Capacitor shell (WKWebView) rather than a browser. */
+function isNativeShell(): boolean {
+  const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+  return Boolean(cap?.isNativePlatform?.());
+}
+
 function readInsets(): void {
   const s = getComputedStyle(insetProbe);
-  game.insets = {
-    top: parseFloat(s.paddingTop) || 0,
-    right: parseFloat(s.paddingRight) || 0,
-    bottom: parseFloat(s.paddingBottom) || 0,
-    left: parseFloat(s.paddingLeft) || 0,
-  };
+  let top = parseFloat(s.paddingTop) || 0;
+  let bottom = parseFloat(s.paddingBottom) || 0;
+  const right = parseFloat(s.paddingRight) || 0;
+  const left = parseFloat(s.paddingLeft) || 0;
+  // WKWebView quirk: env(safe-area-inset-*) can read 0 at boot (and on some
+  // builds never settles). In the native shell a zero top inset in portrait
+  // is impossible — every iPhone has at least a status bar — so floor the
+  // values to the island/notch geometry instead of drawing under the clock.
+  if (isNativeShell() && window.innerHeight >= window.innerWidth) {
+    const tall =
+      Math.max(screen.height, screen.width) / Math.min(screen.height, screen.width) > 1.9;
+    if (top === 0) top = tall ? 59 : 20;
+    if (bottom === 0 && tall) bottom = 34;
+  }
+  game.insets = { top, right, bottom, left };
 }
 
 /** Match the backing store to the display size and devicePixelRatio. */
@@ -84,7 +99,19 @@ function resize(): void {
   readInsets();
 }
 window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", () => setTimeout(resize, 60));
+window.visualViewport?.addEventListener("resize", resize);
 resize();
+
+// The safe-area env() values often land a few frames after boot in
+// WKWebView; re-read them briefly so the HUD settles below the island.
+let insetTries = 0;
+const insetPoll = window.setInterval(() => {
+  readInsets();
+  if ((parseFloat(getComputedStyle(insetProbe).paddingTop) || 0) > 0 || ++insetTries > 12) {
+    window.clearInterval(insetPoll);
+  }
+}, 250);
 
 // Preload generated backdrops (both orientations when present); scenes fall
 // back to code-art until ready.

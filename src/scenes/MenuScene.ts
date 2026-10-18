@@ -126,9 +126,9 @@ export class MenuScene extends BaseScene {
       this.perkOpen = true;
       return;
     }
-    // Footer toggles: sound | voice | lang, by thirds.
+    // Footer toggles: sound | voice | lang, by thirds (44pt-tall finger zone).
     const fy = this.footerY();
-    if (input.y > fy - 16 && input.y < fy + 14) {
+    if (input.y > fy - 26 && input.y < fy + 18) {
       const third = this.game.width / 3;
       if (input.x < third) {
         audio.toggleSound();
