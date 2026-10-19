@@ -14,3 +14,16 @@ ios/App/Pods
 ios/App/output
 ios/DerivedData
 *.xcuserstate
+
+# Env files (only the example is committed)
+.env*
+!.env.example
+
+# Other build / tool outputs
+build
+out
+coverage
+*.tsbuildinfo
+.vercel
+xcuserdata/
+DerivedData/
