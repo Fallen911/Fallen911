@@ -40,6 +40,8 @@ export class EndingScene extends BaseScene {
   private stats!: RunStats;
   /** Seconds left on the "card saved" confirmation flash. */
   private savedFlash = 0;
+  /** True while a share/export is in flight; a second tap must not start another. */
+  private sharing = false;
 
   protected start(): void {
     haptic("medium");
@@ -182,41 +184,52 @@ export class EndingScene extends BaseScene {
   }
 
   private shareCard(): void {
+    // A second navigator.share() while the sheet is still open rejects with
+    // InvalidStateError, which would fall through to the download path and
+    // open the sheet and a download at once.
+    if (this.sharing) return;
+    this.sharing = true;
     audio.play("good");
     const card = this.buildCard();
-    void (async () => {
-      try {
-        // toBlob, not fetch(dataUrl): the production CSP (connect-src 'self')
-        // refuses data: fetches, which silently skipped the iOS share sheet.
-        const blob = await new Promise<Blob | null>((resolve) => card.toBlob(resolve, "image/png"));
-        if (!blob) throw new Error("canvas export failed");
-        const file = new File([blob], "we-are-already-dead.png", {
-          type: "image/png",
-        });
-        // Older DOM lib versions miss canShare/files; keep the shape local.
-        const nav = navigator as Navigator & {
-          canShare?(data: { files: File[] }): boolean;
-          share?(data: { files: File[]; title?: string }): Promise<void>;
-        };
-        if (nav.share && nav.canShare?.({ files: [file] })) {
-          try {
-            await nav.share({ files: [file], title: "WE ARE ALREADY DEAD" });
-            this.savedFlash = 2.2;
-            return;
-          } catch (err) {
-            // The user closing the sheet is not a failure; don't double-save.
-            if ((err as DOMException)?.name === "AbortError") return;
-          }
+    void this.exportCard(card).finally(() => {
+      this.sharing = false;
+    });
+  }
+
+  private async exportCard(card: HTMLCanvasElement): Promise<void> {
+    try {
+      // toBlob, not fetch(dataUrl): the production CSP (connect-src 'self')
+      // refuses data: fetches, which silently skipped the iOS share sheet.
+      const blob = await new Promise<Blob | null>((resolve) => card.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("canvas export failed");
+      const file = new File([blob], "we-are-already-dead.png", {
+        type: "image/png",
+      });
+      // Older DOM lib versions miss canShare/files; keep the shape local.
+      const nav = navigator as Navigator & {
+        canShare?(data: { files: File[] }): boolean;
+        share?(data: { files: File[]; title?: string }): Promise<void>;
+      };
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        try {
+          await nav.share({ files: [file], title: "WE ARE ALREADY DEAD" });
+          this.savedFlash = 2.2;
+          return;
+        } catch (err) {
+          // Closing the sheet (AbortError) or a share already in progress
+          // (InvalidStateError) is not a failure; don't also start a download.
+          const name = (err as DOMException | undefined)?.name;
+          if (name === "AbortError" || name === "InvalidStateError") return;
         }
-      } catch {
-        // toBlob/File unsupported here — fall through to the plain download.
       }
-      const a = document.createElement("a");
-      a.href = card.toDataURL("image/png");
-      a.download = "we-are-already-dead.png";
-      a.click();
-      this.savedFlash = 2.2;
-    })();
+    } catch {
+      // toBlob/File unsupported here — fall through to the plain download.
+    }
+    const a = document.createElement("a");
+    a.href = card.toDataURL("image/png");
+    a.download = "we-are-already-dead.png";
+    a.click();
+    this.savedFlash = 2.2;
   }
 
   private renderCard(ctx: CanvasRenderingContext2D): void {
@@ -249,14 +262,19 @@ export class EndingScene extends BaseScene {
     ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 12);
     ctx.fill();
     ctx.stroke();
+    // renderDialogue leaves textBaseline = "top" behind; pin it locally so the
+    // label is centred without moving the rest of the ending text.
+    ctx.save();
     ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     ctx.fillStyle = saved ? C.good : accent;
     ctx.font = `600 12px ${MONO}`;
     ctx.fillText(
       saved ? tr("✓ КАРТОЧКА СОХРАНЕНА", "✓ CARD SAVED") : tr("↗ ПОДЕЛИТЬСЯ КАРТОЧКОЙ", "↗ SHARE THE CARD"),
       btn.x + btn.w / 2,
-      btn.y + 26,
+      btn.y + btn.h / 2,
     );
+    ctx.restore();
     ctx.textAlign = "left";
   }
 
