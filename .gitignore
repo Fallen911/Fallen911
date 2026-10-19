@@ -19,11 +19,10 @@ ios/DerivedData
 .env*
 !.env.example
 
-# Other build / tool outputs
-build
-out
-coverage
+# Other build / tool outputs (anchored to the repo root on purpose)
+/build
+/out
+/coverage
 *.tsbuildinfo
-.vercel
 xcuserdata/
 DerivedData/

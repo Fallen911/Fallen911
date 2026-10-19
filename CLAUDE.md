@@ -46,7 +46,11 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator \
 
 - Push в `main` → `deploy.yml` собирает `dist/` и публикует GitHub Pages
   (`https://fallen911.github.io/Fallen911/`). Поэтому работаем в ветках и через
-  PR; прямой push в `main` = выкладка в прод.
+  PR; прямой push в `main` = выкладка в прод. Мержит только владелец. Если в
+  старых документах (`docs/HANDOFF.md` и т.п.) встретится «пушь в main» —
+  приоритет у этого файла.
+- Следующие задачи — GitHub Issues репозитория (метки `audit`, `next-step`,
+  `P1`–`P3`); сводка со ссылками — `docs/ROADMAP.md`, раздел «Следующие задачи».
 - `ios-build.yml` — компиляция под симулятор на macOS-раннере (только `main`,
   по путям `ios/**`, `capacitor.config.ts`, или вручную).
 - TestFlight / App Store — вручную владельцем из Xcode, шаги в `docs/IOS.md`.
