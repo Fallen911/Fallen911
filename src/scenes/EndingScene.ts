@@ -183,10 +183,13 @@ export class EndingScene extends BaseScene {
 
   private shareCard(): void {
     audio.play("good");
-    const dataUrl = this.buildCard().toDataURL("image/png");
+    const card = this.buildCard();
     void (async () => {
       try {
-        const blob = await (await fetch(dataUrl)).blob();
+        // toBlob, not fetch(dataUrl): the production CSP (connect-src 'self')
+        // refuses data: fetches, which silently skipped the iOS share sheet.
+        const blob = await new Promise<Blob | null>((resolve) => card.toBlob(resolve, "image/png"));
+        if (!blob) throw new Error("canvas export failed");
         const file = new File([blob], "we-are-already-dead.png", {
           type: "image/png",
         });
@@ -206,10 +209,10 @@ export class EndingScene extends BaseScene {
           }
         }
       } catch {
-        // fetch/File unsupported here — fall through to the plain download.
+        // toBlob/File unsupported here — fall through to the plain download.
       }
       const a = document.createElement("a");
-      a.href = dataUrl;
+      a.href = card.toDataURL("image/png");
       a.download = "we-are-already-dead.png";
       a.click();
       this.savedFlash = 2.2;
